@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function WarehouseUtilization({ warehouses }) {
   return (
     <div className="bg-white rounded-2xl p-5 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)] flex flex-col justify-between">
@@ -37,5 +35,5 @@ export default function WarehouseUtilization({ warehouses }) {
         ))}
       </div>
     </div>
-  )
+  );
 }
