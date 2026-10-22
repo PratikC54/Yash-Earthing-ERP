@@ -3,6 +3,7 @@ import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import AddModuleModal from './AddModuleModal'
 import OperationsOverview from '../../features/dashboard/OperationsOverview'
+import EngineeringDashboard from '../../features/engineering/EngineeringDashboard'
 import { initialNavSections, currentUser } from '../../data/navigationModules'
 
 export default function AppLayout() {
@@ -11,7 +12,7 @@ export default function AppLayout() {
   const [activeModuleId, setActiveModuleId] = useState('dashboard')
   const [isAddModuleModalOpen, setIsAddModuleModalOpen] = useState(false)
 
-  // Handle module selection from sidebar (single module selection)
+  // Handle module selection from sidebar
   const handleSelectModule = (module) => {
     setActiveModule(module.name)
     setActiveModuleId(module.id)
@@ -36,25 +37,27 @@ export default function AppLayout() {
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-[#141d30] font-sans antialiased selection:bg-blue-500 selection:text-white">
-      {/* Left Sidebar (Single module, no submodules) */}
+      {/* Left Sidebar */}
       <Sidebar
         sections={sections}
         activeModuleId={activeModuleId}
         onSelectModule={handleSelectModule}
-        onOpenAddModuleModal={() => setIsAddModuleModalOpen(true)}
+        onOpenAddModuleModal={() => setIsAddModuleModalOpen(false)}
         user={currentUser}
       />
 
       {/* Right Content Area: Navbar + Main Middle Box */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#edf1f7]">
         {/* Top Navbar matching the sidebar deep navy color */}
-        <Navbar
-          activeModule={activeModule}
-        />
+        <Navbar activeModule={activeModule} />
 
-        {/* Main Middle Box (Single Dashboard: Operations Overview) */}
+        {/* Main Middle Content */}
         <main className="flex-1 overflow-y-auto">
-          <OperationsOverview subModuleTitle={`${activeModule} Overview`} />
+          {activeModuleId === 'engineering' ? (
+            <EngineeringDashboard />
+          ) : (
+            <OperationsOverview subModuleTitle={`${activeModule} Overview`} />
+          )}
         </main>
       </div>
 

@@ -1,4 +1,4 @@
-// Navigation configuration with single dashboard module (no submodules)
+// Navigation configuration with single dashboard module and Module 3
 // Easily extensible: additional modules can still be added dynamically via UI
 
 export const initialNavSections = [
@@ -14,10 +14,23 @@ export const initialNavSections = [
       },
     ],
   },
+  {
+    id: 'manufacturing',
+    title: 'MANUFACTURING & ENGINEERING',
+    items: [
+      {
+        id: 'engineering',
+        name: 'M3 · Product & Engineering',
+        icon: 'Layers',
+        badge: 'M3',
+        active: false,
+      },
+    ],
+  },
 ]
 
 export const currentUser = {
-  name: 'Dana Castellanos',
-  role: 'Operations Controller',
-  initials: 'DC',
+  name: 'Pratik Senapati',
+  role: 'Head of Engineering',
+  initials: 'PS',
 }
