@@ -5,9 +5,19 @@ export function errorHandler(err, _req, res, _next) {
     console.error(err);
   }
 
-  res.status(statusCode).json({
+  const message = statusCode >= 500 ? "Internal server error" : err.message;
+
+  const response = {
+    success: false,
+    message,
     error: {
-      message: statusCode >= 500 ? "Internal server error" : err.message,
+      message,
     },
-  });
+  };
+
+  if (err.errors && Array.isArray(err.errors) && err.errors.length > 0) {
+    response.errors = err.errors;
+  }
+
+  res.status(statusCode).json(response);
 }
