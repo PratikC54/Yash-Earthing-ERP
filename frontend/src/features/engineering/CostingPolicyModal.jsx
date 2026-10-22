@@ -82,8 +82,13 @@ export default function CostingPolicyModal({ isOpen, onClose, policy, onUpdatePo
               <label className="block text-xs font-semibold text-slate-300 mb-1">Labour Cost Per Unit (₹)</label>
               <input
                 type="number"
+                min="0"
+                step="1"
                 value={formData.labourCostPerUnit}
-                onChange={(e) => handleChange('labourCostPerUnit', e.target.value)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  handleChange('labourCostPerUnit', isNaN(val) || val < 0 ? 0 : val);
+                }}
                 className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 required
               />
@@ -92,9 +97,14 @@ export default function CostingPolicyModal({ isOpen, onClose, policy, onUpdatePo
               <label className="block text-xs font-semibold text-slate-300 mb-1">Factory Overhead (%)</label>
               <input
                 type="number"
+                min="0"
+                max="100"
                 step="0.5"
                 value={formData.overheadPercent}
-                onChange={(e) => handleChange('overheadPercent', e.target.value)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  handleChange('overheadPercent', isNaN(val) ? 0 : Math.min(100, Math.max(0, val)));
+                }}
                 className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 required
               />
@@ -106,22 +116,30 @@ export default function CostingPolicyModal({ isOpen, onClose, policy, onUpdatePo
               <label className="block text-xs font-semibold text-slate-300 mb-1">Target Sales Margin (%)</label>
               <input
                 type="number"
+                min="0"
                 step="0.5"
                 value={formData.targetMarginPercent}
-                onChange={(e) => handleChange('targetMarginPercent', e.target.value)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  handleChange('targetMarginPercent', isNaN(val) || val < 0 ? 0 : val);
+                }}
                 className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
                 required
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Default GST Rate (%)</label>
-              <input
-                type="number"
+              <select
                 value={formData.defaultGstPercent}
-                onChange={(e) => handleChange('defaultGstPercent', e.target.value)}
+                onChange={(e) => handleChange('defaultGstPercent', Number(e.target.value))}
                 className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
-                required
-              />
+              >
+                <option value={18}>18% — Standard Engineering Slab</option>
+                <option value={28}>28% — Surge & Electronic Protection</option>
+                <option value={12}>12% — Fabricated Hardware</option>
+                <option value={5}>5% — Ground Minerals</option>
+                <option value={0}>0% — Exempt</option>
+              </select>
             </div>
           </div>
 

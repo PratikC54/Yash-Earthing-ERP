@@ -68,6 +68,12 @@ export default function BOMEditorModal({
       item.componentName = comp.name || '';
       item.uom = comp.uom || 'NOS';
       item.unitRate = Number(comp.rate || 0);
+    } else if (field === 'quantity') {
+      const parsedQty = parseFloat(value);
+      item.quantity = isNaN(parsedQty) || parsedQty <= 0 ? 0.001 : parsedQty;
+    } else if (field === 'scrapPercent') {
+      const parsedScrap = parseFloat(value);
+      item.scrapPercent = isNaN(parsedScrap) ? 0 : Math.min(100, Math.max(0, parsedScrap));
     } else {
       item[field] = value;
     }
@@ -389,6 +395,7 @@ export default function BOMEditorModal({
                         {isDraft ? (
                           <input
                             type="number"
+                            min="0.001"
                             step="any"
                             value={it.quantity}
                             onChange={(e) => handleItemChange(idx, 'quantity', e.target.value)}
@@ -404,6 +411,8 @@ export default function BOMEditorModal({
                         {isDraft ? (
                           <input
                             type="number"
+                            min="0"
+                            max="100"
                             step="0.1"
                             value={it.scrapPercent}
                             onChange={(e) => handleItemChange(idx, 'scrapPercent', e.target.value)}

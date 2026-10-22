@@ -73,8 +73,14 @@ export default function ShortageCalculatorModal({ isOpen, onClose, products }) {
               <div className="flex space-x-2">
                 <input
                   type="number"
+                  min="1"
+                  step="1"
                   value={orderQuantity}
-                  onChange={(e) => setOrderQuantity(e.target.value)}
+                  onChange={(e) => {
+                    const val = parseInt(e.target.value, 10);
+                    if (val < 1) return;
+                    setOrderQuantity(e.target.value);
+                  }}
                   placeholder="500"
                   className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-amber-500"
                 />

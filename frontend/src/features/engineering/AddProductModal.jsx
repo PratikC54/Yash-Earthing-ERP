@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Plus, Package } from 'lucide-react';
+import { X, Plus, Package, ShieldCheck } from 'lucide-react';
 
 export default function AddProductModal({ isOpen, onClose, onProductCreated, categories }) {
   const [sku, setSku] = useState('');
@@ -12,7 +12,7 @@ export default function AddProductModal({ isOpen, onClose, onProductCreated, cat
   const [finish, setFinish] = useState('250 Microns Copper Coating');
   const [uom, setUom] = useState('NOS');
   const [rate, setRate] = useState('');
-  const [gstPercent, setGstPercent] = useState('18');
+  const [gstPercent, setGstPercent] = useState(18); // Fixed Indian GST standard slab
   const [description, setDescription] = useState('');
   const [referenceImage, setReferenceImage] = useState('https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80');
   const [error, setError] = useState('');
@@ -29,20 +29,32 @@ export default function AddProductModal({ isOpen, onClose, onProductCreated, cat
       return;
     }
 
+    const cleanSku = sku.trim().toUpperCase();
+    if (!/^[A-Z0-9-_]+$/.test(cleanSku)) {
+      setError('SKU can only contain uppercase letters, numbers, and hyphens (e.g. SKU-CBE-50-3M).');
+      return;
+    }
+
+    const numRate = Number(rate);
+    if (isNaN(numRate) || numRate <= 0) {
+      setError('List Rate must be a positive number greater than 0.');
+      return;
+    }
+
     try {
       setIsSubmitting(true);
       await onProductCreated({
-        sku: sku.trim().toUpperCase(),
+        sku: cleanSku,
         name: name.trim(),
         categoryId,
         itemType,
-        material: material.trim(),
+        material: material.trim() || 'Standard Metallurgy',
         size: size.trim(),
         length: length.trim(),
         finish: finish.trim(),
         uom,
-        rate: Number(rate) || 0,
-        gstPercent: Number(gstPercent) || 18,
+        rate: numRate,
+        gstPercent: Number(gstPercent),
         description: description.trim(),
         referenceImage: referenceImage.trim()
       });
@@ -64,7 +76,7 @@ export default function AddProductModal({ isOpen, onClose, onProductCreated, cat
             </div>
             <div>
               <h2 className="text-base font-bold text-white tracking-wide">Add New Product Master (SKU)</h2>
-              <p className="text-xs text-slate-400">Single engineering truth across Sales, Stores, and Production</p>
+              <p className="text-xs text-slate-400">Validated master record for Sales (M1), Stores (M2), and Production (M4)</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition">
@@ -82,13 +94,14 @@ export default function AddProductModal({ isOpen, onClose, onProductCreated, cat
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Product SKU <span className="text-red-400">*</span> (Permanent)
+                Product SKU <span className="text-red-400">*</span> (Permanent Alphanumeric)
               </label>
               <input
                 type="text"
                 value={sku}
-                onChange={(e) => setSku(e.target.value)}
+                onChange={(e) => setSku(e.target.value.toUpperCase())}
                 placeholder="e.g. SKU-CBE-50-3M"
+                pattern="[A-Z0-9-_]+"
                 className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 uppercase font-mono"
                 required
               />
@@ -202,24 +215,41 @@ export default function AddProductModal({ isOpen, onClose, onProductCreated, cat
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">List Rate (₹ excl. GST)</label>
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                List Rate (₹ excl. GST) <span className="text-red-400">*</span>
+              </label>
               <input
                 type="number"
+                min="0.01"
+                step="0.01"
                 value={rate}
-                onChange={(e) => setRate(e.target.value)}
+                onChange={(e) => {
+                  const val = parseFloat(e.target.value);
+                  if (val < 0) return;
+                  setRate(e.target.value);
+                }}
                 placeholder="3450"
                 className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
+                required
               />
             </div>
 
+            {/* Indian GST Slabs Dropdown - No arbitrary inputs allowed */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">GST Rate (%)</label>
-              <input
-                type="number"
+              <label className="block text-xs font-semibold text-slate-300 mb-1">
+                GST Tax Slab (Fixed) <span className="text-red-400">*</span>
+              </label>
+              <select
                 value={gstPercent}
-                onChange={(e) => setGstPercent(e.target.value)}
-                className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono"
-              />
+                onChange={(e) => setGstPercent(Number(e.target.value))}
+                className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-blue-500"
+              >
+                <option value={18}>18% — Standard Electrical & Electrodes</option>
+                <option value={28}>28% — Advanced Surge & High Voltage</option>
+                <option value={12}>12% — Fabricated Hardware & Trays</option>
+                <option value={5}>5% — Ground Enhancing Minerals</option>
+                <option value={0}>0% — Exempt</option>
+              </select>
             </div>
           </div>
 
@@ -259,7 +289,7 @@ export default function AddProductModal({ isOpen, onClose, onProductCreated, cat
               className="px-5 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold shadow-lg shadow-blue-600/30 transition disabled:opacity-50 flex items-center space-x-2"
             >
               <Plus className="w-4 h-4" />
-              <span>{isSubmitting ? 'Creating Product...' : 'Save & Register SKU'}</span>
+              <span>{isSubmitting ? 'Validating...' : 'Save & Register SKU'}</span>
             </button>
           </div>
         </form>

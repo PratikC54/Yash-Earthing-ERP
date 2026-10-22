@@ -1,4 +1,8 @@
 import { localDb } from './db/localDb.js';
+import { generateAutoCadDxf, generateBlueprintHtml } from './drawingGenerator.js';
+
+// Standard Indian GST Tax Slabs for engineering and manufacturing goods
+const VALID_GST_SLABS = [0, 5, 12, 18, 28];
 
 export const engineeringController = {
   // ===================== DASHBOARD KPIS =====================
@@ -102,11 +106,8 @@ export const engineeringController = {
       return res.status(404).json({ success: false, message: 'Product not found' });
     }
 
-    // Attach category details
     const category = db.categories.find(c => c.id === product.categoryId);
-    // Attach associated BOM if any
     const bom = db.boms.find(b => b.productId === product.id);
-    // Attach associated drawings if any
     const drawings = db.drawings.filter(d => d.productId === product.id);
 
     res.status(200).json({
@@ -124,32 +125,51 @@ export const engineeringController = {
     const db = localDb.read();
     const { sku, name, categoryId, itemType, material, size, length, finish, uom, rate, gstPercent, description, referenceImage, specifications } = req.body;
 
-    if (!sku || !name || !categoryId) {
-      return res.status(400).json({ success: false, message: 'SKU, Product Name, and Category are required.' });
+    // Strict Validation
+    if (!sku || !sku.trim() || !name || !name.trim() || !categoryId) {
+      return res.status(400).json({ success: false, message: 'Product SKU, Name, and Category are required.' });
     }
 
-    // Check duplicate SKU (case-insensitive)
-    const existing = db.products.find(p => p.sku.toLowerCase() === sku.trim().toLowerCase());
+    const cleanSku = sku.trim().toUpperCase();
+    if (!/^[A-Z0-9-_]+$/.test(cleanSku)) {
+      return res.status(400).json({ success: false, message: 'SKU may only contain uppercase letters, numbers, hyphens, and underscores.' });
+    }
+
+    const numRate = Number(rate);
+    if (isNaN(numRate) || numRate <= 0) {
+      return res.status(400).json({ success: false, message: 'Product List Rate must be a positive number greater than 0.' });
+    }
+
+    const numGst = Number(gstPercent);
+    if (!VALID_GST_SLABS.includes(numGst)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid GST rate (${gstPercent}%). Indian tax compliance requires standard slabs: 0%, 5%, 12%, 18%, or 28%.`
+      });
+    }
+
+    // Check duplicate SKU
+    const existing = db.products.find(p => p.sku.toLowerCase() === cleanSku.toLowerCase());
     if (existing) {
-      return res.status(409).json({ success: false, message: `Product with SKU "${sku}" already exists.` });
+      return res.status(409).json({ success: false, message: `Product with SKU "${cleanSku}" already exists.` });
     }
 
     const newProduct = {
       id: `prod_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      sku: sku.trim().toUpperCase(),
+      sku: cleanSku,
       name: name.trim(),
       categoryId,
       itemType: itemType || "FINISHED",
-      material: material || "Standard Spec",
-      size: size || "",
-      length: length || "",
-      finish: finish || "Factory Standard",
+      material: material?.trim() || "Standard Metallurgy",
+      size: size?.trim() || "",
+      length: length?.trim() || "",
+      finish: finish?.trim() || "Factory Standard",
       uom: uom || "NOS",
-      rate: Number(rate) || 0,
-      gstPercent: Number(gstPercent) || 18,
+      rate: numRate,
+      gstPercent: numGst,
       status: "ACTIVE",
-      description: description || "",
-      referenceImage: referenceImage || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80",
+      description: description?.trim() || "",
+      referenceImage: referenceImage?.trim() || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80",
       specifications: specifications || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -162,7 +182,7 @@ export const engineeringController = {
     res.status(201).json({
       success: true,
       data: newProduct,
-      message: 'Product created successfully.'
+      message: 'Product master created successfully.'
     });
   },
 
@@ -174,10 +194,26 @@ export const engineeringController = {
     }
 
     const existing = db.products[index];
+    const { rate, gstPercent } = req.body;
+
+    if (rate !== undefined) {
+      const numRate = Number(rate);
+      if (isNaN(numRate) || numRate <= 0) {
+        return res.status(400).json({ success: false, message: 'Rate must be a positive number greater than 0.' });
+      }
+    }
+
+    if (gstPercent !== undefined) {
+      const numGst = Number(gstPercent);
+      if (!VALID_GST_SLABS.includes(numGst)) {
+        return res.status(400).json({ success: false, message: `GST must be one of: 0%, 5%, 12%, 18%, 28%.` });
+      }
+    }
+
     const updated = {
       ...existing,
       ...req.body,
-      sku: existing.sku, // SKU is permanent once released
+      sku: existing.sku, // SKU is immutable
       updatedAt: new Date().toISOString()
     };
 
@@ -304,10 +340,10 @@ export const engineeringController = {
             componentProductId: it.componentProductId,
             componentSku: it.componentSku,
             componentName: it.componentName,
-            quantity: Number(it.quantity) || 1,
+            quantity: Math.max(0.001, Number(it.quantity) || 1),
             uom: it.uom || "NOS",
-            unitRate: Number(it.unitRate) || 0,
-            scrapPercent: Number(it.scrapPercent) || 0,
+            unitRate: Math.max(0, Number(it.unitRate) || 0),
+            scrapPercent: Math.min(100, Math.max(0, Number(it.scrapPercent) || 0)),
             lineCost: Number(it.quantity) * (1 + (Number(it.scrapPercent) || 0) / 100) * Number(it.unitRate),
             note: it.note || ""
           }))
@@ -328,7 +364,7 @@ export const engineeringController = {
 
   updateRevisionItems: (req, res) => {
     const db = localDb.read();
-    const { id } = req.params; // revisionId
+    const { id } = req.params;
     const { items, changeReason } = req.body;
 
     let targetRev = null;
@@ -354,14 +390,18 @@ export const engineeringController = {
       });
     }
 
-    // Validate items
     if (!items || items.length === 0) {
       return res.status(400).json({ success: false, message: 'BOM must contain at least one component.' });
     }
 
     for (const it of items) {
-      if (!it.componentProductId || Number(it.quantity) <= 0) {
-        return res.status(400).json({ success: false, message: 'All BOM lines must have a valid component and quantity > 0.' });
+      const q = Number(it.quantity);
+      if (isNaN(q) || q <= 0) {
+        return res.status(400).json({ success: false, message: 'Component quantities must be strictly greater than 0.' });
+      }
+      const scrap = Number(it.scrapPercent);
+      if (isNaN(scrap) || scrap < 0 || scrap > 100) {
+        return res.status(400).json({ success: false, message: 'Scrap % must be between 0% and 100%.' });
       }
       if (it.componentProductId === targetBom.productId) {
         return res.status(400).json({ success: false, message: 'Circular BOM error: A product cannot contain itself as a component.' });
@@ -370,9 +410,9 @@ export const engineeringController = {
 
     targetRev.items = items.map((it, idx) => {
       const comp = db.products.find(p => p.id === it.componentProductId) || {};
-      const rate = Number(it.unitRate ?? comp.rate ?? 0);
-      const scrap = Number(it.scrapPercent || 0);
-      const qty = Number(it.quantity);
+      const rate = Math.max(0, Number(it.unitRate ?? comp.rate ?? 0));
+      const scrap = Math.min(100, Math.max(0, Number(it.scrapPercent || 0)));
+      const qty = Math.max(0.001, Number(it.quantity));
       return {
         id: it.id || `item_${idx + 1}`,
         componentProductId: it.componentProductId,
@@ -401,7 +441,7 @@ export const engineeringController = {
 
   createNextRevision: (req, res) => {
     const db = localDb.read();
-    const { id } = req.params; // bomId
+    const { id } = req.params;
     const { changeReason } = req.body;
 
     const bom = db.boms.find(b => b.id === id);
@@ -417,7 +457,7 @@ export const engineeringController = {
       id: `rev_${Date.now()}_${String.fromCharCode(charCode + 1).toLowerCase()}`,
       revisionCode: nextCode,
       status: "DRAFT",
-      changeReason: changeReason || `Cloned from ${latest.revisionCode} for engineering optimization.`,
+      changeReason: changeReason || `Cloned from ${latest.revisionCode} for engineering revision.`,
       createdBy: req.user?.name || "Product Engineer",
       submittedBy: null,
       submittedAt: null,
@@ -536,15 +576,13 @@ export const engineeringController = {
     }
 
     const policy = db.costingPolicy;
-
-    // Calculate frozen cost snapshot
     const materialCost = targetRev.items.reduce((sum, it) => sum + (Number(it.lineCost) || 0), 0);
-    const labourCost = Number(policy.labourCostPerUnit || 0);
-    const overheadCost = (materialCost + labourCost) * (Number(policy.overheadPercent || 0) / 100);
+    const labourCost = Math.max(0, Number(policy.labourCostPerUnit || 0));
+    const overheadCost = (materialCost + labourCost) * (Math.max(0, Number(policy.overheadPercent || 0)) / 100);
     const totalCost = materialCost + labourCost + overheadCost;
-    const suggestedPrice = totalCost * (1 + Number(policy.targetMarginPercent || 0) / 100);
+    const suggestedPrice = totalCost * (1 + Math.max(0, Number(policy.targetMarginPercent || 0)) / 100);
 
-    // Supersede previously released revisions in the same BOM
+    // Supersede previously released revisions
     parentBom.revisions.forEach(rev => {
       if (rev.id !== targetRev.id && rev.status === 'RELEASED') {
         rev.status = 'SUPERSEDED';
@@ -588,10 +626,10 @@ export const engineeringController = {
 
     const policy = db.costingPolicy;
     const materialCost = targetRev.items.reduce((sum, it) => sum + (Number(it.lineCost) || 0), 0);
-    const labourCost = Number(policy.labourCostPerUnit || 0);
-    const overheadCost = (materialCost + labourCost) * (Number(policy.overheadPercent || 0) / 100);
+    const labourCost = Math.max(0, Number(policy.labourCostPerUnit || 0));
+    const overheadCost = (materialCost + labourCost) * (Math.max(0, Number(policy.overheadPercent || 0)) / 100);
     const totalCost = materialCost + labourCost + overheadCost;
-    const suggestedPrice = totalCost * (1 + Number(policy.targetMarginPercent || 0) / 100);
+    const suggestedPrice = totalCost * (1 + Math.max(0, Number(policy.targetMarginPercent || 0)) / 100);
 
     res.status(200).json({
       success: true,
@@ -612,7 +650,7 @@ export const engineeringController = {
 
   compareRevisions: (req, res) => {
     const db = localDb.read();
-    const { id } = req.params; // bomId
+    const { id } = req.params;
     const { from, to } = req.query;
 
     const bom = db.boms.find(b => b.id === id);
@@ -677,9 +715,24 @@ export const engineeringController = {
 
   updateCostingPolicy: (req, res) => {
     const db = localDb.read();
+    const { labourCostPerUnit, overheadPercent, targetMarginPercent, defaultGstPercent } = req.body;
+
+    if (labourCostPerUnit !== undefined && (isNaN(Number(labourCostPerUnit)) || Number(labourCostPerUnit) < 0)) {
+      return res.status(400).json({ success: false, message: 'Labour cost cannot be negative.' });
+    }
+    if (overheadPercent !== undefined && (isNaN(Number(overheadPercent)) || Number(overheadPercent) < 0 || Number(overheadPercent) > 100)) {
+      return res.status(400).json({ success: false, message: 'Overhead % must be between 0% and 100%.' });
+    }
+    if (targetMarginPercent !== undefined && (isNaN(Number(targetMarginPercent)) || Number(targetMarginPercent) < 0)) {
+      return res.status(400).json({ success: false, message: 'Target margin % cannot be negative.' });
+    }
+
     db.costingPolicy = {
       ...db.costingPolicy,
       ...req.body,
+      labourCostPerUnit: Math.max(0, Number(labourCostPerUnit ?? db.costingPolicy.labourCostPerUnit)),
+      overheadPercent: Math.min(100, Math.max(0, Number(overheadPercent ?? db.costingPolicy.overheadPercent))),
+      targetMarginPercent: Math.max(0, Number(targetMarginPercent ?? db.costingPolicy.targetMarginPercent)),
       updatedAt: new Date().toISOString()
     };
     localDb.write(db);
@@ -697,14 +750,16 @@ export const engineeringController = {
     const db = localDb.read();
     const { productId, orderQuantity } = req.body;
 
-    const qty = Number(orderQuantity) || 1;
-    const bom = db.boms.find(b => b.productId === productId);
+    const qty = Number(orderQuantity);
+    if (isNaN(qty) || qty <= 0) {
+      return res.status(400).json({ success: false, message: 'Order Quantity must be a valid number greater than 0.' });
+    }
 
+    const bom = db.boms.find(b => b.productId === productId);
     if (!bom) {
       return res.status(404).json({ success: false, message: 'No BOM found for this product.' });
     }
 
-    // Find the currently released revision
     const releasedRev = bom.revisions.find(r => r.status === 'RELEASED');
     if (!releasedRev) {
       return res.status(422).json({ success: false, message: 'This product has no RELEASED BOM. Cannot compute production shortages from unapproved drafts.' });
@@ -712,7 +767,7 @@ export const engineeringController = {
 
     const shortages = releasedRev.items.map(item => {
       const comp = db.products.find(p => p.id === item.componentProductId);
-      const availableStock = comp?.stockQuantity ?? 100; // Simulated available inventory
+      const availableStock = comp?.stockQuantity ?? 100;
       const requiredQty = (item.quantity * (1 + item.scrapPercent / 100)) * qty;
       const shortage = Math.max(0, requiredQty - availableStock);
 
@@ -767,20 +822,21 @@ export const engineeringController = {
     const db = localDb.read();
     const { drawingNo, title, type, productId, changeReason } = req.body;
 
-    if (!drawingNo || !title) {
+    if (!drawingNo || !drawingNo.trim() || !title || !title.trim()) {
       return res.status(400).json({ success: false, message: 'Drawing Number and Title are required.' });
     }
 
-    const existing = db.drawings.find(d => d.drawingNo.toLowerCase() === drawingNo.trim().toLowerCase());
+    const cleanDrawingNo = drawingNo.trim().toUpperCase();
+    const existing = db.drawings.find(d => d.drawingNo.toLowerCase() === cleanDrawingNo.toLowerCase());
     if (existing) {
-      return res.status(409).json({ success: false, message: `Drawing "${drawingNo}" already exists.` });
+      return res.status(409).json({ success: false, message: `Drawing "${cleanDrawingNo}" already exists.` });
     }
 
     const newDrawing = {
       id: `drw_${Date.now()}`,
-      drawingNo: drawingNo.trim().toUpperCase(),
+      drawingNo: cleanDrawingNo,
       title: title.trim(),
-      type: type || 'GENERAL_ARRANGEMENT',
+      type: type || 'FABRICATION',
       productId: productId || null,
       status: 'RELEASED',
       latestRevision: 'Rev A',
@@ -789,16 +845,15 @@ export const engineeringController = {
           id: `drw_rev_${Date.now()}_a`,
           revisionCode: 'Rev A',
           status: 'RELEASED',
-          fileName: `${drawingNo.trim()}-RevA.pdf`,
-          fileSize: '2.1 MB',
+          fileName: `${cleanDrawingNo}-RevA.pdf`,
+          fileSize: '1.4 MB',
           fileType: 'application/pdf',
           checksum: 'f4b3e2...auto',
-          changeReason: changeReason || 'Initial design approved for manufacturing.',
+          changeReason: changeReason?.trim() || 'Initial design approved for manufacturing.',
           uploadedBy: req.user?.name || 'Design Engineer',
           uploadedAt: new Date().toISOString(),
           releasedBy: req.user?.name || 'Head of Engineering (Pratik Senapati)',
-          releasedAt: new Date().toISOString(),
-          downloadUrl: `/api/v1/engineering/drawings/${drawingNo.trim()}/download?rev=Rev%20A`
+          releasedAt: new Date().toISOString()
         }
       ]
     };
@@ -814,13 +869,46 @@ export const engineeringController = {
     });
   },
 
+  // Protected Real Vector CAD / Blueprint Download Endpoint
   downloadDrawingRevision: (req, res) => {
-    // Protected endpoint per PRD M3-D06
-    res.status(200).json({
-      success: true,
-      message: 'File download token verified. Serving drawing asset securely.',
-      fileDownloadUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf'
-    });
+    const db = localDb.read();
+    const { id } = req.params;
+    const { format } = req.query; // 'dxf' or 'html' (printable blueprint)
+
+    const drawing = db.drawings.find(d => d.id === id || d.drawingNo.toLowerCase() === id.toLowerCase());
+    if (!drawing) {
+      return res.status(404).send('Drawing not found');
+    }
+
+    const releasedRev = drawing.revisions.find(r => r.status === 'RELEASED') || drawing.revisions[0];
+    const product = db.products.find(p => p.id === drawing.productId);
+
+    if (format === 'dxf') {
+      const dxfContent = generateAutoCadDxf(
+        drawing.drawingNo,
+        drawing.title,
+        product?.sku || 'GEN-SKU',
+        releasedRev.revisionCode
+      );
+      res.setHeader('Content-Type', 'application/dxf');
+      res.setHeader('Content-Disposition', `attachment; filename="${drawing.drawingNo}-${releasedRev.revisionCode}.dxf"`);
+      return res.send(dxfContent);
+    }
+
+    // Default: Printable standalone high-precision CAD Blueprint
+    const htmlBlueprint = generateBlueprintHtml(
+      drawing.drawingNo,
+      drawing.title,
+      product?.sku || 'GENERAL SPEC',
+      releasedRev.revisionCode,
+      drawing.type,
+      releasedRev.uploadedBy,
+      releasedRev.releasedBy,
+      releasedRev.releasedAt
+    );
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(htmlBlueprint);
   },
 
   // ===================== INTEGRATION APIS FOR M1, M2, M4 =====================
