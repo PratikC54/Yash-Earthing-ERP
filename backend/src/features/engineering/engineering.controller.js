@@ -920,7 +920,9 @@ export const engineeringController = {
       drawing.type,
       releasedRev.uploadedBy,
       releasedRev.releasedBy,
-      releasedRev.releasedAt
+      releasedRev.releasedAt,
+      product,
+      drawing
     );
 
     res.setHeader('Content-Type', 'text/html');

@@ -203,8 +203,37 @@
       "gstPercent": 18,
       "status": "ARCHIVED",
       "description": "Tested as per NFC 17-102:2011 for solar farms and telecom towers.",
-      "referenceImage": "https://reazychina.com/Uploads/images/products/2024-10-10/en--20241010134607-134827.png",
-      "specifications": [],
+      "referenceImage": "https://images.unsplash.com/photo-1541888946425-d0fbb18f15f7?w=600&auto=format&fit=crop&q=80",
+      "specifications": [
+        {
+          "attribute": "Discharge Current Rating",
+          "value": "100",
+          "unit": "kA",
+          "tolerance": "10/350 µs wave",
+          "standard": "NFC 17-102:2011"
+        },
+        {
+          "attribute": "Radius of Protection",
+          "value": "108",
+          "unit": "meter",
+          "tolerance": "Level 1 (h=5m)",
+          "standard": "NFC 17-102"
+        },
+        {
+          "attribute": "Trigger Advance Time ΔT",
+          "value": "60",
+          "unit": "µs",
+          "tolerance": "± 5 µs",
+          "standard": "CPRI Tested"
+        },
+        {
+          "attribute": "Base Mounting Adapter",
+          "value": "2\" BSP Thread",
+          "unit": "",
+          "tolerance": "Class 6g",
+          "standard": "ISO 7-1"
+        }
+      ],
       "createdAt": "2026-10-22T18:05:58.557Z",
       "updatedAt": "2026-10-22T18:19:35.438Z"
     },
