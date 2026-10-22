@@ -1,50 +1,33 @@
-import axios from 'axios'
+import api from '../../api/api'
 
-const API_BASE_URL = '/api/v1/auth'
-
-const api = axios.create({
-  baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true,
-})
-
-// Attach token to requests if available
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('yash_auth_token')
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`
-  }
-  return config
-})
+const AUTH_PREFIX = '/auth'
 
 export const authService = {
   async login(email, password) {
-    const response = await api.post('/login', { email, password })
+    const response = await api.post(`${AUTH_PREFIX}/login`, { email, password })
     return response.data
   },
 
   async register(userData) {
-    const response = await api.post('/register', userData)
+    const response = await api.post(`${AUTH_PREFIX}/register`, userData)
     return response.data
   },
 
   async checkStatus(email) {
-    const response = await api.get('/status', {
+    const response = await api.get(`${AUTH_PREFIX}/status`, {
       params: { email },
     })
     return response.data
   },
 
   async getMe() {
-    const response = await api.get('/me')
+    const response = await api.get(`${AUTH_PREFIX}/me`)
     return response.data
   },
 
   async logout() {
     try {
-      const response = await api.post('/logout')
+      const response = await api.post(`${AUTH_PREFIX}/logout`)
       return response.data
     } finally {
       localStorage.removeItem('yash_auth_token')
@@ -53,22 +36,22 @@ export const authService = {
   },
 
   async getPendingUsers() {
-    const response = await api.get('/pending')
+    const response = await api.get(`${AUTH_PREFIX}/pending`)
     return response.data
   },
 
   async approveUser(userId) {
-    const response = await api.post(`/approve/${userId}`)
+    const response = await api.post(`${AUTH_PREFIX}/approve/${userId}`)
     return response.data
   },
 
   async rejectUser(userId) {
-    const response = await api.post(`/reject/${userId}`)
+    const response = await api.post(`${AUTH_PREFIX}/reject/${userId}`)
     return response.data
   },
 
   async devQuickApprove(email) {
-    const response = await api.post('/dev-quick-approve', { email })
+    const response = await api.post(`${AUTH_PREFIX}/dev-quick-approve`, { email })
     return response.data
   },
 }

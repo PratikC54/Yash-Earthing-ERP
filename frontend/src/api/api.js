@@ -1,7 +1,10 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL || "/api",
+  baseURL:
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    "/api/v1",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -11,10 +14,10 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    // Add authentication headers here if your ERP uses Bearer tokens.
-    // If authentication uses HTTP-only cookies, withCredentials
-    // allows the browser to send cookies where permitted.
-
+    const token = localStorage.getItem("yash_auth_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => Promise.reject(error),
