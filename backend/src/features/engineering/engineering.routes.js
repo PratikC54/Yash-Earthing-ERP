@@ -17,6 +17,7 @@ router.get('/products/:id', engineeringController.getProductById);
 router.patch('/products/:id', engineeringController.updateProduct);
 router.post('/products/:id/archive', engineeringController.archiveProduct);
 router.put('/products/:id/specifications', engineeringController.updateSpecifications);
+router.get('/products/:id/report', engineeringController.getProductRegistryReport);
 
 // BOM, Revisions & Costing
 router.get('/boms', engineeringController.getBoms);

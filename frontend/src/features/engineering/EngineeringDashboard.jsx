@@ -17,7 +17,8 @@ import {
   Archive,
   RefreshCw,
   GitCommit,
-  Download
+  Download,
+  Printer
 } from 'lucide-react';
 
 import { engineeringService } from '../../services/engineeringService';
@@ -154,6 +155,12 @@ export default function EngineeringDashboard() {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
     const downloadUrl = `${baseUrl}/engineering/drawings/${drwId}/download?format=${format}`;
     window.open(downloadUrl, '_blank');
+  };
+
+  const handleExportProductReport = (productId) => {
+    const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
+    const reportUrl = `${baseUrl}/engineering/products/${productId}/report`;
+    window.open(reportUrl, '_blank');
   };
 
   // Filtered Products
@@ -380,6 +387,7 @@ export default function EngineeringDashboard() {
                     <th className="py-3 px-3">Finish / Coating</th>
                     <th className="py-3 px-3 text-right">List Rate</th>
                     <th className="py-3 px-3 text-center">Status</th>
+                    <th className="py-3 px-3 text-center">Datasheet</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -418,12 +426,22 @@ export default function EngineeringDashboard() {
                             {p.status}
                           </span>
                         </td>
+                        <td className="py-3 px-3 text-center" onClick={(e) => e.stopPropagation()}>
+                          <button
+                            onClick={() => handleExportProductReport(p.id)}
+                            title="Export / Print Official Registry Report (PDF)"
+                            className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md font-bold text-[11px] transition inline-flex items-center space-x-1"
+                          >
+                            <Printer className="w-3 h-3" />
+                            <span>PDF</span>
+                          </button>
+                        </td>
                       </tr>
                     );
                   })}
                   {filteredProducts.length === 0 && (
                     <tr>
-                      <td colSpan={6} className="py-8 text-center text-slate-400">
+                      <td colSpan={7} className="py-8 text-center text-slate-400">
                         No matching products found.
                       </td>
                     </tr>
@@ -515,6 +533,20 @@ export default function EngineeringDashboard() {
                     <span className="font-mono font-bold text-slate-800">{selectedProduct.uom}</span>
                   </div>
                 </div>
+
+                {/* Official Registry PDF Report Trigger */}
+                <div className="pt-1">
+                  <button
+                    onClick={() => handleExportProductReport(selectedProduct.id)}
+                    className="w-full py-2.5 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-500/20 flex items-center justify-center space-x-2 transition"
+                  >
+                    <Printer className="w-4 h-4" />
+                    <span>Export Official Datasheet / Registry Report (PDF)</span>
+                  </button>
+                  <p className="text-[10px] text-slate-400 text-center mt-1.5">
+                    Includes company header, product photo, technical parameters, released BOM recipe & ISO compliance sign-offs.
+                  </p>
+                </div>
               </>
             ) : (
               <div className="py-12 text-center text-slate-400 text-xs">
@@ -596,15 +628,26 @@ export default function EngineeringDashboard() {
                         )}
                       </td>
                       <td className="py-3.5 px-4 text-center">
-                        <button
-                          onClick={() => {
-                            setActiveEditingBom(b);
-                            setIsBomEditorOpen(true);
-                          }}
-                          className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs shadow-sm transition"
-                        >
-                          Open BOM Editor
-                        </button>
+                        <div className="flex items-center justify-center space-x-1.5">
+                          <button
+                            onClick={() => {
+                              setActiveEditingBom(b);
+                              setIsBomEditorOpen(true);
+                            }}
+                            className="px-3 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs shadow-sm transition"
+                          >
+                            Open BOM Editor
+                          </button>
+                          {b.product?.id && (
+                            <button
+                              onClick={() => handleExportProductReport(b.product.id)}
+                              title="Export Technical Registry & Cost Report (PDF)"
+                              className="p-1.5 bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 rounded-lg transition"
+                            >
+                              <Printer className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );

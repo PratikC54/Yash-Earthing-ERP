@@ -189,6 +189,26 @@
   ],
   "products": [
     {
+      "id": "prod_1792692358557_bi91",
+      "sku": "SKU-YASH-ESE-108M",
+      "name": "Yash Advanced ESE Lightning Terminal 108m",
+      "categoryId": "cat_lightning",
+      "itemType": "FINISHED",
+      "material": "SS 316L Stainless Steel",
+      "size": "108m Radius Level 1",
+      "length": "400mm",
+      "finish": "Mirror Polish Electro-Passivated",
+      "uom": "METER",
+      "rate": 22500,
+      "gstPercent": 18,
+      "status": "ARCHIVED",
+      "description": "Tested as per NFC 17-102:2011 for solar farms and telecom towers.",
+      "referenceImage": "https://reazychina.com/Uploads/images/products/2024-10-10/en--20241010134607-134827.png",
+      "specifications": [],
+      "createdAt": "2026-10-22T18:05:58.557Z",
+      "updatedAt": "2026-10-22T18:19:35.438Z"
+    },
+    {
       "id": "prod_cbe_50_3m",
       "sku": "SKU-CBE-50-3M",
       "name": "Yash Copper Bonded Earthing Electrode 50mm x 3m",
@@ -617,6 +637,32 @@
   ],
   "drawings": [
     {
+      "id": "drw_1792692548026",
+      "drawingNo": "YASH-ENG-DWG-902",
+      "title": "108m ESE Terminal Stainless Steel Base Mount Section",
+      "type": "FABRICATION",
+      "productId": "prod_1792692358557_bi91",
+      "status": "RELEASED",
+      "latestRevision": "Rev A",
+      "revisions": [
+        {
+          "id": "drw_rev_1792692548026_a",
+          "revisionCode": "Rev A",
+          "status": "RELEASED",
+          "fileName": "YASH-ENG-DWG-902-RevA.pdf",
+          "fileSize": "2.1 MB",
+          "fileType": "application/pdf",
+          "checksum": "f4b3e2...auto",
+          "changeReason": "Initial shop-floor production release approved by engineering.",
+          "uploadedBy": "Design Engineer",
+          "uploadedAt": "2026-10-22T18:09:08.026Z",
+          "releasedBy": "Head of Engineering (Pratik Senapati)",
+          "releasedAt": "2026-10-22T18:09:08.026Z",
+          "downloadUrl": "/api/v1/engineering/drawings/YASH-ENG-DWG-902/download?rev=Rev%20A"
+        }
+      ]
+    },
+    {
       "id": "drw_cbe_50_ga",
       "drawingNo": "YASH-ENG-DWG-501",
       "title": "General Arrangement & Fabrication Cross-Section: 50mm Electrode",
@@ -699,6 +745,51 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "audit_1792693175441_3bg4x",
+      "entity": "Product",
+      "entityId": "prod_1792692358557_bi91",
+      "action": "ARCHIVE",
+      "actor": "Product Engineer",
+      "details": "Archived product SKU-YASH-ESE-108M",
+      "timestamp": "2026-10-22T18:19:35.442Z"
+    },
+    {
+      "id": "audit_1792693172122_qevvu",
+      "entity": "Product",
+      "entityId": "prod_1792692358557_bi91",
+      "action": "ARCHIVE",
+      "actor": "Product Engineer",
+      "details": "Archived product SKU-YASH-ESE-108M",
+      "timestamp": "2026-10-22T18:19:32.122Z"
+    },
+    {
+      "id": "audit_1792692548032_m05c8",
+      "entity": "Drawing",
+      "entityId": "drw_1792692548026",
+      "action": "CREATE_DRAWING",
+      "actor": "Design Engineer",
+      "details": "Uploaded & released drawing YASH-ENG-DWG-902",
+      "timestamp": "2026-10-22T18:09:08.032Z"
+    },
+    {
+      "id": "audit_1792692389451_jehtc",
+      "entity": "Product",
+      "entityId": "prod_1792692358557_bi91",
+      "action": "ARCHIVE",
+      "actor": "Product Engineer",
+      "details": "Archived product SKU-YASH-ESE-108M",
+      "timestamp": "2026-10-22T18:06:29.451Z"
+    },
+    {
+      "id": "audit_1792692358581_dbwuj",
+      "entity": "Product",
+      "entityId": "prod_1792692358557_bi91",
+      "action": "CREATE",
+      "actor": "Product Engineer",
+      "details": "Created product SKU-YASH-ESE-108M - Yash Advanced ESE Lightning Terminal 108m",
+      "timestamp": "2026-10-22T18:05:58.581Z"
+    },
     {
       "id": "audit_1",
       "entity": "BOMRevision",

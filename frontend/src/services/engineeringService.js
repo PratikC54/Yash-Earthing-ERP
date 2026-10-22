@@ -138,5 +138,9 @@ export const engineeringService = {
   downloadDrawing: async (drawingId) => {
     const res = await api.get(`${BASE_URL}/drawings/${drawingId}/download`);
     return res.data;
+  },
+
+  getProductReportUrl: (productId) => {
+    return `/api/v1${BASE_URL}/products/${productId}/report`;
   }
 };

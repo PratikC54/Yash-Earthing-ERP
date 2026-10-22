@@ -1,5 +1,5 @@
 import { localDb } from './db/localDb.js';
-import { generateAutoCadDxf, generateBlueprintHtml } from './drawingGenerator.js';
+import { generateAutoCadDxf, generateBlueprintHtml, generateProductRegistryReportHtml } from './drawingGenerator.js';
 
 // Standard Indian GST Tax Slabs for engineering and manufacturing goods
 const VALID_GST_SLABS = [0, 5, 12, 18, 28];
@@ -264,6 +264,22 @@ export const engineeringController = {
       data: product.specifications,
       message: 'Specifications updated successfully.'
     });
+  },
+
+  getProductRegistryReport: (req, res) => {
+    const db = localDb.read();
+    const product = db.products.find(p => p.id === req.params.id || p.sku === req.params.id);
+    if (!product) {
+      return res.status(404).send('Product not found in Engineering Registry');
+    }
+
+    const category = db.categories.find(c => c.id === product.categoryId);
+    const bom = db.boms.find(b => b.productId === product.id);
+
+    const htmlReport = generateProductRegistryReportHtml(product, category, bom);
+
+    res.setHeader('Content-Type', 'text/html');
+    res.send(htmlReport);
   },
 
   // ===================== BOM & REVISIONS =====================

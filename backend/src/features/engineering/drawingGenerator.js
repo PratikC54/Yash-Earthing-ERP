@@ -407,3 +407,313 @@ export function generateBlueprintHtml(drawingNo, title, productSku, revision, ty
 </body>
 </html>`;
 }
+
+// Generate Official Yash Group Product Master & Technical Registry Report (PDF / Printable)
+export function generateProductRegistryReportHtml(product, category, bom) {
+  const releasedRev = bom?.revisions?.find(r => r.status === 'RELEASED');
+  const now = new Date().toLocaleDateString('en-IN', {
+    day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+  });
+  const imageSrc = product.referenceImage || 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600';
+
+  const specRows = (product.specifications || []).map((s, idx) => `
+    <tr style="background: ${idx % 2 === 0 ? '#f8fafc' : '#ffffff'};">
+      <td style="padding: 10px 14px; font-weight: 600; border-bottom: 1px solid #e2e8f0; color: #1e293b;">${s.attribute}</td>
+      <td style="padding: 10px 14px; font-family: monospace; font-weight: bold; border-bottom: 1px solid #e2e8f0; color: #0f172a;">${s.value} ${s.unit || ''}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #64748b; font-size: 11px;">${s.tolerance || 'Factory Spec'}</td>
+      <td style="padding: 10px 14px; border-bottom: 1px solid #e2e8f0; color: #0284c7; font-weight: 600; font-size: 11px;">${s.standard || 'IS 3043 / UL 467'}</td>
+    </tr>
+  `).join('');
+
+  const bomRows = releasedRev?.items ? releasedRev.items.map((it, idx) => `
+    <tr style="background: ${idx % 2 === 0 ? '#f8fafc' : '#ffffff'};">
+      <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-mono; color: #64748b;">${idx + 1}</td>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; font-weight: 600; color: #0f172a;">${it.componentName} <span style="font-size: 10px; color: #64748b;">(${it.componentSku})</span></td>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: monospace; font-weight: bold;">${it.quantity} ${it.uom}</td>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; color: #d97706; font-family: monospace;">${it.scrapPercent}%</td>
+      <td style="padding: 8px 12px; border-bottom: 1px solid #e2e8f0; text-align: right; font-family: monospace; font-weight: bold; color: #059669;">₹${Number(it.lineCost).toFixed(2)}</td>
+    </tr>
+  `).join('') : `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #94a3b8;">No released BOM recipe associated yet.</td></tr>`;
+
+  return `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Engineering Registry Report — ${product.sku}</title>
+  <style>
+    @page { size: A4 portrait; margin: 12mm; }
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      padding: 24px;
+      background: #f1f5f9;
+      color: #0f172a;
+    }
+    .report-sheet {
+      max-width: 820px;
+      margin: 0 auto;
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      border-radius: 8px;
+      padding: 32px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    }
+    .header-table {
+      width: 100%;
+      border-bottom: 3px solid #0284c7;
+      padding-bottom: 16px;
+      margin-bottom: 24px;
+    }
+    .logo-text {
+      font-size: 22px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
+      color: #0369a1;
+    }
+    .doc-type {
+      font-size: 13px;
+      font-weight: 700;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+    }
+    .meta-badge {
+      display: inline-block;
+      padding: 3px 10px;
+      background: #ecfdf5;
+      color: #059669;
+      border: 1px solid #a7f3d0;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .section-title {
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: #0369a1;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 6px;
+      margin-top: 24px;
+      margin-bottom: 12px;
+    }
+    .grid-2 {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+    }
+    .product-img {
+      width: 260px;
+      height: 180px;
+      object-fit: cover;
+      border-radius: 8px;
+      border: 1px solid #cbd5e1;
+      background: #f8fafc;
+    }
+    .details-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+    .details-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #f1f5f9;
+    }
+    .label-col {
+      color: #64748b;
+      font-weight: 600;
+      width: 38%;
+    }
+    .val-col {
+      font-weight: 700;
+      color: #0f172a;
+    }
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+      margin-top: 8px;
+    }
+    .data-table th {
+      background: #f1f5f9;
+      padding: 10px 12px;
+      font-weight: 800;
+      font-size: 11px;
+      text-align: left;
+      color: #475569;
+      text-transform: uppercase;
+      border-bottom: 2px solid #cbd5e1;
+    }
+    .signature-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 1px solid #e2e8f0;
+    }
+    .sig-box {
+      border: 1px dashed #cbd5e1;
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+      background: #f8fafc;
+    }
+    .sig-title {
+      font-size: 10px;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 700;
+      margin-bottom: 24px;
+    }
+    .sig-name {
+      font-size: 12px;
+      font-weight: bold;
+      color: #0f172a;
+    }
+    .print-btn {
+      margin-bottom: 20px;
+      padding: 10px 20px;
+      background: #0284c7;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    @media print {
+      body { background: white; padding: 0; }
+      .report-sheet { border: none; box-shadow: none; padding: 0; width: 100%; max-width: 100%; }
+      .print-btn { display: none; }
+    }
+  </style>
+</head>
+<body>
+  <div style="text-align: center;">
+    <button class="print-btn" onclick="window.print()">🖨️ Print / Save as Official PDF</button>
+  </div>
+
+  <div class="report-sheet">
+    <!-- Header -->
+    <table class="header-table">
+      <tr>
+        <td>
+          <div class="logo-text">YASH GROUP — EARTHING & LIGHTNING PROTECTION</div>
+          <div class="doc-type">Engineering Master Specification & Registry Report</div>
+        </td>
+        <td style="text-align: right;">
+          <span class="meta-badge">STATUS: ${product.status}</span>
+          <div style="font-size: 10px; color: #64748b; margin-top: 4px; font-family: monospace;">Doc Ref: YASH-ENG-${product.sku}</div>
+          <div style="font-size: 10px; color: #64748b; font-family: monospace;">Generated: ${now}</div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Product Master & Photo Section -->
+    <div class="section-title">1. Master Item Identity & Classification</div>
+    <div class="grid-2">
+      <img src="${imageSrc}" alt="${product.name}" class="product-img" onerror="this.src='https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600'" />
+      
+      <table class="details-table">
+        <tr>
+          <td class="label-col">Product SKU (Code):</td>
+          <td class="val-col" style="color: #0284c7; font-family: monospace; font-size: 14px;">${product.sku}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Official Name:</td>
+          <td class="val-col">${product.name}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Category Family:</td>
+          <td class="val-col">${category?.name || 'Earthing Electrodes'}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Item Master Type:</td>
+          <td class="val-col">${product.itemType} (Sellable SKU)</td>
+        </tr>
+        <tr>
+          <td class="label-col">Dimensions / Size:</td>
+          <td class="val-col">${product.size || 'Standard'} · ${product.length || ''}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Conductor Metallurgy:</td>
+          <td class="val-col">${product.material}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Surface Plating:</td>
+          <td class="val-col">${product.finish}</td>
+        </tr>
+        <tr>
+          <td class="label-col">Standard Indian GST:</td>
+          <td class="val-col" style="color: #059669;">${product.gstPercent}% (Fixed Statutory Slab)</td>
+        </tr>
+        <tr>
+          <td class="label-col">Commercial List Rate:</td>
+          <td class="val-col" style="font-family: monospace;">₹${Number(product.rate).toLocaleString()} per ${product.uom}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Approved Technical Specifications Table -->
+    <div class="section-title">2. Approved Technical Specifications & Compliance Standards</div>
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th>Engineering Parameter</th>
+          <th>Nominal Value & Unit</th>
+          <th>Tolerance</th>
+          <th>Testing Standard / Compliance</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${specRows}
+      </tbody>
+    </table>
+
+    <!-- Released BOM Composition & Cost Snapshot -->
+    <div class="section-title">3. Manufacturing Bill of Materials (BOM) & Cost Composition</div>
+    <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">
+      Active Released Recipe: <strong style="color: #0f172a;">${bom?.bomCode || 'BOM-' + product.sku}</strong> — 
+      Revision: <span style="color: #059669; font-weight: bold;">${releasedRev?.revisionCode || 'Pending Release'}</span> ·
+      Frozen Factory Unit Cost: <strong style="color: #0369a1;">₹${releasedRev?.costSnapshot ? releasedRev.costSnapshot.totalCost.toFixed(2) : Number(product.rate * 0.7).toFixed(2)}</strong>
+    </div>
+
+    <table class="data-table">
+      <thead>
+        <tr>
+          <th style="width: 40px;">#</th>
+          <th>Raw Material / Sub-assembly</th>
+          <th style="text-align: right;">Unit Quantity</th>
+          <th style="text-align: right;">Scrap %</th>
+          <th style="text-align: right;">Component Cost (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${bomRows}
+      </tbody>
+    </table>
+
+    <!-- Quality & Approval Signatures Block -->
+    <div class="signature-grid">
+      <div class="sig-box">
+        <div class="sig-title">Prepared By (Design)</div>
+        <div class="sig-name">Eng. Vikram Sharma</div>
+        <div style="font-size: 10px; color: #64748b; margin-top: 3px;">Product Engineer</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-title">Verified By (Standards & QC)</div>
+        <div class="sig-name">Quality & Testing Division</div>
+        <div style="font-size: 10px; color: #64748b; margin-top: 3px;">ISO 9001 / CPRI Tested</div>
+      </div>
+      <div class="sig-box">
+        <div class="sig-title">Approved & Released By</div>
+        <div class="sig-name" style="color: #0369a1;">Pratik Senapati</div>
+        <div style="font-size: 10px; color: #64748b; margin-top: 3px;">Head of Engineering</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+}
