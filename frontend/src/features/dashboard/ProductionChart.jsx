@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 
 export default function ProductionChart({ data }) {
   const [hoveredIdx, setHoveredIdx] = useState(null)

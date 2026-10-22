@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Filter, Plus } from 'lucide-react'
 import KpiCards from './KpiCards'
 import ProductionChart from './ProductionChart'

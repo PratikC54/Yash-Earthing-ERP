@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { X, Plus, PackageCheck } from 'lucide-react'
 
 export default function OrderModal({ isOpen, onClose, onAddOrder }) {

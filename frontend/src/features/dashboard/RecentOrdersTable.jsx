@@ -1,5 +1,3 @@
-import React from 'react'
-
 export default function RecentOrdersTable({ orders }) {
   const getStatusBadge = (status) => {
     switch (status) {
