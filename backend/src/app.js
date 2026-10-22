@@ -23,6 +23,17 @@ app.use(
   }),
 );
 
+// Root landing route
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    message: "Yash Group ERP Backend API",
+    version: "1.0.0",
+    apiPrefix: "/api/v1",
+    healthCheck: "/api/v1/health",
+  });
+});
+
 app.use("/api/v1", apiRouter);
 app.use(notFound);
 app.use(errorHandler);
