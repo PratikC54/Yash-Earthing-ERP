@@ -1,0 +1,30 @@
+import cookieParser from "cookie-parser";
+import cors from "cors";
+import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import { env } from "./config/env.js";
+import { errorHandler } from "./middleware/errorHandler.js";
+import { notFound } from "./middleware/notFound.js";
+import apiRouter from "./routes/v1/index.js";
+
+const app = express();
+
+app.use(helmet());
+app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(express.json({ limit: "1mb" }));
+app.use(cookieParser());
+app.use(
+  rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: 100,
+    standardHeaders: "draft-7",
+    legacyHeaders: false,
+  }),
+);
+
+app.use("/api/v1", apiRouter);
+app.use(notFound);
+app.use(errorHandler);
+
+export default app;
