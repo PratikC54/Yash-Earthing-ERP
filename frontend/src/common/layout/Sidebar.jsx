@@ -1,10 +1,8 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import {
   LayoutGrid,
   Search,
   Globe,
-  PlusCircle,
-  ChevronRight,
   FolderPlus,
   Box,
   Layers,
@@ -15,6 +13,7 @@ import {
   ShoppingCart,
   Landmark,
   Users,
+  LogOut,
 } from 'lucide-react'
 
 // Icon mapping helper
@@ -37,6 +36,7 @@ export default function Sidebar({
   onSelectModule,
   onOpenAddModuleModal,
   user,
+  onLogout,
 }) {
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -60,60 +60,54 @@ export default function Sidebar({
       {/* Quick Search */}
       <div className="px-4 py-3">
         <div className="relative">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
+            placeholder="Search modules..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search"
-            className="w-full bg-[#0d1424] text-xs text-slate-200 placeholder-slate-400 pl-8 pr-8 py-2 rounded-lg border border-slate-750 focus:outline-none focus:ring-1 focus:ring-blue-500/60 focus:border-blue-500 transition"
+            className="w-full bg-[#0d1424] text-xs text-slate-200 placeholder-slate-500 pl-8 pr-3 py-1.5 rounded-lg border border-slate-700/60 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition"
           />
-          <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1 py-0.5 text-[9px] font-semibold text-slate-400 bg-slate-800 rounded border border-slate-700">
-            ⌘K
-          </kbd>
         </div>
       </div>
 
-      {/* Main Navigation Items (Single Module without any submodules) */}
-      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-4">
+      {/* Navigation Sections */}
+      <div className="flex-1 overflow-y-auto px-3 py-2 space-y-6">
         {sections.map((section) => {
-          const filteredItems = section.items.filter((item) => {
-            if (!searchQuery) return true
-            return item.name.toLowerCase().includes(searchQuery.toLowerCase())
-          })
+          const filteredItems = section.items.filter((item) =>
+            item.name.toLowerCase().includes(searchQuery.toLowerCase())
+          )
 
-          if (filteredItems.length === 0) return null
+          if (filteredItems.length === 0 && searchQuery) {
+            return null
+          }
 
           return (
-            <div key={section.id} className="space-y-1.5">
-              {/* Section Header Title */}
-              {section.title && (
-                <div className="px-3 text-[10px] font-bold text-slate-400 tracking-wider uppercase">
-                  {section.title}
-                </div>
-              )}
+            <div key={section.id} className="space-y-1">
+              <div className="px-2 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+                {section.title}
+              </div>
 
-              {/* Module Items (Single-level modules, NO submodules) */}
-              <div className="space-y-1">
+              <div className="space-y-0.5 mt-1">
                 {filteredItems.map((item) => {
-                  const IconComponent = iconMap[item.icon] || LayoutGrid
-                  const isActive = activeModuleId === item.id || (!activeModuleId && item.active)
+                  const Icon = iconMap[item.icon] || LayoutGrid
+                  const isActive = activeModuleId === item.id
 
                   return (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => onSelectModule(item)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-medium transition cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs font-medium transition cursor-pointer ${
                         isActive
-                          ? 'bg-blue-600/20 text-white font-semibold shadow-inner border border-blue-500/30'
-                          : 'text-slate-300 hover:bg-slate-800/40 hover:text-white'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                       }`}
                     >
-                      <div className="flex items-center space-x-3 min-w-0">
-                        <IconComponent
+                      <div className="flex items-center space-x-2.5 min-w-0">
+                        <Icon
                           className={`w-4 h-4 shrink-0 ${
-                            isActive ? 'text-blue-400' : 'text-slate-400'
+                            isActive ? 'text-white' : 'text-slate-400'
                           }`}
                         />
                         <span className="truncate">{item.name}</span>
@@ -144,21 +138,30 @@ export default function Sidebar({
 
       {/* User Profile Footer */}
       <div className="p-3 border-t border-slate-800/80 bg-[#0f1728]">
-        <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/50 transition cursor-pointer">
+        <div className="flex items-center justify-between p-2 rounded-lg hover:bg-slate-800/50 transition">
           <div className="flex items-center space-x-3 min-w-0">
             <div className="w-8 h-8 rounded-full bg-blue-600 text-white font-bold text-xs flex items-center justify-center shrink-0 shadow">
-              {user.initials}
+              {user?.initials || 'U'}
             </div>
             <div className="min-w-0 text-left">
-              <div className="text-xs font-semibold text-white truncate">
-                {user.name}
+              <div className="text-xs font-semibold text-white truncate max-w-[100px]">
+                {user?.name || 'User'}
               </div>
-              <div className="text-[11px] text-slate-400 truncate">
-                {user.role}
+              <div className="text-[11px] text-slate-400 truncate max-w-[100px]">
+                {user?.role || 'Staff'}
               </div>
             </div>
           </div>
-          <ChevronRight className="w-4 h-4 text-slate-400 shrink-0" />
+          {onLogout && (
+            <button
+              type="button"
+              onClick={onLogout}
+              title="Sign Out"
+              className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-lg transition cursor-pointer"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </aside>

@@ -1,7 +1,12 @@
-import React from 'react'
-import { Search, Bell, Sparkles } from 'lucide-react'
+import { Search, Bell, Sparkles, UserCheck } from 'lucide-react'
 
-export default function Navbar({ activeModule = 'Dashboard', activeSubModule, onSearch }) {
+export default function Navbar({
+  activeModule = 'Dashboard',
+  activeSubModule,
+  onSearch,
+  isAdmin = false,
+  onOpenAdminApprovals,
+}) {
   return (
     <header className="bg-[#141d30] border-b border-slate-800/80 px-6 py-3.5 flex items-center justify-between transition-colors duration-200 shadow-sm shrink-0">
       {/* Breadcrumb Navigation */}
@@ -23,8 +28,21 @@ export default function Navbar({ activeModule = 'Dashboard', activeSubModule, on
         )}
       </div>
 
-      {/* Right Controls: Search bar & Notifications */}
+      {/* Right Controls: Search bar, Admin Approvals & Notifications */}
       <div className="flex items-center space-x-3.5">
+        {/* Admin Approvals Quick Access */}
+        {isAdmin && (
+          <button
+            type="button"
+            onClick={onOpenAdminApprovals}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-cyan-300 border border-blue-500/40 text-xs font-medium transition cursor-pointer"
+            title="Review pending user registrations"
+          >
+            <UserCheck className="w-3.5 h-3.5 text-cyan-400" />
+            <span>User Approvals</span>
+          </button>
+        )}
+
         {/* Search input with keyboard shortcut */}
         <div className="relative w-72 sm:w-80">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
