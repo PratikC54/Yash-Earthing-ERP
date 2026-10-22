@@ -153,13 +153,13 @@ export default function EngineeringDashboard() {
 
   const handleDrawingDownload = (drwId, format = 'html') => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
-    const downloadUrl = `${baseUrl}/engineering/drawings/${drwId}/download?format=${format}`;
+    const downloadUrl = `${baseUrl}/engineering/drawings/${drwId}/download?format=${format}${format === 'html' ? '&download=true' : ''}`;
     window.open(downloadUrl, '_blank');
   };
 
   const handleExportProductReport = (productId) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
-    const reportUrl = `${baseUrl}/engineering/products/${productId}/report`;
+    const reportUrl = `${baseUrl}/engineering/products/${productId}/report?download=true`;
     window.open(reportUrl, '_blank');
   };
 

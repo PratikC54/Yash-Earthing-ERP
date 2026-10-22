@@ -827,16 +827,66 @@ export function generateBlueprintHtml(drawingNo, title, productSku, revision, ty
       .ctq-table td { border: 1px solid black; color: black; }
     }
   </style>
+  <script src="/api/v1/engineering/assets/html2pdf.bundle.min.js"></script>
+  <script>
+    function downloadBlueprintPdf() {
+      var btn = document.getElementById('dl-blueprint-btn');
+      var originalHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.innerHTML = '⏳ Generating Blueprint PDF...';
+        btn.style.opacity = '0.7';
+        btn.disabled = true;
+      }
+      var element = document.querySelector('.sheet');
+      var opt = {
+        margin: [5, 5, 5, 5],
+        filename: '${drawingNo}-${revision}-Official-Blueprint.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      };
+
+      if (typeof html2pdf !== 'undefined') {
+        html2pdf().set(opt).from(element).save().then(function() {
+          if (btn) {
+            btn.innerHTML = '✅ PDF Downloaded (Click to re-download)';
+            btn.style.opacity = '1';
+            btn.disabled = false;
+          }
+        }).catch(function(err) {
+          console.error('Blueprint PDF generation error:', err);
+          if (btn) {
+            btn.innerHTML = originalHtml;
+            btn.style.opacity = '1';
+            btn.disabled = false;
+          }
+          window.print();
+        });
+      } else {
+        window.print();
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', function() {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('download') === 'true') {
+        setTimeout(downloadBlueprintPdf, 700);
+      }
+    });
+  </script>
 </head>
 <body>
   <!-- Top Navigation & Role Based Download Toolbar -->
   <div class="no-print">
     <div style="display: flex; align-items: center; gap: 10px;">
-      <button onclick="window.print()" class="action-btn download-pdf-btn">
-        ⬇️ Download Official PDF (A4 Landscape Print)
+      <button id="dl-blueprint-btn" onclick="downloadBlueprintPdf()" class="action-btn download-pdf-btn">
+        ⬇️ Download Official Blueprint PDF (.PDF)
+      </button>
+      <button onclick="window.print()" class="action-btn" style="background:#1e293b; color:#cbd5e1; border:1px solid #475569;">
+        🖨️ Print Blueprint (Ctrl+P)
       </button>
       <a href="?format=dxf" class="action-btn download-cad-btn">
-        📐 Download CAD Vector (.DXF)
+        📐 Download AutoCAD Vector (.DXF)
       </a>
     </div>
     <div style="font-size: 11px; color: #94a3b8; font-family: monospace;">
@@ -1129,7 +1179,7 @@ export function generateProductRegistryReportHtml(product, category, bom) {
       padding: 10px 18px;
       background: #0284c7;
       color: white;
-      border: none;
+      border: 1px solid #0369a1;
       border-radius: 6px;
       font-weight: bold;
       cursor: pointer;
@@ -1140,6 +1190,21 @@ export function generateProductRegistryReportHtml(product, category, bom) {
       transition: background 0.2s;
     }
     .download-btn:hover { background: #0369a1; }
+    .print-btn-secondary {
+      padding: 10px 16px;
+      background: #f1f5f9;
+      color: #334155;
+      border: 1px solid #cbd5e1;
+      border-radius: 6px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 13px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .print-btn-secondary:hover { background: #e2e8f0; }
     .product-visual-box {
       width: 260px;
       min-width: 260px;
@@ -1159,20 +1224,63 @@ export function generateProductRegistryReportHtml(product, category, bom) {
       .print-btn { display: none; }
     }
   </style>
+  <script src="/api/v1/engineering/assets/html2pdf.bundle.min.js"></script>
   <script>
-    function handleImageFallback(img) {
-      img.style.display = 'none';
-      var fallback = img.parentElement.querySelector('.fallback-schematic');
-      if (fallback) fallback.style.display = 'block';
+    function downloadReportPdf() {
+      var btn = document.getElementById('dl-btn');
+      var originalHtml = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.innerHTML = '⏳ Generating PDF... Please wait';
+        btn.style.opacity = '0.7';
+        btn.disabled = true;
+      }
+      var element = document.querySelector('.report-sheet');
+      var opt = {
+        margin: [10, 8, 10, 8],
+        filename: 'YASH-ENG-REPORT-${product.sku || 'PRODUCT'}.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true, logging: false },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      };
+
+      if (typeof html2pdf !== 'undefined') {
+        html2pdf().set(opt).from(element).save().then(function() {
+          if (btn) {
+            btn.innerHTML = '✅ PDF Downloaded (Click to re-download)';
+            btn.style.opacity = '1';
+            btn.disabled = false;
+          }
+        }).catch(function(err) {
+          console.error('Report PDF generation error:', err);
+          if (btn) {
+            btn.innerHTML = originalHtml;
+            btn.style.opacity = '1';
+            btn.disabled = false;
+          }
+          window.print();
+        });
+      } else {
+        window.print();
+      }
     }
+
+    window.addEventListener('DOMContentLoaded', function() {
+      var params = new URLSearchParams(window.location.search);
+      if (params.get('download') === 'true') {
+        setTimeout(downloadReportPdf, 700);
+      }
+    });
   </script>
 </head>
 <body>
   <!-- Top Download Action Toolbar -->
   <div class="no-print">
-    <div>
-      <button class="download-btn" onclick="window.print()">
-        ⬇️ Download / Save Official PDF
+    <div style="display: flex; align-items: center; gap: 10px;">
+      <button id="dl-btn" class="download-btn" onclick="downloadReportPdf()">
+        ⬇️ Download Official PDF File (.PDF)
+      </button>
+      <button class="print-btn-secondary" onclick="window.print()">
+        🖨️ Print / Save (Ctrl+P)
       </button>
     </div>
     <div style="font-size: 11px; color: #64748b; font-family: monospace;">
@@ -1199,17 +1307,13 @@ export function generateProductRegistryReportHtml(product, category, bom) {
     <!-- Product Master & Photo Section -->
     <div class="section-title">1. Master Item Identity & Classification</div>
     <div class="grid-2">
-      <div class="product-visual-box">
-        ${imageSrc ? `
-          <img src="${imageSrc}" alt="${product.name}" class="product-img" onerror="handleImageFallback(this)" />
-          <div class="fallback-schematic" style="display: none; width: 100%; height: 100%;">
-            ${vectorSvgSchematic}
-          </div>
-        ` : `
-          <div class="fallback-schematic" style="width: 100%; height: 100%;">
-            ${vectorSvgSchematic}
-          </div>
-        `}
+      <div style="flex-shrink: 0;">
+        <div class="product-visual-box">
+          ${vectorSvgSchematic}
+        </div>
+        <div style="font-size: 9px; color: #64748b; font-family: monospace; text-align: center; margin-top: 5px; font-weight: bold; letter-spacing: 0.5px;">
+          APPROVED CAD 2D PROJECTION (REV RELEASED)
+        </div>
       </div>
       
       <table class="details-table">

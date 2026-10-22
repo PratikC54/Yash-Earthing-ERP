@@ -1,7 +1,15 @@
 import { Router } from 'express';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { engineeringController } from './engineering.controller.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const router = Router();
+
+// Static local assets for offline PDF generation
+router.get('/assets/html2pdf.bundle.min.js', (req, res) => {
+  res.sendFile(path.resolve(__dirname, 'html2pdf.bundle.min.js'));
+});
 
 // Dashboard
 router.get('/dashboard/kpis', engineeringController.getDashboardKpis);
