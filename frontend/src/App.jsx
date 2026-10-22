@@ -1,5 +1,5 @@
 import React from 'react'
-import AppLayout from './components/layout/AppLayout'
+import AppLayout from './common/layout/AppLayout'
 
 function App() {
   return <AppLayout />

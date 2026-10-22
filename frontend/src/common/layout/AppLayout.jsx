@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import AddModuleModal from './AddModuleModal'
-import OperationsOverview from '../dashboard/OperationsOverview'
+import OperationsOverview from '../../features/dashboard/OperationsOverview'
 import { initialNavSections, currentUser } from '../../data/navigationModules'
 
 export default function AppLayout() {
