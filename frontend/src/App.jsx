@@ -1,8 +1,8 @@
+import React from 'react'
+import AppLayout from './common/layout/AppLayout'
+
 function App() {
-  return (
-    <>
-    </>
-  );
+  return <AppLayout />
 }
 
-export default App;
+export default App
