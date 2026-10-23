@@ -10,7 +10,8 @@ import {
   QrCode,
 } from "lucide-react";
 import jsPDF from "jspdf";
-import html2canvas from "html2canvas";
+import html2canvas from "html2canvas-pro";
+import module1Service from "../services/module1Service";
 
 export default function QuotationModal({
   isOpen,
@@ -23,6 +24,8 @@ export default function QuotationModal({
 }) {
   const [activeTab, setActiveTab] = useState("preview"); // 'preview' | 'revise'
   const [isExportingPDF, setIsExportingPDF] = useState(false);
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailStatusMessage, setEmailStatusMessage] = useState(null);
   const [negotiationNotes, setNegotiationNotes] = useState("");
   const [revisedDiscount, setRevisedDiscount] = useState(0);
   const printableRef = useRef(null);
@@ -83,7 +86,37 @@ export default function QuotationModal({
   };
 
   const handlePrint = () => {
-    window.print();
+    if (!printableRef.current) {
+      window.print();
+      return;
+    }
+    const printContent = printableRef.current.innerHTML;
+    const printWindow = window.open("", "_blank", "width=900,height=800");
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Commercial Quotation - ${quoteNo}</title>
+          <style>
+            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #111; background: #fff; font-size: 11px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 10px; }
+            th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
+            th { background-color: #f2f2f2; font-weight: bold; }
+            .text-right { text-align: right; }
+            .font-mono { font-family: monospace; }
+            .font-bold { font-weight: bold; }
+            .signature-box { margin-top: 25px; border-top: 1px solid #ddd; padding-top: 15px; display: flex; justify-content: space-between; }
+          </style>
+        </head>
+        <body>
+          ${printContent}
+          <script>
+            window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
+          </script>
+        </body>
+      </html>
+    `);
+    printWindow.document.close();
   };
 
   const handleDownloadPDF = async () => {
@@ -91,29 +124,101 @@ export default function QuotationModal({
     setIsExportingPDF(true);
     try {
       const element = printableRef.current;
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: "#0d1326",
+      });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
-      const imgWidth = 210;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
       pdf.save(`${quoteNo}_Rev${revision}.pdf`);
     } catch (err) {
       console.error("PDF generation failed:", err);
-      // Fallback to window.print
       window.print();
     } finally {
       setIsExportingPDF(false);
     }
   };
 
-  const handleEmailClient = () => {
-    const email = quotation.customer?.email || quotation.lead?.email || "procurement@client.com";
-    const subject = encodeURIComponent(`Quotation ${quoteNo} (Rev-${revision}) from Yash Earthing Solutions`);
-    const body = encodeURIComponent(
-      `Dear ${customerName},\n\nPlease find attached commercial estimate and quotation ${quoteNo} (Rev-${revision}) for amount INR ${grandTotal.toFixed(2)}.\n\nRegards,\nYash Earthing Solutions Pvt Ltd`
-    );
-    window.open(`mailto:${email}?subject=${subject}&body=${body}`, "_blank");
+  const handleEmailClient = async () => {
+    const email = quotation.customer?.email || quotation.lead?.email || "";
+    setSendingEmail(true);
+    setEmailStatusMessage("Preparing quotation PDF and opening Gmail compose...");
+
+    try {
+      // 1. Generate and trigger download of the official Quotation PDF
+      if (printableRef.current) {
+        try {
+          const element = printableRef.current;
+          const canvas = await html2canvas(element, {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: "#0d1326",
+          });
+          const imgData = canvas.toDataURL("image/png");
+          const pdf = new jsPDF("p", "mm", "a4");
+          const pdfWidth = pdf.internal.pageSize.getWidth();
+          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+          pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+          const fileName = `${quoteNo}_Rev${revision}.pdf`;
+          pdf.save(fileName);
+        } catch (pdfErr) {
+          console.warn("Auto PDF download notice:", pdfErr);
+        }
+      }
+
+      // 2. Also record quotation as SENT_TO_CLIENT in backend database
+      await module1Service.sendQuotationEmail(quotation.id, {
+        email: email || "pratik.fundsaudit@gmail.com",
+        recipientName: customerName,
+      }).catch(() => null);
+
+      // 3. Construct professional email draft
+      const subject = `Commercial Quotation ${quoteNo} (Rev-${revision}) - Yash Earthing Solutions Pvt Ltd`;
+      const body = `Dear ${customerName},
+
+Greetings from Yash Earthing Solutions Pvt Ltd!
+
+We appreciate your interest in our advanced Earthing & Lightning Protection Systems.
+
+Please find our official Commercial Estimate & Quotation details below:
+--------------------------------------------------
+• Quotation Reference: ${quoteNo} (Revision: Rev-${revision})
+• Total Quoted Value : INR ${grandTotal.toFixed(2)} (Inclusive of GST)
+• Payment Terms      : ${quotation.paymentTerms || "100% Advance against PI"}
+• Delivery Terms     : ${quotation.deliveryTerms || "Ex-Works Pune / Road Transport"}
+• Bank Remittance    : State Bank of India | A/c: 42706903179 | IFSC: SBIN0004726
+--------------------------------------------------
+
+Please let us know if you require any technical clarifications or adjustments. We look forward to partnering with your esteemed organization.
+
+Warm regards,
+${quotation.preparedBy?.split("(")[0]?.trim() || "Commercial Sales Team"}
+Yash Earthing Solutions Pvt Ltd
+Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
+
+      // 4. Open Gmail Compose directly in a new tab with to, subject, and body prefilled
+      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+      
+      const openedWindow = window.open(gmailUrl, "_blank");
+      
+      // Fallback to mailto if popup blocker prevented window.open
+      if (!openedWindow || openedWindow.closed || typeof openedWindow.closed === "undefined") {
+        const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.location.href = mailtoUrl;
+      }
+
+      setEmailStatusMessage(`Quotation PDF downloaded! Gmail draft opened with greeting & details.`);
+    } catch (err) {
+      console.error("Email compose failed:", err);
+      setEmailStatusMessage("Could not open email compose. Please check browser popups.");
+    } finally {
+      setSendingEmail(false);
+      setTimeout(() => setEmailStatusMessage(null), 8000);
+    }
   };
 
   const handleNegotiateSubmit = () => {
@@ -255,13 +360,28 @@ export default function QuotationModal({
             <button
               type="button"
               onClick={handleEmailClient}
+              disabled={sendingEmail}
               className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md transition cursor-pointer"
             >
               <Mail className="w-3.5 h-3.5" />
-              <span>Email Directly to Client</span>
+              <span>{sendingEmail ? "Preparing..." : "Email to Client (Gmail Compose)"}</span>
             </button>
           </div>
         </div>
+
+        {/* Optional status banner for email */}
+        {emailStatusMessage && (
+          <div className="px-6 py-2 bg-emerald-950/80 border-b border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center justify-between">
+            <span>{emailStatusMessage}</span>
+            <button
+              type="button"
+              onClick={() => setEmailStatusMessage(null)}
+              className="text-emerald-400 hover:text-white"
+            >
+              ×
+            </button>
+          </div>
+        )}
 
         {/* Content Body */}
         <div className="p-6 overflow-y-auto flex-1 bg-[#080d1e]">
@@ -352,9 +472,9 @@ export default function QuotationModal({
                   <div className="text-slate-400 text-[10px] font-semibold mb-1">
                     QUOTE REF: <span className="text-white font-mono">{quoteNo}</span>
                   </div>
-                  <div className="w-16 h-16 bg-white p-1 rounded-lg border border-slate-300 flex flex-col items-center justify-center shadow">
-                    <QrCode className="w-11 h-11 text-slate-900" />
-                    <span className="text-[7px] font-bold text-slate-700 tracking-tighter">AUTHENTICATED</span>
+                  <div className="px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-950/30 text-right">
+                    <div className="text-[10px] font-bold text-cyan-300">ESTIMATE ISSUED</div>
+                    <div className="text-[9px] text-slate-400 font-mono">Status: {status}</div>
                   </div>
                 </div>
               </div>
@@ -546,13 +666,18 @@ export default function QuotationModal({
                   <div className="text-[10px] font-bold text-slate-300 mb-1">
                     For YASH EARTHING SOLUTIONS PVT LTD
                   </div>
-                  <div className="inline-block relative">
-                    <div className="w-24 h-12 border border-blue-500/40 rounded bg-blue-900/20 flex items-center justify-center text-[10px] text-blue-300 font-bold uppercase rotate-[-3deg]">
-                      [ SEAL & STAMP ]
+                  <div className="p-2 border border-blue-500/30 rounded bg-blue-950/30 text-right">
+                    <div className="text-[11px] font-bold text-cyan-300">
+                      {quotation.preparedBy?.split("(")[0]?.trim() || "Back Officer"}
+                    </div>
+                    <div className="text-[9px] text-slate-400 font-mono">
+                      {quotation.preparedBy?.includes("(")
+                        ? quotation.preparedBy.split("(")[1]?.replace(")", "")
+                        : "BACK_OFFICER"}
                     </div>
                   </div>
                   <div className="text-[10px] text-slate-400 mt-1">
-                    Authorised Signatory / Sales & Engineering
+                    Authorised Signatory / Commercial & Engineering
                   </div>
                 </div>
               </div>
