@@ -34,6 +34,7 @@ apiRouter.use("/", inwardsRouter);
 apiRouter.use("/", inventoryRouter);
 apiRouter.use("/", dashboardRouter);
 
+apiRouter.use("/production-quality", productionQualityRouter);
 apiRouter.use("/pq", productionQualityRouter);
 
 // Module 7: HRMS Workforce

@@ -19,6 +19,16 @@ export const qualityService = {
     return await axiosInstance.get("/production-quality/quality/inspection-queue", { params });
   },
 
+  // GET /api/production-quality/quality/eligible-inspectors
+  getEligibleInspectors: async () => {
+    return await axiosInstance.get("/production-quality/quality/eligible-inspectors");
+  },
+
+  // POST /api/production-quality/quality/inspections/:id/assign
+  assignInspector: async (id, data) => {
+    return await axiosInstance.post(`/production-quality/quality/inspections/${id}/assign`, data);
+  },
+
   // GET /api/production-quality/quality/inspections/:id
   getInspectionById: async (id) => {
     return await axiosInstance.get(`/production-quality/quality/inspections/${id}`);

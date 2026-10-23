@@ -73,7 +73,7 @@ export async function handleGetMe(req, res, next) {
     const user = await getUserById(req.user.id);
     return res.status(200).json({
       success: true,
-      data: { user },
+      data: { ...user, user },
     });
   } catch (error) {
     next(error);

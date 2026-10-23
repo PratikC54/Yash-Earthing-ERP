@@ -751,7 +751,7 @@ export class PlanningService {
   /**
    * Get production calendar
    */
-  static async getProductionCalendar({ startDate, endDate }) {
+  static async getProductionCalendar({ startDate, endDate, search, status, priority }) {
     const where = {};
     if (startDate || endDate) {
       where.plannedStart = {};
@@ -759,19 +759,86 @@ export class PlanningService {
       if (endDate) where.plannedStart.lte = new Date(endDate);
     }
 
+    if (status && status !== "ALL") {
+      where.status = status;
+    }
+
+    if (priority && priority !== "ALL") {
+      where.priority = priority;
+    }
+
+    if (search && search.trim()) {
+      const q = search.trim();
+      where.OR = [
+        { workOrderNo: { contains: q, mode: "insensitive" } },
+        { assignedLine: { contains: q, mode: "insensitive" } },
+        { notes: { contains: q, mode: "insensitive" } },
+        { salesOrder: { orderNumber: { contains: q, mode: "insensitive" } } },
+        { salesOrder: { customer: { name: { contains: q, mode: "insensitive" } } } },
+        { bomRevision: { product: { name: { contains: q, mode: "insensitive" } } } },
+        { bomRevision: { product: { sku: { contains: q, mode: "insensitive" } } } },
+      ];
+    }
+
     const scheduledOrders = await prisma.workOrder.findMany({
       where,
-      orderBy: { plannedStart: "asc" },
+      orderBy: [
+        { plannedStart: "asc" },
+        { createdAt: "desc" },
+      ],
       select: {
         id: true,
         workOrderNo: true,
         status: true,
         priority: true,
         plannedQuantity: true,
+        goodQuantity: true,
+        rejectedQuantity: true,
         plannedStart: true,
         plannedEnd: true,
+        actualStart: true,
+        actualEnd: true,
+        assignedLine: true,
+        notes: true,
+        createdAt: true,
         salesOrder: {
-          select: { orderNumber: true, customer: { select: { name: true } } },
+          select: {
+            id: true,
+            orderNumber: true,
+            customer: {
+              select: { id: true, name: true },
+            },
+          },
+        },
+        bomRevision: {
+          select: {
+            id: true,
+            revision: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                sku: true,
+                unitOfMeasure: true,
+              },
+            },
+          },
+        },
+        items: {
+          select: {
+            id: true,
+            plannedQuantity: true,
+            issuedQuantity: true,
+            consumedQuantity: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                sku: true,
+                unitOfMeasure: true,
+              },
+            },
+          },
         },
       },
     });

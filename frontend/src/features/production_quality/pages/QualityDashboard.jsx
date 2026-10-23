@@ -1,36 +1,42 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, FileCheck } from "lucide-react";
 import ModuleHeader from "../components/shared/ModuleHeader";
 import QualityStats from "../components/quality/QualityStats";
 import DefectSummary from "../components/quality/DefectSummary";
 import InspectionTable from "../components/quality/InspectionTable";
+import AssignInspectorModal from "../components/quality/AssignInspectorModal";
 import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
 import Loader from "../../../components/common/Loader";
 import qualityService from "../services/qualityService";
 
 export default function QualityDashboard() {
+  const navigate = useNavigate();
   const [metrics, setMetrics] = useState(null);
   const [queue, setQueue] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [assigningInspection, setAssigningInspection] = useState(null);
+
+  const loadData = async () => {
+    setLoading(true);
+    try {
+      const [dashRes, queueRes] = await Promise.all([
+        qualityService.getQualityDashboard().catch(() => null),
+        qualityService.getInspectionQueue().catch(() => null),
+      ]);
+      if (dashRes?.data?.metrics) setMetrics(dashRes.data.metrics);
+      const queueList =
+        (Array.isArray(queueRes?.data) ? queueRes.data : queueRes?.data?.queue) || [];
+      setQueue(queueList);
+    } catch (err) {
+      console.error("Quality dashboard fetch failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    async function loadData() {
-      setLoading(true);
-      try {
-        const [dashRes, queueRes] = await Promise.all([
-          qualityService.getQualityDashboard().catch(() => null),
-          qualityService.getInspectionQueue({ limit: 5 }).catch(() => null),
-        ]);
-        if (dashRes?.data?.metrics) setMetrics(dashRes.data.metrics);
-        if (queueRes?.data?.inspections) setQueue(queueRes.data.inspections);
-      } catch (err) {
-        console.error("Quality dashboard fetch failed:", err);
-      } finally {
-        setLoading(false);
-      }
-    }
     loadData();
   }, []);
 
@@ -47,7 +53,7 @@ export default function QualityDashboard() {
           <div className="flex items-center gap-2">
             <Link to="/production-quality/inspections">
               <Button variant="primary" size="sm" icon={FileCheck}>
-                Inspection Queue
+                Inspection Register
               </Button>
             </Link>
           </div>
@@ -67,22 +73,27 @@ export default function QualityDashboard() {
             <div className="flex items-center justify-between">
               <div>
                 <h3 className="text-base font-bold text-[#f1f5f9]">
-                  Pending QA Inspection Queue
+                  Active QA Inspection Queue
                 </h3>
                 <p className="text-xs text-[#94a3b8]">
-                  Completed manufacturing outputs waiting for dimensional & visual tests
+                  Completed manufacturing outputs waiting for manual inspector assignment & testing
                 </p>
               </div>
               <Link
                 to="/production-quality/inspections"
                 className="text-xs font-semibold text-[#3b82f6] hover:underline flex items-center gap-1"
               >
-                <span>View full inspection queue</span>
+                <span>View full inspection register</span>
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            <InspectionTable inspections={queue} loading={false} />
+            <InspectionTable
+              inspections={queue}
+              loading={false}
+              onInspect={(row) => navigate(`/production-quality/inspections/${row.id}`)}
+              onAssign={(row) => setAssigningInspection(row)}
+            />
           </div>
 
           {/* Defect Analysis & ISO Standards Compliance */}
@@ -127,6 +138,18 @@ export default function QualityDashboard() {
             </Card>
           </div>
         </>
+      )}
+
+      {/* Manual Inspector Assignment Modal */}
+      {assigningInspection && (
+        <AssignInspectorModal
+          isOpen={Boolean(assigningInspection)}
+          onClose={() => setAssigningInspection(null)}
+          inspection={assigningInspection}
+          onAssigned={() => {
+            loadData();
+          }}
+        />
       )}
     </div>
   );

@@ -13,9 +13,13 @@ export class QualityService {
    * Quality Control Dashboard metrics
    */
   static async getDashboard() {
-    const [total, pending, passed, failed, held, released] = await Promise.all([
+    const [total, pendingAssignment, assigned, inProgress, passed, failed, held, released] = await Promise.all([
       prisma.qualityInspection.count(),
-      prisma.qualityInspection.count({ where: { status: QUALITY_STATUS.PENDING } }),
+      prisma.qualityInspection.count({ where: { status: QUALITY_STATUS.PENDING_ASSIGNMENT } }),
+      prisma.qualityInspection.count({
+        where: { status: { in: [QUALITY_STATUS.ASSIGNED, QUALITY_STATUS.PENDING] } },
+      }),
+      prisma.qualityInspection.count({ where: { status: QUALITY_STATUS.IN_PROGRESS } }),
       prisma.qualityInspection.count({ where: { status: QUALITY_STATUS.PASS } }),
       prisma.qualityInspection.count({ where: { status: QUALITY_STATUS.FAIL } }),
       prisma.qualityInspection.count({ where: { status: QUALITY_STATUS.HOLD } }),
@@ -27,35 +31,91 @@ export class QualityService {
     return {
       metrics: {
         totalInspections: total,
-        pendingInspection: pending,
+        pendingAssignment,
+        assignedToInspector: assigned,
+        inProgress,
         passed,
         failed,
         onHold: held,
         releasedToInventory: released,
+        pendingInspection: pendingAssignment + assigned + inProgress + held,
       },
       queue,
     };
   }
 
   /**
-   * Inspection queue: work order outputs waiting for QC decision
+   * Inspection queue: work order outputs waiting for QC assignment or decision
    */
-  static async getInspectionQueue() {
+  static async getInspectionQueue(query = {}) {
+    const where = {};
+    if (query?.status) {
+      where.status = query.status;
+    } else {
+      where.status = {
+        in: [
+          QUALITY_STATUS.PENDING_ASSIGNMENT,
+          QUALITY_STATUS.ASSIGNED,
+          QUALITY_STATUS.PENDING,
+          QUALITY_STATUS.IN_PROGRESS,
+          QUALITY_STATUS.HOLD,
+        ],
+      };
+    }
+
+    if (query?.inspectorId) {
+      where.assignedInspectorId = Number(query.inspectorId);
+    }
+
     return prisma.qualityInspection.findMany({
-      where: {
-        status: { in: [QUALITY_STATUS.PENDING, QUALITY_STATUS.HOLD] },
-      },
+      where,
       include: {
+        assignedInspector: {
+          select: { id: true, name: true, email: true, role: true, department: true },
+        },
+        assignedBy: {
+          select: { id: true, name: true, role: true },
+        },
         workOrder: {
           select: {
             id: true,
             workOrderNo: true,
             priority: true,
-            bomRevision: { select: { product: { select: { id: true, name: true, sku: true } } } },
+            bomRevision: {
+              select: {
+                revision: true,
+                product: {
+                  select: { id: true, name: true, sku: true, unitOfMeasure: true },
+                },
+              },
+            },
+            salesOrder: {
+              select: { orderNumber: true, customer: { select: { name: true } } },
+            },
           },
         },
       },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: "desc" },
+    });
+  }
+
+  /**
+   * Get eligible users who can be assigned as Quality Inspectors
+   */
+  static async getEligibleInspectors() {
+    return await prisma.user.findMany({
+      where: {
+        isActive: true,
+        role: { in: ["QUALITY_INSPECTOR", "ADMIN", "PRODUCTION_MANAGER"] },
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        department: true,
+      },
+      orderBy: { name: "asc" },
     });
   }
 
@@ -66,6 +126,12 @@ export class QualityService {
     const inspection = await prisma.qualityInspection.findUnique({
       where: { id: Number(id) },
       include: {
+        assignedInspector: {
+          select: { id: true, name: true, email: true, role: true, department: true },
+        },
+        assignedBy: {
+          select: { id: true, name: true, role: true },
+        },
         workOrder: {
           include: {
             bomRevision: {
@@ -82,6 +148,7 @@ export class QualityService {
             },
           },
         },
+        capaRecords: true,
       },
     });
 
@@ -93,21 +160,137 @@ export class QualityService {
   }
 
   /**
-   * Start Inspection
+   * Manually Assign a Quality Inspector to an Inspection Lot
    */
-  static async startInspection(id, _user) {
+  static async assignInspector(id, data, user) {
+    const { inspectorId, notes } = data;
+    if (!inspectorId) {
+      throw ApiError.badRequest("Inspector ID is required for assignment.");
+    }
+
+    const inspector = await prisma.user.findUnique({
+      where: { id: Number(inspectorId) },
+      select: { id: true, name: true, role: true, isActive: true },
+    });
+
+    if (!inspector) {
+      throw ApiError.notFound(`User with ID ${inspectorId} not found.`);
+    }
+
+    if (!inspector.isActive) {
+      throw ApiError.badRequest(`User '${inspector.name}' is inactive and cannot be assigned to inspections.`);
+    }
+
+    const eligibleRoles = ["QUALITY_INSPECTOR", "ADMIN", "PRODUCTION_MANAGER"];
+    if (!eligibleRoles.includes(inspector.role)) {
+      throw ApiError.badRequest(
+        `User '${inspector.name}' has role '${inspector.role}', which is not authorized to perform quality inspections.`
+      );
+    }
+
     const inspection = await this.getInspectionById(id);
 
-    if (inspection.status !== QUALITY_STATUS.PENDING && inspection.status !== QUALITY_STATUS.NOT_STARTED) {
+    if (inspection.status === QUALITY_STATUS.RELEASED) {
+      throw ApiError.conflict("Cannot reassign inspector for inspection lot that has already been released to finished goods.");
+    }
+
+    if (inspection.status === QUALITY_STATUS.PASS || inspection.status === QUALITY_STATUS.FAIL) {
+      throw ApiError.badRequest(`Cannot assign inspector to an inspection that has already been finalized (${inspection.status}).`);
+    }
+
+    return await prisma.$transaction(async (tx) => {
+      const updated = await tx.qualityInspection.update({
+        where: { id: Number(id) },
+        data: {
+          assignedInspectorId: inspector.id,
+          status: QUALITY_STATUS.ASSIGNED,
+          assignedAt: new Date(),
+          assignedById: user?.id || null,
+          evidenceNotes: notes
+            ? `${inspection.evidenceNotes || ""}\nInspector Assignment: Assigned to ${inspector.name}. ${notes}`.trim()
+            : inspection.evidenceNotes,
+        },
+        include: {
+          assignedInspector: { select: { id: true, name: true, email: true, role: true } },
+          assignedBy: { select: { id: true, name: true, role: true } },
+          workOrder: {
+            select: {
+              id: true,
+              workOrderNo: true,
+              priority: true,
+              bomRevision: { select: { product: { select: { id: true, name: true, sku: true } } } },
+            },
+          },
+        },
+      });
+
+      await AuditService.record({
+        userId: user?.id,
+        action: "INSPECTION_INSPECTOR_ASSIGNED",
+        entityType: "QualityInspection",
+        entityId: Number(id),
+        after: {
+          inspectionNo: inspection.inspectionNo,
+          assignedInspectorId: inspector.id,
+          assignedInspectorName: inspector.name,
+          assignedById: user?.id,
+          status: updated.status,
+        },
+        client: tx,
+      });
+
+      return updated;
+    });
+  }
+
+  /**
+   * Start Inspection
+   */
+  static async startInspection(id, user) {
+    const inspection = await this.getInspectionById(id);
+
+    if (!inspection.assignedInspectorId) {
       throw ApiError.badRequest(
-        `Cannot start inspection in status '${inspection.status}'. Must be PENDING or NOT_STARTED.`
+        "Cannot start an unassigned inspection lot. An authorized user must assign a Quality Inspector first."
+      );
+    }
+
+    if (
+      user?.role !== "ADMIN" &&
+      user?.role !== "PRODUCTION_MANAGER" &&
+      user?.id !== inspection.assignedInspectorId
+    ) {
+      throw ApiError.forbidden("Only the assigned Quality Inspector or an administrator can start this inspection.");
+    }
+
+    const validStartStatuses = [
+      QUALITY_STATUS.PENDING_ASSIGNMENT,
+      QUALITY_STATUS.ASSIGNED,
+      QUALITY_STATUS.PENDING,
+      QUALITY_STATUS.NOT_STARTED,
+    ];
+
+    if (!validStartStatuses.includes(inspection.status)) {
+      throw ApiError.badRequest(
+        `Cannot start inspection in status '${inspection.status}'.`
       );
     }
 
     return await prisma.qualityInspection.update({
       where: { id: Number(id) },
       data: {
-        inspectedAt: new Date(),
+        status: QUALITY_STATUS.IN_PROGRESS,
+        inspectedAt: inspection.inspectedAt || new Date(),
+      },
+      include: {
+        assignedInspector: { select: { id: true, name: true, email: true, role: true } },
+        workOrder: {
+          select: {
+            id: true,
+            workOrderNo: true,
+            bomRevision: { select: { product: { select: { id: true, name: true, sku: true } } } },
+          },
+        },
       },
     });
   }
@@ -117,6 +300,20 @@ export class QualityService {
    */
   static async recordResults(id, data, user) {
     const inspection = await this.getInspectionById(id);
+
+    if (!inspection.assignedInspectorId) {
+      throw ApiError.badRequest(
+        "Cannot record inspection results on an unassigned inspection lot. An authorized user must assign a Quality Inspector first."
+      );
+    }
+
+    if (
+      user?.role !== "ADMIN" &&
+      user?.role !== "PRODUCTION_MANAGER" &&
+      user?.id !== inspection.assignedInspectorId
+    ) {
+      throw ApiError.forbidden("Only the assigned Quality Inspector or an administrator can record inspection results.");
+    }
 
     if (inspection.status === QUALITY_STATUS.RELEASED) {
       throw ApiError.badRequest("Cannot modify inspection results. Output has already been released to finished goods.");
@@ -140,6 +337,8 @@ export class QualityService {
       calculatedStatus = QUALITY_STATUS.FAIL;
     } else if (rejected > 0) {
       calculatedStatus = QUALITY_STATUS.HOLD;
+    } else if (inspection.status === QUALITY_STATUS.ASSIGNED || inspection.status === QUALITY_STATUS.PENDING) {
+      calculatedStatus = QUALITY_STATUS.IN_PROGRESS;
     }
 
     return await prisma.$transaction(async (tx) => {
@@ -152,6 +351,17 @@ export class QualityService {
           evidenceNotes: data.evidenceNotes ?? inspection.evidenceNotes,
           status: calculatedStatus,
           inspectedAt: inspection.inspectedAt || new Date(),
+          decisionOfficer: inspection.assignedInspector?.name || user?.name || null,
+        },
+        include: {
+          assignedInspector: { select: { id: true, name: true, email: true, role: true } },
+          workOrder: {
+            select: {
+              id: true,
+              workOrderNo: true,
+              bomRevision: { select: { product: { select: { id: true, name: true, sku: true } } } },
+            },
+          },
         },
       });
 
@@ -174,6 +384,20 @@ export class QualityService {
   static async approveInspection(id, notes, user) {
     const inspection = await this.getInspectionById(id);
 
+    if (!inspection.assignedInspectorId) {
+      throw ApiError.badRequest(
+        "Cannot approve an unassigned inspection lot. An authorized user must assign a Quality Inspector first."
+      );
+    }
+
+    if (
+      user?.role !== "ADMIN" &&
+      user?.role !== "PRODUCTION_MANAGER" &&
+      user?.id !== inspection.assignedInspectorId
+    ) {
+      throw ApiError.forbidden("Only the assigned Quality Inspector or an administrator can approve this inspection.");
+    }
+
     if (inspection.status === QUALITY_STATUS.RELEASED) {
       throw ApiError.badRequest("Inspection already released to finished goods.");
     }
@@ -188,9 +412,14 @@ export class QualityService {
           status: QUALITY_STATUS.PASS,
           acceptedQuantity: accepted,
           rejectedQuantity: 0,
+          decisionOfficer: inspection.assignedInspector?.name || user?.name || null,
+          decisionAt: new Date(),
           evidenceNotes: notes
             ? `${inspection.evidenceNotes || ""}\nApproval Note: ${notes}`
             : inspection.evidenceNotes,
+        },
+        include: {
+          assignedInspector: { select: { id: true, name: true, email: true, role: true } },
         },
       });
 
@@ -213,6 +442,20 @@ export class QualityService {
   static async holdInspection(id, reason, user) {
     const inspection = await this.getInspectionById(id);
 
+    if (!inspection.assignedInspectorId) {
+      throw ApiError.badRequest(
+        "Cannot hold an unassigned inspection lot. An authorized user must assign a Quality Inspector first."
+      );
+    }
+
+    if (
+      user?.role !== "ADMIN" &&
+      user?.role !== "PRODUCTION_MANAGER" &&
+      user?.id !== inspection.assignedInspectorId
+    ) {
+      throw ApiError.forbidden("Only the assigned Quality Inspector or an administrator can place this lot on hold.");
+    }
+
     if (inspection.status === QUALITY_STATUS.RELEASED) {
       throw ApiError.conflict("Cannot hold inspection that is already released.");
     }
@@ -222,7 +465,12 @@ export class QualityService {
         where: { id: Number(id) },
         data: {
           status: QUALITY_STATUS.HOLD,
+          decisionOfficer: inspection.assignedInspector?.name || user?.name || null,
+          decisionAt: new Date(),
           evidenceNotes: `${inspection.evidenceNotes || ""}\nQC Hold: ${reason}`,
+        },
+        include: {
+          assignedInspector: { select: { id: true, name: true, email: true, role: true } },
         },
       });
 
@@ -251,6 +499,20 @@ export class QualityService {
   static async rejectInspection(id, reason, user) {
     const inspection = await this.getInspectionById(id);
 
+    if (!inspection.assignedInspectorId) {
+      throw ApiError.badRequest(
+        "Cannot reject an unassigned inspection lot. An authorized user must assign a Quality Inspector first."
+      );
+    }
+
+    if (
+      user?.role !== "ADMIN" &&
+      user?.role !== "PRODUCTION_MANAGER" &&
+      user?.id !== inspection.assignedInspectorId
+    ) {
+      throw ApiError.forbidden("Only the assigned Quality Inspector or an administrator can reject this inspection.");
+    }
+
     if (inspection.status === QUALITY_STATUS.RELEASED) {
       throw ApiError.conflict("Cannot reject output that has already been released to finished goods.");
     }
@@ -264,7 +526,12 @@ export class QualityService {
           status: QUALITY_STATUS.FAIL,
           acceptedQuantity: 0,
           rejectedQuantity: inspected,
+          decisionOfficer: inspection.assignedInspector?.name || user?.name || null,
+          decisionAt: new Date(),
           evidenceNotes: `${inspection.evidenceNotes || ""}\nQC Rejection Reason: ${reason}`,
+        },
+        include: {
+          assignedInspector: { select: { id: true, name: true, email: true, role: true } },
         },
       });
 
@@ -287,6 +554,20 @@ export class QualityService {
   static async requestRework(id, notes, user) {
     const inspection = await this.getInspectionById(id);
 
+    if (!inspection.assignedInspectorId) {
+      throw ApiError.badRequest(
+        "Cannot request rework for an unassigned inspection lot. An authorized user must assign a Quality Inspector first."
+      );
+    }
+
+    if (
+      user?.role !== "ADMIN" &&
+      user?.role !== "PRODUCTION_MANAGER" &&
+      user?.id !== inspection.assignedInspectorId
+    ) {
+      throw ApiError.forbidden("Only the assigned Quality Inspector or an administrator can request rework.");
+    }
+
     if (!notes?.trim()) {
       throw ApiError.badRequest("Rework notes are required.");
     }
@@ -300,7 +581,12 @@ export class QualityService {
         where: { id: Number(id) },
         data: {
           status: QUALITY_STATUS.HOLD,
+          decisionOfficer: inspection.assignedInspector?.name || user?.name || null,
+          decisionAt: new Date(),
           evidenceNotes: `${inspection.evidenceNotes || ""}\nRework Instructions: ${notes}`,
+        },
+        include: {
+          assignedInspector: { select: { id: true, name: true, email: true, role: true } },
         },
       });
 
@@ -436,7 +722,6 @@ export class QualityService {
 
   /**
    * Release inspected & accepted batch into Finished Goods Inventory
-   * Ensures IDEMPOTENCY: cannot be released more than once.
    */
   static async releaseFinishedGoods(data, user) {
     const { inspectionId, warehouseLocation, batchNumber, notes } = data;
@@ -469,7 +754,6 @@ export class QualityService {
     let finishedProductId = workOrder.bomRevision?.productId;
 
     if (!finishedProductId) {
-      // Fallback: check sales order items
       const so = await prisma.salesOrder.findUnique({
         where: { id: workOrder.salesOrderId },
         include: { items: true },
@@ -489,6 +773,9 @@ export class QualityService {
         where: { id: Number(inspectionId) },
         data: {
           status: QUALITY_STATUS.RELEASED,
+        },
+        include: {
+          assignedInspector: { select: { id: true, name: true, email: true, role: true } },
         },
       });
 
@@ -534,7 +821,6 @@ export class QualityService {
       });
 
       // Step D: Check if Work Order is completely finished
-      // Total released across all inspections for this work order
       const allInspections = await tx.qualityInspection.findMany({
         where: { workOrderId: workOrder.id },
       });
@@ -585,15 +871,26 @@ export class QualityService {
   }
 
   /**
-   * Inspection Reports
-   */
-  /**
    * Submit Quality Decision (Pass, Rework, Rejected)
    * Enforces strict quantity conservation:
    * Transferred = Passed + Rework + Rejected + Pending
    */
   static async submitDecision(id, data, user) {
     const inspection = await this.getInspectionById(id);
+
+    if (!inspection.assignedInspectorId) {
+      throw ApiError.badRequest(
+        "Cannot record a quality decision on an unassigned inspection lot. An authorized user must assign a Quality Inspector first."
+      );
+    }
+
+    if (
+      user?.role !== "ADMIN" &&
+      user?.role !== "PRODUCTION_MANAGER" &&
+      user?.id !== inspection.assignedInspectorId
+    ) {
+      throw ApiError.forbidden("Only the assigned Quality Inspector or an authorized administrator can submit quality decisions for this lot.");
+    }
 
     if (inspection.status === QUALITY_STATUS.RELEASED) {
       throw ApiError.conflict("Cannot record decision for inspection lot that has already been released to finished goods.");
@@ -638,7 +935,7 @@ export class QualityService {
       );
     }
 
-    const decisionOfficer = data.officer || user?.name || null;
+    const decisionOfficer = data.officer || inspection.assignedInspector?.name || user?.name || "Quality Inspector";
     const decisionTime = new Date();
 
     return await prisma.$transaction(async (tx) => {
@@ -683,6 +980,9 @@ export class QualityService {
             decisionNotes: notes || reason || null,
             decisionAt: decisionTime,
           },
+          include: {
+            assignedInspector: { select: { id: true, name: true, email: true, role: true } },
+          },
         });
 
         await AuditService.record({
@@ -718,6 +1018,9 @@ export class QualityService {
             decisionOfficer,
             decisionNotes: reason || defectDescription || notes,
             decisionAt: decisionTime,
+          },
+          include: {
+            assignedInspector: { select: { id: true, name: true, email: true, role: true } },
           },
         });
 
@@ -774,6 +1077,9 @@ export class QualityService {
             decisionOfficer,
             decisionNotes: reason || notes,
             decisionAt: decisionTime,
+          },
+          include: {
+            assignedInspector: { select: { id: true, name: true, email: true, role: true } },
           },
         });
 
@@ -860,6 +1166,9 @@ export class QualityService {
   static async getInspectionReport() {
     const inspections = await prisma.qualityInspection.findMany({
       include: {
+        assignedInspector: {
+          select: { id: true, name: true, email: true, role: true },
+        },
         workOrder: {
           select: {
             workOrderNo: true,
@@ -880,6 +1189,8 @@ export class QualityService {
       inspectedQuantity: Number(insp.inspectedQuantity),
       acceptedQuantity: Number(insp.acceptedQuantity),
       rejectedQuantity: Number(insp.rejectedQuantity),
+      inspector: insp.assignedInspector?.name || insp.decisionOfficer || "Unassigned",
+      assignedInspector: insp.assignedInspector || null,
       inspectedAt: insp.inspectedAt,
       createdAt: insp.createdAt,
     }));

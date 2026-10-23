@@ -182,7 +182,10 @@ enum WorkOrderStatus {
 
 enum QualityStatus {
   NOT_STARTED
+  PENDING_ASSIGNMENT
+  ASSIGNED
   PENDING
+  IN_PROGRESS
   PASS
   FAIL
   HOLD
@@ -331,6 +334,8 @@ model User {
   createdWorkOrders      WorkOrder[]     @relation("WorkOrderCreator")
   assignedProjects       Project[]       @relation("ProjectOwner")
   assignedServiceTickets ServiceTicket[] @relation("ServiceAssignee")
+  assignedInspections    QualityInspection[] @relation("InspectionAssignedInspector")
+  delegatedInspections   QualityInspection[] @relation("InspectionAssignedBy")
   uploadedMedia          MediaAsset[]    @relation("MediaUploader")
   auditEvents            AuditLog[]
   employee               Employee?
@@ -610,6 +615,7 @@ model SalesOrder {
   items                 SalesOrderItem[]
   purchaseRequests      PurchaseRequest[]
   workOrders            WorkOrder[]
+  dispatchRecords       DispatchRecord[]
   projects              Project[]
   invoices              Invoice[]
   inventoryMovements    InventoryMovement[]
@@ -926,6 +932,9 @@ model WorkOrder {
   createdBy        User?               @relation("WorkOrderCreator", fields: [createdById], references: [id], onDelete: SetNull)
   items            WorkOrderItem[]
   inspections      QualityInspection[]
+  capaRecords      CAPARecord[]
+  dispatchRecords  DispatchRecord[]
+  assignedLine     String?
   mediaAssets      MediaAsset[]
 
   @@index([status, plannedStart])
@@ -943,18 +952,74 @@ model WorkOrderItem {
 }
 
 model QualityInspection {
-  id                Int           @id @default(autoincrement())
-  inspectionNo      String        @unique
-  workOrderId       Int
-  status            QualityStatus @default(NOT_STARTED)
-  inspectedQuantity Decimal       @default(0) @db.Decimal(12, 3)
-  acceptedQuantity  Decimal       @default(0) @db.Decimal(12, 3)
-  rejectedQuantity  Decimal       @default(0) @db.Decimal(12, 3)
-  measurements      Json?
-  evidenceNotes     String?
-  inspectedAt       DateTime?
-  workOrder         WorkOrder     @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
-  createdAt         DateTime      @default(now())
+  id                  Int              @id @default(autoincrement())
+  inspectionNo        String           @unique
+  workOrderId         Int
+  status              QualityStatus    @default(PENDING_ASSIGNMENT)
+  inspectedQuantity   Decimal          @default(0) @db.Decimal(12, 3)
+  acceptedQuantity    Decimal          @default(0) @db.Decimal(12, 3)
+  rejectedQuantity    Decimal          @default(0) @db.Decimal(12, 3)
+  reworkQuantity      Decimal          @default(0) @db.Decimal(12, 3)
+  dispatchedQuantity  Decimal          @default(0) @db.Decimal(12, 3)
+  assignedInspectorId Int?
+  assignedInspector   User?            @relation("InspectionAssignedInspector", fields: [assignedInspectorId], references: [id], onDelete: SetNull)
+  assignedAt          DateTime?
+  assignedById        Int?
+  assignedBy          User?            @relation("InspectionAssignedBy", fields: [assignedById], references: [id], onDelete: SetNull)
+  decisionOfficer     String?
+  decisionNotes       String?
+  decisionAt          DateTime?
+  measurements        Json?
+  evidenceNotes       String?
+  inspectedAt         DateTime?
+  workOrder           WorkOrder        @relation(fields: [workOrderId], references: [id], onDelete: Restrict)
+  capaRecords         CAPARecord[]
+  dispatchRecords     DispatchRecord[]
+  createdAt           DateTime         @default(now())
+}
+
+model CAPARecord {
+  id                   Int               @id @default(autoincrement())
+  capaNo               String            @unique
+  inspectionId         Int
+  workOrderId          Int
+  defectDescription    String?
+  rootCause            String?
+  correctiveAction     String
+  preventiveAction     String?
+  responsiblePerson    String?
+  targetCompletionDate DateTime?
+  quantityAffected     Decimal           @default(0) @db.Decimal(12, 3)
+  status               String            @default("OPEN")
+  resolvedAt           DateTime?
+  resolutionNotes      String?
+  createdAt            DateTime          @default(now())
+  updatedAt            DateTime          @updatedAt
+  inspection           QualityInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  workOrder            WorkOrder         @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+}
+
+model DispatchRecord {
+  id                 Int               @id @default(autoincrement())
+  dispatchNo         String            @unique
+  workOrderId        Int
+  inspectionId       Int
+  salesOrderId       Int?
+  salesOrder         SalesOrder?       @relation(fields: [salesOrderId], references: [id], onDelete: SetNull)
+  quantity           Decimal           @db.Decimal(12, 3)
+  dispatchDate       DateTime          @default(now())
+  destinationAddress String
+  transporterName    String
+  vehicleNumber      String
+  lrNumber           String?
+  deliveryChallanNo  String?
+  deliveryNotes      String?
+  responsibleUser    String?
+  status             String            @default("DISPATCHED")
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  inspection         QualityInspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  workOrder          WorkOrder         @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
 }
 
 model Project {

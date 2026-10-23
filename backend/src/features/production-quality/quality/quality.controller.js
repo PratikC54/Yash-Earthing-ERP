@@ -18,10 +18,26 @@ export const getInspectionQueue = asyncHandler(async (_req, res) => {
   });
 });
 
+export const getEligibleInspectors = asyncHandler(async (_req, res) => {
+  const inspectors = await QualityService.getEligibleInspectors();
+  return sendSuccess(res, {
+    message: "Eligible quality inspectors retrieved successfully",
+    data: inspectors,
+  });
+});
+
 export const getInspectionById = asyncHandler(async (req, res) => {
   const inspection = await QualityService.getInspectionById(req.params.id);
   return sendSuccess(res, {
     message: "Quality Inspection retrieved successfully",
+    data: inspection,
+  });
+});
+
+export const assignInspector = asyncHandler(async (req, res) => {
+  const inspection = await QualityService.assignInspector(req.params.id, req.body, req.user);
+  return sendSuccess(res, {
+    message: "Quality inspector assigned successfully",
     data: inspection,
   });
 });

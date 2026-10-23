@@ -34,7 +34,11 @@ export default function LoginPage() {
       const from = location.state?.from?.pathname || "/pq/dashboard";
       navigate(from, { replace: true });
     } catch (err) {
-      setError(err?.message || "Invalid email or password. Please try again.");
+      setError(
+        err?.response?.data?.message ||
+        err?.message ||
+        "Invalid email or password. Please try again."
+      );
     } finally {
       setLoading(false);
     }
