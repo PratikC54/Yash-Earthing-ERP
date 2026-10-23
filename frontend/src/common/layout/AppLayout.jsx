@@ -74,10 +74,10 @@ export default function AppLayout() {
     if (sectionId === 'module-1') {
       return ['ADMIN', 'SALES_MANAGER', 'SALES_CONSULTANT', 'BACK_OFFICER', 'ACCOUNTS_MANAGER'].includes(userRole)
     }
-    if (sectionId === 'manufacturing') {
+    if (sectionId === 'manufacturing' || sectionId === 'module-3') {
       return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
     }
-    if (sectionId === 'commercial') {
+    if (sectionId === 'commercial' || sectionId === 'module-6') {
       return ['ADMIN', 'ACCOUNTS_MANAGER', 'FINANCE_MGR', 'SALES_MANAGER'].includes(userRole)
     }
     return true
@@ -88,6 +88,7 @@ export default function AppLayout() {
     if (itemId === 'overview') return ['ADMIN', 'SALES_MANAGER'].includes(userRole)
     if (itemId === 'leads' || itemId === 'followups') return ['ADMIN', 'SALES_MANAGER', 'SALES_CONSULTANT', 'BACK_OFFICER'].includes(userRole)
     if (itemId === 'quotations') return ['ADMIN', 'SALES_MANAGER', 'BACK_OFFICER'].includes(userRole)
+    if (itemId === 'orders') return ['ADMIN', 'SALES_MANAGER', 'BACK_OFFICER', 'PRODUCTION_MANAGER', 'ACCOUNTS_MANAGER'].includes(userRole)
     if (itemId.startsWith('m3-') || itemId === 'engineering') {
       return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
     }
