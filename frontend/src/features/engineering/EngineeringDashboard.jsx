@@ -28,8 +28,15 @@ import CostingPolicyModal from './CostingPolicyModal';
 import ShortageCalculatorModal from './ShortageCalculatorModal';
 import AddDrawingModal from './AddDrawingModal';
 
-export default function EngineeringDashboard() {
-  const [activeTab, setActiveTab] = useState('products'); // 'products', 'boms', 'drawings'
+export default function EngineeringDashboard({ initialTab = 'products' }) {
+  const [activeTab, setActiveTab] = useState(initialTab); // 'products', 'boms', 'drawings'
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 

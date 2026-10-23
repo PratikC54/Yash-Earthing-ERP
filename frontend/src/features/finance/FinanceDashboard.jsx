@@ -38,8 +38,14 @@ import CreateVendorBillModal from './CreateVendorBillModal';
 import SmartDataExtractionModal from './SmartDataExtractionModal';
 import EditRegisterItemModal from './EditRegisterItemModal';
 
-export default function FinanceDashboard() {
-  const [activeTab, setActiveTab] = useState('invoices'); // invoices, receipts, payables, costing, settings
+export default function FinanceDashboard({ initialTab = 'invoices' }) {
+  const [activeTab, setActiveTab] = useState(initialTab); // invoices, receipts, payables, costing, settings
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
   const [dashboardData, setDashboardData] = useState(null);
   const [invoices, setInvoices] = useState([]);
   const [receipts, setReceipts] = useState([]);

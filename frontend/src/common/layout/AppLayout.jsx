@@ -88,9 +88,12 @@ export default function AppLayout() {
     if (itemId === 'overview') return ['ADMIN', 'SALES_MANAGER'].includes(userRole)
     if (itemId === 'leads' || itemId === 'followups') return ['ADMIN', 'SALES_MANAGER', 'SALES_CONSULTANT', 'BACK_OFFICER'].includes(userRole)
     if (itemId === 'quotations') return ['ADMIN', 'SALES_MANAGER', 'BACK_OFFICER'].includes(userRole)
-    if (itemId === 'orders') return ['ADMIN', 'SALES_MANAGER', 'BACK_OFFICER', 'PRODUCTION_MANAGER', 'ACCOUNTS_MANAGER'].includes(userRole)
-    if (itemId === 'engineering') return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
-    if (itemId === 'finance') return ['ADMIN', 'ACCOUNTS_MANAGER', 'FINANCE_MGR', 'SALES_MANAGER'].includes(userRole)
+    if (itemId.startsWith('m3-') || itemId === 'engineering') {
+      return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
+    }
+    if (itemId.startsWith('m6-') || itemId === 'finance') {
+      return ['ADMIN', 'ACCOUNTS_MANAGER', 'FINANCE_MGR', 'SALES_MANAGER'].includes(userRole)
+    }
     return true
   }
 
@@ -160,16 +163,51 @@ export default function AppLayout() {
         return <QuotationsPage onNavigateToOrders={() => handleNavigate('orders')} />
       case 'orders':
         return <OrdersPage onNavigate={handleNavigate} />
+      // Module 3: Product & Engineering submodules
       case 'engineering':
-        return <EngineeringDashboard />
+      case 'm3-products':
+        return <EngineeringDashboard initialTab="products" />
+      case 'm3-boms':
+        return <EngineeringDashboard initialTab="boms" />
+      case 'm3-drawings':
+        return <EngineeringDashboard initialTab="drawings" />
+      // Module 6: Finance & Commercial submodules
       case 'finance':
-        return <FinanceDashboard />
+      case 'm6-invoices':
+        return <FinanceDashboard initialTab="invoices" />
+      case 'm6-payables':
+        return <FinanceDashboard initialTab="payables" />
+      case 'm6-costing':
+        return <FinanceDashboard initialTab="costing" />
+      case 'm6-settings':
+        return <FinanceDashboard initialTab="settings" />
       default:
         return isSuperUser ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />
         ) : (
           <LeadsPage onNavigateToQuotation={() => handleNavigate('quotations')} />
         )
+    }
+  }
+
+  const currentSection = sections.find((sec) => sec.items.some((it) => it.id === activeModuleId))
+  const currentItem = currentSection?.items.find((it) => it.id === activeModuleId)
+  const navSectionTitle = currentSection ? currentSection.title : 'Control Tower'
+  const navSubModuleTitle = currentItem ? currentItem.name : activeModule
+
+  const handleScopeChange = (scope) => {
+    if (scope === 'M1') {
+      if (!['leads', 'followups', 'quotations', 'orders'].includes(activeModuleId)) {
+        handleNavigate('leads')
+      }
+    } else if (scope === 'M3') {
+      if (!activeModuleId.startsWith('m3-')) {
+        handleNavigate('m3-products')
+      }
+    } else if (scope === 'M6') {
+      if (!activeModuleId.startsWith('m6-')) {
+        handleNavigate('m6-invoices')
+      }
     }
   }
 
@@ -190,8 +228,11 @@ export default function AppLayout() {
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#070e1e]">
         {/* Top Navbar */}
         <Navbar
-          activeModule={activeModule}
+          activeModule={navSectionTitle}
+          activeSubModule={navSubModuleTitle}
           isAdmin={isAdmin}
+          user={effectiveUser}
+          onScopeChange={handleScopeChange}
           onOpenAdminApprovals={() => setIsAdminApprovalsOpen(true)}
           onOpenTrace={() => setIsTraceOpen(true)}
           onQuickAdd={() => setIsQuickAddOpen(true)}
