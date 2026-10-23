@@ -63,21 +63,50 @@ export default function AppLayout() {
       : defaultUser.initials,
   }
 
+  const userRole = user?.role || 'ADMIN'
+
+  // Map allowed sections per role according to ERP governance
+  const isSectionAllowed = (sectionId) => {
+    if (isAdmin || user?.hasFullAccess) return true
+    if (sectionId === 'control-tower') {
+      return ['ADMIN', 'SALES_MANAGER'].includes(userRole)
+    }
+    if (sectionId === 'module-1') {
+      return ['ADMIN', 'SALES_MANAGER', 'SALES_CONSULTANT', 'BACK_OFFICER', 'ACCOUNTS_MANAGER'].includes(userRole)
+    }
+    if (sectionId === 'manufacturing') {
+      return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
+    }
+    if (sectionId === 'commercial') {
+      return ['ADMIN', 'ACCOUNTS_MANAGER', 'FINANCE_MGR', 'SALES_MANAGER'].includes(userRole)
+    }
+    return true
+  }
+
+  const isItemAllowed = (itemId) => {
+    if (isAdmin || user?.hasFullAccess) return true
+    if (itemId === 'overview') return ['ADMIN', 'SALES_MANAGER'].includes(userRole)
+    if (itemId === 'leads' || itemId === 'followups') return ['ADMIN', 'SALES_MANAGER', 'SALES_CONSULTANT', 'BACK_OFFICER'].includes(userRole)
+    if (itemId === 'quotations') return ['ADMIN', 'SALES_MANAGER', 'BACK_OFFICER'].includes(userRole)
+    if (itemId === 'orders') return ['ADMIN', 'SALES_MANAGER', 'BACK_OFFICER', 'PRODUCTION_MANAGER', 'ACCOUNTS_MANAGER'].includes(userRole)
+    if (itemId === 'engineering') return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
+    if (itemId === 'finance') return ['ADMIN', 'ACCOUNTS_MANAGER', 'FINANCE_MGR', 'SALES_MANAGER'].includes(userRole)
+    return true
+  }
+
   // Filter navigation sections based on RBAC:
-  // Non-admins do NOT see 'Control Tower' (Master Dashboard)
   const visibleSections = sections
-    .map((sec) => {
-      if (sec.id === 'control-tower' && !isSuperUser) {
-        return null
-      }
-      return sec
-    })
-    .filter(Boolean)
+    .filter((sec) => isSectionAllowed(sec.id))
+    .map((sec) => ({
+      ...sec,
+      items: sec.items.filter((item) => isItemAllowed(item.id)),
+    }))
+    .filter((sec) => sec.items.length > 0)
 
   // Handle module selection from sidebar or internal link
   const handleSelectModule = (item) => {
-    if (item.id === 'overview' && !isSuperUser) {
-      alert('Access Denied: Master Dashboard is restricted to Administrators.')
+    if (!isItemAllowed(item.id)) {
+      alert(`Access Restricted: ${item.name} is not permitted for your current role (${effectiveUser.role}).`)
       return
     }
     setActiveModule(item.name)
@@ -85,8 +114,8 @@ export default function AppLayout() {
   }
 
   const handleNavigate = (targetId) => {
-    if (targetId === 'overview' && !isSuperUser) {
-      alert('Access Denied: Master Dashboard is restricted to Administrators.')
+    if (!isItemAllowed(targetId)) {
+      alert(`Access Restricted: This section is not permitted for your current role (${effectiveUser.role}).`)
       return
     }
     setActiveModuleId(targetId)
@@ -158,7 +187,7 @@ export default function AppLayout() {
       />
 
       {/* Right Content Area: Navbar + Main Workspace */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#edf1f7]">
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#070e1e]">
         {/* Top Navbar */}
         <Navbar
           activeModule={activeModule}
