@@ -50,9 +50,11 @@ export default function ServiceTicketRegisterPage() {
     try {
       setLoading(true);
       const res = await module5Api.getServiceTickets({ search, status: statusFilter });
-      setTickets(res.data);
+      const list = res?.tickets || res?.data || (Array.isArray(res) ? res : []);
+      setTickets(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('Failed to load tickets', err);
+      setTickets([]);
     } finally {
       setLoading(false);
     }
@@ -192,14 +194,14 @@ export default function ServiceTicketRegisterPage() {
                     Loading tickets...
                   </td>
                 </tr>
-              ) : tickets.length === 0 ? (
+              ) : (!tickets || tickets.length === 0) ? (
                 <tr>
                   <td colSpan="6" className="py-8 text-center text-slate-500">
                     No service tickets found.
                   </td>
                 </tr>
               ) : (
-                tickets.map((t) => {
+                (tickets || []).map((t) => {
                   const isWarranty = t.warrantyStatus === 'UNDER_WARRANTY';
 
                   return (

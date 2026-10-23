@@ -26,6 +26,15 @@ import {
   Award,
   CreditCard,
   Briefcase,
+  Factory,
+  ClipboardList,
+  Target,
+  CheckCircle2,
+  Gauge,
+  Wrench,
+  FolderKanban,
+  Headset,
+  AlertTriangle,
 } from 'lucide-react'
 
 // Icon mapping helper
@@ -52,6 +61,15 @@ const iconMap = {
   Award,
   CreditCard,
   Briefcase,
+  Factory,
+  ClipboardList,
+  Target,
+  CheckCircle2,
+  Gauge,
+  Wrench,
+  FolderKanban,
+  Headset,
+  AlertTriangle,
 }
 
 export default function Sidebar({

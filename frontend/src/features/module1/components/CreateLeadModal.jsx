@@ -1,6 +1,20 @@
 import { useState, useEffect } from "react";
-import { X, UserPlus, ShieldCheck, Plus, Trash2, Package } from "lucide-react";
+import { X, UserPlus, ShieldCheck, Plus, Trash2, Package, ChevronDown, AlertCircle, CheckCircle2 } from "lucide-react";
 import module1Service from "../services/module1Service";
+
+export const COUNTRY_CODES = [
+  { code: "+91", country: "India", flag: "🇮🇳", digits: 10, placeholder: "98230 44121" },
+  { code: "+1", country: "USA / Canada", flag: "🇺🇸", digits: 10, placeholder: "202 555 0143" },
+  { code: "+971", country: "UAE", flag: "🇦🇪", digits: 9, placeholder: "50 123 4567" },
+  { code: "+44", country: "UK", flag: "🇬🇧", digits: 10, placeholder: "7911 123456" },
+  { code: "+966", country: "Saudi Arabia", flag: "🇸🇦", digits: 9, placeholder: "50 123 4567" },
+  { code: "+65", country: "Singapore", flag: "🇸🇬", digits: 8, placeholder: "8123 4567" },
+  { code: "+974", country: "Qatar", flag: "🇶🇦", digits: 8, placeholder: "3312 3456" },
+  { code: "+968", country: "Oman", flag: "🇴🇲", digits: 8, placeholder: "9123 4567" },
+  { code: "+965", country: "Kuwait", flag: "🇰🇼", digits: 8, placeholder: "5123 4567" },
+  { code: "+61", country: "Australia", flag: "🇦🇺", digits: 9, placeholder: "412 345 678" },
+  { code: "+49", country: "Germany", flag: "🇩🇪", digits: 10, placeholder: "151 12345678" },
+];
 
 export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
   const [formData, setFormData] = useState({
@@ -14,6 +28,11 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
     priority: "HIGH",
     requirement: "Standard earthing & lightning protection enquiry",
   });
+
+  const [selectedCountryCode, setSelectedCountryCode] = useState("+91");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [phoneError, setPhoneError] = useState("");
+  const [phoneTouched, setPhoneTouched] = useState(false);
 
   const [availableProducts, setAvailableProducts] = useState([]);
   const [selectedItems, setSelectedItems] = useState([
@@ -133,10 +152,69 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
     0
   );
 
+  const selectedCountry =
+    COUNTRY_CODES.find((c) => c.code === selectedCountryCode) || COUNTRY_CODES[0];
+
+  const validatePhone = (num, code) => {
+    const clean = (num || "").trim();
+    if (!clean) return "Mobile number is required";
+    if (code === "+91") {
+      if (clean.length !== 10) {
+        return "Indian mobile number must be exactly 10 digits";
+      }
+      if (!/^[6-9]/.test(clean)) {
+        return "Valid Indian mobile number must start with 6, 7, 8, or 9";
+      }
+      if (!/^[6-9]\d{9}$/.test(clean)) {
+        return "Please enter a valid 10-digit number";
+      }
+    } else {
+      const targetCountry = COUNTRY_CODES.find((c) => c.code === code) || COUNTRY_CODES[0];
+      if (clean.length !== targetCountry.digits) {
+        return `${targetCountry.country} number must be exactly ${targetCountry.digits} digits`;
+      }
+      if (!/^\d+$/.test(clean)) {
+        return "Please enter valid digits only";
+      }
+    }
+    return "";
+  };
+
+  const handlePhoneChange = (e) => {
+    const rawVal = e.target.value.replace(/\D/g, "");
+    const maxDigits = selectedCountry.digits;
+    const truncated = rawVal.slice(0, maxDigits);
+    setPhoneNumber(truncated);
+
+    if (phoneTouched || truncated.length > 0) {
+      setPhoneError(validatePhone(truncated, selectedCountryCode));
+    }
+  };
+
+  const handleCountryChange = (e) => {
+    const newCode = e.target.value;
+    setSelectedCountryCode(newCode);
+    const targetCountry = COUNTRY_CODES.find((c) => c.code === newCode) || COUNTRY_CODES[0];
+    const truncated = phoneNumber.slice(0, targetCountry.digits);
+    setPhoneNumber(truncated);
+    if (phoneTouched || truncated.length > 0) {
+      setPhoneError(validatePhone(truncated, newCode));
+    }
+  };
+
+  const isValidPhone = phoneNumber.length > 0 && !validatePhone(phoneNumber, selectedCountryCode);
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!formData.customerName || !formData.phone) {
-      alert("Please provide customer company and phone number.");
+    if (!formData.customerName) {
+      alert("Please provide customer company name.");
+      return;
+    }
+    const phoneErr = validatePhone(phoneNumber, selectedCountryCode);
+    if (phoneErr) {
+      setPhoneTouched(true);
+      setPhoneError(phoneErr);
+      alert(phoneErr);
       return;
     }
     if (selectedItems.length === 0) {
@@ -144,9 +222,12 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
       return;
     }
 
+    const fullPhone = `${selectedCountryCode} ${phoneNumber.trim()}`;
+
     if (onSubmit) {
       onSubmit({
         ...formData,
+        phone: fullPhone,
         items: selectedItems,
         productName: selectedItems.map((i) => i.productName).join(", "),
         productSku: selectedItems[0]?.productSku || "MULTIPLE",
@@ -223,18 +304,85 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
-                Mobile Number *
-              </label>
-              <input
-                type="tel"
-                name="phone"
-                required
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="+91 98230 44121"
-                className="w-full bg-[#0a1020] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 font-mono"
-              />
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-xs font-semibold text-slate-300">
+                  Mobile Number *
+                </label>
+                <span
+                  className={`text-[10px] font-mono ${
+                    phoneNumber.length === selectedCountry.digits
+                      ? isValidPhone
+                        ? "text-emerald-400 font-semibold"
+                        : "text-amber-400 font-semibold"
+                      : phoneNumber.length > 0
+                      ? "text-slate-400"
+                      : "text-slate-500"
+                  }`}
+                >
+                  {phoneNumber.length}/{selectedCountry.digits} digits
+                </span>
+              </div>
+              <div className="flex items-stretch gap-1.5">
+                {/* Country Code Dropdown */}
+                <div className="relative shrink-0 w-[110px]">
+                  <select
+                    value={selectedCountryCode}
+                    onChange={handleCountryChange}
+                    className="w-full h-full appearance-none bg-[#0a1020] text-slate-100 text-xs pl-2.5 pr-7 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer font-medium"
+                    title="Select Country Code"
+                  >
+                    {COUNTRY_CODES.map((item) => (
+                      <option key={item.code} value={item.code} className="bg-[#0f172a] text-slate-200">
+                        {item.flag} {item.code}
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                </div>
+
+                {/* Phone Number Input */}
+                <div className="relative flex-1">
+                  <input
+                    type="tel"
+                    inputMode="numeric"
+                    required
+                    value={phoneNumber}
+                    onChange={handlePhoneChange}
+                    onBlur={() => {
+                      setPhoneTouched(true);
+                      setPhoneError(validatePhone(phoneNumber, selectedCountryCode));
+                    }}
+                    placeholder={selectedCountry.placeholder}
+                    maxLength={selectedCountry.digits}
+                    className={`w-full bg-[#0a1020] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border font-mono tracking-wide focus:outline-none focus:ring-1 ${
+                      phoneTouched && phoneError
+                        ? "border-rose-500/80 focus:ring-rose-500 bg-rose-950/10 text-rose-100"
+                        : isValidPhone
+                        ? "border-emerald-500/60 focus:ring-emerald-500 bg-emerald-950/10"
+                        : "border-slate-800 focus:ring-blue-500"
+                    }`}
+                  />
+                  {isValidPhone && (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  )}
+                </div>
+              </div>
+
+              {/* Validation helper / error text */}
+              {phoneTouched && phoneError ? (
+                <p className="mt-1 flex items-center gap-1 text-[11px] text-rose-400 font-medium">
+                  <AlertCircle className="w-3 h-3 shrink-0" />
+                  <span>{phoneError}</span>
+                </p>
+              ) : selectedCountryCode === "+91" ? (
+                <p className="mt-1 text-[10px] text-slate-500">
+                  Enter 10-digit Indian mobile number (starts with 6, 7, 8, or 9)
+                </p>
+              ) : (
+                <p className="mt-1 text-[10px] text-slate-500">
+                  {selectedCountry.country}: {selectedCountry.digits} digits required
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">

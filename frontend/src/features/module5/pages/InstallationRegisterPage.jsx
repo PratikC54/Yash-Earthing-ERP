@@ -57,9 +57,11 @@ export default function InstallationRegisterPage() {
     try {
       setLoading(true);
       const res = await module5Api.getInstallations({ search, status: statusFilter });
-      setInstallations(res.data);
+      const list = res?.installations || res?.data || (Array.isArray(res) ? res : []);
+      setInstallations(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('Failed to load installations', err);
+      setInstallations([]);
     } finally {
       setLoading(false);
     }
@@ -208,14 +210,14 @@ export default function InstallationRegisterPage() {
                     Loading installations...
                   </td>
                 </tr>
-              ) : installations.length === 0 ? (
+              ) : (!installations || installations.length === 0) ? (
                 <tr>
                   <td colSpan="7" className="py-8 text-center text-slate-500">
                     No installation records found.
                   </td>
                 </tr>
               ) : (
-                installations.map((inst) => {
+                (installations || []).map((inst) => {
                   const ohms = inst.testResults?.resistanceOhms;
                   const isPassed = inst.testResults?.passedQC;
 

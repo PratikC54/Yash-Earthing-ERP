@@ -26,7 +26,7 @@ export default function Module5Dashboard({ onNavigate }) {
       setLoading(true);
       setError(null);
       const data = await module5Api.getDashboardMetrics();
-      setMetrics(data.data);
+      setMetrics(data?.data || data || {});
     } catch (err) {
       console.error('Failed to load Module 5 dashboard metrics:', err);
       setError('Unable to fetch live metrics from ERP server.');

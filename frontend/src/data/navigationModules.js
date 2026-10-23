@@ -113,6 +113,92 @@ export const initialNavSections = [
     ],
   },
   {
+    id: 'module-4',
+    title: 'Module 4 · Production & Quality',
+    items: [
+      {
+        id: 'm4-dashboard',
+        name: 'Production & QA Center',
+        desc: 'Plant telemetry, live line yields & FPY metrics',
+        icon: 'Gauge',
+        badge: 'Live',
+      },
+      {
+        id: 'm4-planning',
+        name: 'Planning & Scheduling',
+        desc: 'Monthly production plan, capacity & calendars',
+        icon: 'Target',
+      },
+      {
+        id: 'm4-work-orders',
+        name: 'Work Orders & Job Cards',
+        desc: 'Release fabrication orders, BOM specs & routing',
+        icon: 'ClipboardList',
+      },
+      {
+        id: 'm4-shop-floor',
+        name: 'Shop Floor Tracking',
+        desc: 'Live line execution, output logs & downtime',
+        icon: 'Factory',
+      },
+      {
+        id: 'm4-issuance',
+        name: 'Material Issuance',
+        desc: 'BOM component issue, consumption & scrap return',
+        icon: 'Box',
+      },
+      {
+        id: 'm4-inspections',
+        name: 'Quality Inspections',
+        desc: 'In-process & final QC, ultrasonic tests & IS-3043',
+        icon: 'CheckCircle2',
+      },
+      {
+        id: 'm4-ncr',
+        name: 'Non-Conformance (NCR)',
+        desc: 'Defect logging, root cause & CAPA action plans',
+        icon: 'AlertTriangle',
+      },
+      {
+        id: 'm4-dispatch',
+        name: 'Production Dispatch',
+        desc: 'QC release gate pass, packing & delivery challans',
+        icon: 'Truck',
+      },
+    ],
+  },
+  {
+    id: 'module-5',
+    title: 'Module 5 · Projects & Site Services',
+    items: [
+      {
+        id: 'm5-dashboard',
+        name: 'Services Dashboard',
+        desc: 'Site execution, testing verification & support tickets',
+        icon: 'Layers',
+        badge: 'Live',
+      },
+      {
+        id: 'm5-projects',
+        name: 'Project Register',
+        desc: 'Project milestones, WBS tasks & stock check',
+        icon: 'FolderKanban',
+      },
+      {
+        id: 'm5-installations',
+        name: 'Site Installations',
+        desc: 'Earth pit resistance QC & client handover signoff',
+        icon: 'Wrench',
+      },
+      {
+        id: 'm5-service',
+        name: 'Service & AMC Tickets',
+        desc: 'Maintenance tickets, parts log & SLA tracking',
+        icon: 'Headset',
+      },
+    ],
+  },
+  {
     id: 'module-6',
     title: 'Module 6 · Finance & Commercial',
     items: [
@@ -188,37 +274,6 @@ export const initialNavSections = [
         desc: 'Shop floor shift scheduling & skill dispatch',
         icon: 'Briefcase',
         badge: 'M7',
-      },
-    ],
-  },
-  {
-    id: 'module-5',
-    title: 'Module 5 · Installation & Service',
-    items: [
-      {
-        id: 'm5-dashboard',
-        name: 'Installation & Service',
-        desc: 'Site execution, testing verification & support tickets',
-        icon: 'Layers',
-        badge: 'Live',
-      },
-      {
-        id: 'm5-projects',
-        name: 'Project Register',
-        desc: 'Project milestones, WBS tasks & stock check',
-        icon: 'Layers',
-      },
-      {
-        id: 'm5-installations',
-        name: 'Site Installations',
-        desc: 'Earth pit resistance QC & client handover signoff',
-        icon: 'ShieldCheck',
-      },
-      {
-        id: 'm5-service',
-        name: 'Service & Warranty',
-        desc: 'Maintenance tickets, parts log & SLA tracking',
-        icon: 'Box',
       },
     ],
   },

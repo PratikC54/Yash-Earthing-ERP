@@ -47,9 +47,11 @@ export default function ProjectRegisterPage() {
     try {
       setLoading(true);
       const res = await module5Api.getProjects({ search, status: statusFilter });
-      setProjects(res.data);
+      const list = res?.projects || res?.data || (Array.isArray(res) ? res : []);
+      setProjects(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('Failed to load projects', err);
+      setProjects([]);
     } finally {
       setLoading(false);
     }
@@ -174,14 +176,14 @@ export default function ProjectRegisterPage() {
                     Loading projects from ERP...
                   </td>
                 </tr>
-              ) : projects.length === 0 ? (
+              ) : (!projects || projects.length === 0) ? (
                 <tr>
                   <td colSpan="7" className="py-8 text-center text-slate-500">
                     No projects found matching the filter criteria.
                   </td>
                 </tr>
               ) : (
-                projects.map((proj) => (
+                (projects || []).map((proj) => (
                   <tr
                     key={proj.id}
                     onClick={() => handleSelectProject(proj.id)}
