@@ -8,18 +8,22 @@ import {
   handleIssueCustomerPO,
   handleUpdateSalesOrder,
 } from "./order.handler.js";
-import { authenticate } from "../auth/auth.middleware.js";
+import { authenticate, requireRoles } from "../auth/auth.middleware.js";
 
 const orderRouter = Router();
 
-orderRouter.get("/", handleGetOrders);
-orderRouter.get("/:id", handleGetOrderById);
+orderRouter.get("/", authenticate, handleGetOrders);
+orderRouter.get("/:id", authenticate, handleGetOrderById);
 
-// Authenticated actions
-orderRouter.post("/po/:quotationId", authenticate, handleIssueCustomerPO);
-orderRouter.post("/", authenticate, handleCreateSalesOrder);
+// RBAC: Customer PO can be issued by BACK_OFFICER, SALES_MANAGER, or ADMIN
+orderRouter.post("/po/:quotationId", authenticate, requireRoles("BACK_OFFICER", "SALES_MANAGER"), handleIssueCustomerPO);
+
+// RBAC: Official Sales Order can be approved and issued by SALES_MANAGER (or ADMIN)
+orderRouter.post("/", authenticate, requireRoles("SALES_MANAGER"), handleCreateSalesOrder);
+
+// Standard product inventory check
 orderRouter.post("/:id/check-inventory", authenticate, handleCheckInventory);
-orderRouter.put("/:id", authenticate, handleUpdateSalesOrder);
-orderRouter.delete("/:id", authenticate, handleDeleteSalesOrder);
+orderRouter.put("/:id", authenticate, requireRoles("SALES_MANAGER"), handleUpdateSalesOrder);
+orderRouter.delete("/:id", authenticate, requireRoles("SALES_MANAGER"), handleDeleteSalesOrder);
 
 export default orderRouter;
