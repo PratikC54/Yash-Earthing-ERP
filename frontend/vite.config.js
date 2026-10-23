@@ -5,6 +5,9 @@ import tailwindcss from '@tailwindcss/vite'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), tailwindcss()],
+  optimizeDeps: {
+    include: ['jspdf', 'html2canvas-pro', 'xlsx', 'lucide-react', 'axios', 'react', 'react-dom']
+  },
   server: {
     port: 5173,
     proxy: {
