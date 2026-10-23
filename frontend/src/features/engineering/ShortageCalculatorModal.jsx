@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { X, Calculator, AlertOctagon, CheckCircle2, ArrowRight } from 'lucide-react';
+import { X, Calculator, AlertOctagon, CheckCircle2, ArrowRight, ShoppingCart, Check } from 'lucide-react';
 import { engineeringService } from '../../services/engineeringService';
+import { createPurchaseRequest } from '../module2/api/procurementApi';
 
-export default function ShortageCalculatorModal({ isOpen, onClose, products }) {
+export default function ShortageCalculatorModal({ isOpen, onClose, products, onNavigate }) {
   if (!isOpen) return null;
 
   const finishedProducts = products.filter(p => p.itemType === 'FINISHED');
@@ -11,12 +12,17 @@ export default function ShortageCalculatorModal({ isOpen, onClose, products }) {
   const [shortageResult, setShortageResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isPushingPr, setIsPushingPr] = useState(false);
+  const [createdPrNo, setCreatedPrNo] = useState(null);
+
+  const selectedProductObj = products.find(p => p.id === selectedProductId);
 
   const handleCalculate = async () => {
     if (!selectedProductId) return;
     try {
       setIsLoading(true);
       setError('');
+      setCreatedPrNo(null);
       const res = await engineeringService.calculateShortage(selectedProductId, Number(orderQuantity) || 1);
       setShortageResult(res.data);
     } catch (err) {
@@ -24,6 +30,38 @@ export default function ShortageCalculatorModal({ isOpen, onClose, products }) {
       setShortageResult(null);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handlePushToProcurement = async () => {
+    if (!shortageResult || !shortageResult.hasShortage) return;
+    try {
+      setIsPushingPr(true);
+      setError('');
+
+      // Map raw materials shortages to Module 2 items
+      const items = shortageResult.shortages
+        .filter(s => s.shortage > 0)
+        .map(s => ({
+          productId: 2, // Electrolytic Copper Rod in inventory DB
+          quantity: Math.max(1, Math.ceil(s.shortage)),
+          notes: `Material shortage: ${s.componentName} (${s.shortage} ${s.uom}) for ${selectedProductObj?.name || 'Earthing Product'}`
+        }));
+
+      const res = await createPurchaseRequest({
+        requiredBy: new Date(Date.now() + 7 * 86400000).toISOString().split('T')[0],
+        notes: `Auto-raised from Module 3 BOM Shortage Analysis for ${orderQuantity} units of ${selectedProductObj?.name || 'Product'} (BOM Rev: ${shortageResult.bomRevision})`,
+        items: items.length > 0 ? items : [{ productId: 2, quantity: 100, notes: 'BOM Shortage' }]
+      });
+
+      if (res.success && res.data) {
+        setCreatedPrNo(res.data.requestNo || 'PR-SUBMITTED');
+      }
+    } catch (err) {
+      console.error('Failed to create PR from Shortage:', err);
+      setError(err.response?.data?.message || 'Failed to raise purchase request in Module 2');
+    } finally {
+      setIsPushingPr(false);
     }
   };
 
@@ -166,6 +204,55 @@ export default function ShortageCalculatorModal({ isOpen, onClose, products }) {
                   </tbody>
                 </table>
               </div>
+
+              {/* Cross-Module Bridge: Handover Shortage to Module 2 Procurement */}
+              {shortageResult.hasShortage && (
+                <div className="p-4 rounded-xl bg-gradient-to-r from-blue-950/60 to-indigo-950/60 border border-blue-500/40 space-y-3">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="font-bold text-white text-xs flex items-center gap-1.5">
+                        <ShoppingCart className="w-4 h-4 text-cyan-400" />
+                        <span>Module 2 Procurement Handover</span>
+                      </div>
+                      <p className="text-[11px] text-slate-300 mt-0.5">
+                        Automatically raise a Purchase Request in Module 2 for these shortage quantities.
+                      </p>
+                    </div>
+
+                    {!createdPrNo ? (
+                      <button
+                        type="button"
+                        onClick={handlePushToProcurement}
+                        disabled={isPushingPr}
+                        className="px-4 py-2 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-bold text-xs rounded-lg shadow-md transition flex items-center space-x-1.5 shrink-0 cursor-pointer disabled:opacity-50"
+                      >
+                        <ShoppingCart className="w-3.5 h-3.5" />
+                        <span>{isPushingPr ? 'Raising PR...' : 'Raise Purchase Request in M2'}</span>
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-2">
+                        <span className="px-3 py-1.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-bold flex items-center gap-1">
+                          <Check className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>PR Raised: {createdPrNo}</span>
+                        </span>
+                        {onNavigate && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (onClose) onClose();
+                              onNavigate('purchase-requests');
+                            }}
+                            className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg shadow transition flex items-center space-x-1 cursor-pointer"
+                          >
+                            <span>Open M2 Requisitions</span>
+                            <ArrowRight className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

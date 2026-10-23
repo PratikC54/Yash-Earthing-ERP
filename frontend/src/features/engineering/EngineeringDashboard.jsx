@@ -28,7 +28,7 @@ import CostingPolicyModal from './CostingPolicyModal';
 import ShortageCalculatorModal from './ShortageCalculatorModal';
 import AddDrawingModal from './AddDrawingModal';
 
-export default function EngineeringDashboard({ initialTab = 'products' }) {
+export default function EngineeringDashboard({ initialTab = 'products', onNavigate }) {
   const [activeTab, setActiveTab] = useState(initialTab); // 'products', 'boms', 'drawings'
 
   useEffect(() => {
@@ -775,6 +775,7 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
         isOpen={isShortageCheckOpen}
         onClose={() => setIsShortageCheckOpen(false)}
         products={products}
+        onNavigate={onNavigate}
       />
 
       <AddDrawingModal

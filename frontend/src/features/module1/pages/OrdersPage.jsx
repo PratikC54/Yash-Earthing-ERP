@@ -6,7 +6,7 @@ import InventoryCheckModal from "../components/InventoryCheckModal";
 import module1Service from "../services/module1Service";
 import { exportToExcel, importFromExcel } from "../utils/excelUtils";
 
-export default function OrdersPage() {
+export default function OrdersPage({ onNavigate }) {
   const [orders, setOrders] = useState([]);
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -343,6 +343,7 @@ export default function OrdersPage() {
         isOpen={Boolean(inventoryCheckResult)}
         onClose={() => setInventoryCheckResult(null)}
         checkResult={inventoryCheckResult}
+        onNavigate={onNavigate}
       />
     </div>
   );

@@ -1,6 +1,6 @@
 import { X, CheckCircle, AlertTriangle, Boxes, ArrowRight } from "lucide-react";
 
-export default function InventoryCheckModal({ isOpen, onClose, checkResult, onConfirmReserve }) {
+export default function InventoryCheckModal({ isOpen, onClose, checkResult, onConfirmReserve, onNavigate }) {
   if (!isOpen || !checkResult) return null;
 
   const {
@@ -12,6 +12,16 @@ export default function InventoryCheckModal({ isOpen, onClose, checkResult, onCo
   } = checkResult;
 
   const isReady = stockReserved || dispatchStatus === "READY_FOR_DISPATCH";
+
+  const handleGoToModule3 = () => {
+    if (onClose) onClose();
+    if (onNavigate) onNavigate('m3-boms');
+  };
+
+  const handleGoToModule2 = () => {
+    if (onClose) onClose();
+    if (onNavigate) onNavigate('purchase-requests');
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm overflow-y-auto animate-in fade-in duration-200">
@@ -95,16 +105,39 @@ export default function InventoryCheckModal({ isOpen, onClose, checkResult, onCo
           </div>
 
           {/* Next Workflow Steps */}
-          <div className="bg-[#0a1020] border border-slate-800 rounded-xl p-3.5 space-y-1.5 text-[11px] text-slate-400">
-            <span className="font-bold text-slate-200 block mb-1">Fulfilment Workflow Next Step:</span>
+          <div className="bg-[#0a1020] border border-slate-800 rounded-xl p-3.5 space-y-2 text-[11px] text-slate-400">
+            <span className="font-bold text-slate-200 block">Fulfilment Workflow Next Step:</span>
             <div className="flex items-center gap-1.5 text-cyan-300">
-              <ArrowRight className="w-3.5 h-3.5" />
+              <ArrowRight className="w-3.5 h-3.5 shrink-0" />
               <span>
                 {isReady
-                  ? "Stock reserved in warehouse. Ready for handover to Factory & Dispatch Desk (Operations Module)."
-                  : "Production replenishment request has been forwarded to Manufacturing & Work Orders desk."}
+                  ? "Stock verified in warehouse stores. Ready for delivery document & dispatch."
+                  : "Insufficient finished inventory. Proceed to Module 3 (BOM Material Shortage) or Module 2 (Procurement Requisition)."}
               </span>
             </div>
+
+            {/* Direct Cross-Module Jump Buttons on Shortage */}
+            {!isReady && onNavigate && (
+              <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={handleGoToModule3}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-amber-600/20 hover:bg-amber-600/30 text-amber-300 border border-amber-500/40 rounded-lg font-semibold transition cursor-pointer"
+                >
+                  <span>Explode BOM in Module 3</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleGoToModule2}
+                  className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 rounded-lg font-semibold transition cursor-pointer"
+                >
+                  <span>Raise Requisition in Module 2</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Actions */}
