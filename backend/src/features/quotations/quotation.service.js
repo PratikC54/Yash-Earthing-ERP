@@ -1,4 +1,5 @@
 import prisma from "../../db/prisma.js";
+import { sendEmail } from "../../services/mailer.service.js";
 
 // Helper to auto-generate quotation number (e.g. QT-261022-457)
 export async function generateQuotationNo() {
@@ -78,10 +79,26 @@ export async function getQuotationById(id) {
 }
 
 export async function createQuotation(data, user) {
-  const quotationNo = data.quotationNo || (await generateQuotationNo());
   const customerId = Number(data.customerId);
   const leadId = data.leadId ? Number(data.leadId) : null;
   const salesRepId = data.salesRepresentativeId ? Number(data.salesRepresentativeId) : user?.id || 1;
+
+  // Prevent duplicate quotations on the same lead if one already exists
+  if (leadId) {
+    const existing = await prisma.quotation.findFirst({
+      where: { leadId },
+      orderBy: { createdAt: "desc" },
+    });
+    if (existing) {
+      const error = new Error(
+        `Quotation ${existing.quotationNo} has already been issued for this enquiry. Please use "Revise Quotation" to negotiate or update terms.`
+      );
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
+  const quotationNo = data.quotationNo || (await generateQuotationNo());
 
   // Calculate items and totals
   let subtotal = 0;
@@ -108,7 +125,7 @@ export async function createQuotation(data, user) {
       leadId,
       salesRepresentativeId: salesRepId,
       status: data.status || "DRAFT",
-      preparedBy: user?.name || "Back Officer",
+      preparedBy: user?.name ? `${user.name} (${user.role || "BACK_OFFICER"})` : "Back Officer (BACK_OFFICER)",
       currency: "INR",
       subtotal,
       discountAmount,
@@ -259,15 +276,92 @@ export async function finalizeProformaInvoice(id, user) {
 }
 
 export async function sendQuotationEmail(id, { email, recipientName }) {
+  const quotation = await getQuotationById(id);
+  const targetEmail = email || quotation.customer?.email || quotation.lead?.email;
+
+  if (!targetEmail) {
+    const error = new Error("No recipient email specified for quotation dispatch");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  const itemsHtml = (quotation.items || [])
+    .map(
+      (it, idx) => `
+      <tr>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${idx + 1}</td>
+        <td style="padding: 8px; border: 1px solid #ddd;"><strong>${it.product?.name || "GI Earthing Electrode"}</strong><br/><small>${it.description || ""}</small></td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: center;">${it.quantity}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">INR ${Number(it.unitPrice).toFixed(2)}</td>
+        <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">INR ${Number(it.subtotal || it.lineTotal).toFixed(2)}</td>
+      </tr>`
+    )
+    .join("");
+
+  const emailHtml = `
+    <div style="font-family: Arial, sans-serif; color: #333; max-width: 650px; margin: auto; padding: 20px; border: 1px solid #eee; border-radius: 8px;">
+      <h2 style="color: #0f2b5c; border-bottom: 2px solid #0f2b5c; padding-bottom: 8px;">Yash Earthing Solutions Pvt Ltd</h2>
+      <p>Dear <strong>${recipientName || quotation.customer?.name || quotation.lead?.customerName || "Customer"}</strong>,</p>
+      <p>Greetings from Yash Earthing Solutions.</p>
+      <p>Please find below the commercial estimate and quotation <strong>${quotation.quotationNo}</strong> (Rev-${quotation.revision || 0}).</p>
+      
+      <table style="width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 13px;">
+        <thead>
+          <tr style="background: #f4f6fa; color: #333;">
+            <th style="padding: 8px; border: 1px solid #ddd;">#</th>
+            <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Item Description</th>
+            <th style="padding: 8px; border: 1px solid #ddd;">Qty</th>
+            <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Rate</th>
+            <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsHtml}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="4" style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold;">Grand Total (Incl. GST):</td>
+            <td style="padding: 8px; border: 1px solid #ddd; text-align: right; font-weight: bold; color: #0f2b5c;">INR ${Number(quotation.total).toFixed(2)}</td>
+          </tr>
+        </tfoot>
+      </table>
+
+      <div style="background: #f8fafc; padding: 12px; border-radius: 6px; font-size: 12px; margin-top: 16px;">
+        <p style="margin: 0 0 6px 0;"><strong>Payment Terms:</strong> ${quotation.paymentTerms || "100% Advance against PI"}</p>
+        <p style="margin: 0 0 6px 0;"><strong>Delivery:</strong> ${quotation.deliveryTerms || "Ex-Works Pune / Road Transport"}</p>
+        <p style="margin: 0;"><strong>Bank Details:</strong> STATE BANK OF INDIA | A/c: 42706903179 | IFSC: SBIN0004726 (Branch: SIB PUNE)</p>
+      </div>
+
+      <p style="margin-top: 20px; font-size: 13px;">
+        Prepared by: <strong>${quotation.preparedBy || "Back Officer"}</strong><br/>
+        For any clarification, please reply directly to this email or contact our Sales Consultant.
+      </p>
+      <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;" />
+      <small style="color: #888;">Yash Earthing Solutions Pvt Ltd · Regd Office: Satara Road, Pune 411043</small>
+    </div>
+  `;
+
+  const mailResult = await sendEmail({
+    to: targetEmail,
+    subject: `Commercial Quotation ${quotation.quotationNo} (Rev-${quotation.revision || 0}) - Yash Earthing Solutions`,
+    html: emailHtml,
+    text: `Quotation ${quotation.quotationNo} for amount INR ${Number(quotation.total).toFixed(2)} has been released for ${recipientName || targetEmail}.`,
+  });
+
   await prisma.quotation.update({
     where: { id: Number(id) },
     data: {
       emailSentAt: new Date(),
-      emailRecipient: email,
-      status: "SENT",
+      emailRecipient: targetEmail,
+      status: "SENT_TO_CLIENT",
     },
   });
-  return { success: true, message: `Quotation PDF sent to ${email} (${recipientName || ""})` };
+
+  return {
+    success: true,
+    message: `Quotation successfully sent to ${targetEmail} from pratik.fundsaudit@gmail.com`,
+    mailResult,
+  };
 }
 
 export async function deleteQuotation(id) {
