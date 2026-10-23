@@ -1,13 +1,17 @@
 import { useState, useEffect, useCallback } from "react";
-import { PhoneCall, Trash2 } from "lucide-react";
+import { PhoneCall, Trash2, UserPlus, Clock } from "lucide-react";
 import Module1KpiCards from "../components/Module1KpiCards";
 import FilterBar from "../components/FilterBar";
 import CreateLeadModal from "../components/CreateLeadModal";
 import LogCallModal from "../components/LogCallModal";
 import module1Service from "../services/module1Service";
+import { useAuth } from "../../auth/useAuth";
 import { exportToExcel, importFromExcel } from "../utils/excelUtils";
 
 export default function LeadsPage({ onNavigateToQuotation }) {
+  const { user } = useAuth();
+  const canReassign = user?.role === "ADMIN" || user?.role === "SALES_MANAGER";
+
   const [leads, setLeads] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -20,12 +24,15 @@ export default function LeadsPage({ onNavigateToQuotation }) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [callModalLead, setCallModalLead] = useState(null);
   const [selectedLeadDetails, setSelectedLeadDetails] = useState(null);
+  const [reassignModalLead, setReassignModalLead] = useState(null);
+  const [selectedConsultantId, setSelectedConsultantId] = useState("");
+  const [consultantsList, setConsultantsList] = useState([]);
 
   // Fetch leads and pipeline stats from backend
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [leadsRes, statsRes] = await Promise.all([
+      const [leadsRes, statsRes] = await Promise.allSettled([
         module1Service.getLeads({
           search: searchQuery,
           stage: selectedStage,
@@ -36,11 +43,11 @@ export default function LeadsPage({ onNavigateToQuotation }) {
         module1Service.getPipelineStats(),
       ]);
 
-      if (leadsRes?.success && leadsRes?.data?.leads) {
-        setLeads(leadsRes.data.leads);
+      if (leadsRes.status === "fulfilled" && leadsRes.value?.success && leadsRes.value?.data?.leads) {
+        setLeads(leadsRes.value.data.leads);
       }
-      if (statsRes?.success && statsRes?.data) {
-        setStats(statsRes.data);
+      if (statsRes.status === "fulfilled" && statsRes.value?.success && statsRes.value?.data) {
+        setStats(statsRes.value.data);
       }
     } catch (err) {
       console.error("Failed to fetch leads data:", err);
@@ -85,6 +92,45 @@ export default function LeadsPage({ onNavigateToQuotation }) {
     } catch (err) {
       console.error("Log call failed:", err);
       alert(err.response?.data?.message || "Failed to log call");
+    }
+  };
+
+  // Handle Manual Reassign Lead
+  const openReassignModal = async (lead) => {
+    setReassignModalLead(lead);
+    setSelectedConsultantId(String(lead.assignedToId || ""));
+    try {
+      const res = await module1Service.getConsultants();
+      if (res?.success && res.data?.users) {
+        setConsultantsList(res.data.users);
+      }
+    } catch {
+      // Fallback consultants list
+      setConsultantsList([
+        { id: 6, name: "Pratik Senapati", role: "SALES_CONSULTANT" },
+        { id: 9, name: "Sales Consultant 2", role: "SALES_CONSULTANT" },
+        { id: 2, name: "Pratik Senapati (Mgr)", role: "SALES_MANAGER" },
+      ]);
+    }
+  };
+
+  const handleReassignSubmit = async (e) => {
+    e.preventDefault();
+    if (!reassignModalLead || !selectedConsultantId) return;
+    try {
+      const chosen = consultantsList.find((c) => String(c.id) === String(selectedConsultantId));
+      const res = await module1Service.reassignLead(reassignModalLead.id, {
+        assignedToId: Number(selectedConsultantId),
+        assignedByName: chosen?.name,
+      });
+      if (res?.success) {
+        alert(res.message || "Lead successfully reassigned!");
+        setReassignModalLead(null);
+        fetchData();
+      }
+    } catch (err) {
+      console.error("Reassign failed:", err);
+      alert(err.response?.data?.message || "Failed to reassign lead");
     }
   };
 
@@ -151,11 +197,13 @@ export default function LeadsPage({ onNavigateToQuotation }) {
         { value: "NEW", label: "New Leads" },
         { value: "CONTACTED", label: "Contacted" },
         { value: "QUALIFIED", label: "Qualified" },
-        { value: "QUOTATION_REQUESTED", label: "Quotes Requested" },
+        { value: "REQUIREMENT_CAPTURED", label: "Requirement Captured" },
+        { value: "QUOTATION_DRAFT", label: "Quote Draft" },
         { value: "QUOTATION_SENT", label: "Quote Sent" },
-        { value: "FOLLOW_UP_SCHEDULED", label: "Follow-up Scheduled" },
+        { value: "NEGOTIATION", label: "Negotiation" },
         { value: "PO_RECEIVED", label: "PO Received" },
-        { value: "ORDER_CONFIRMED", label: "Order Confirmed" },
+        { value: "CONVERTED", label: "Converted / Closed" },
+        { value: "LOST", label: "Lost" },
       ],
     },
     {
@@ -318,10 +366,26 @@ export default function LeadsPage({ onNavigateToQuotation }) {
 
                     {/* 7. Assigned Rep */}
                     <td className="py-3 px-4">
-                      <div className="text-xs text-white font-medium">
-                        {l.assignedTo?.name || l.assignedByName || "Sales Consultant"}
+                      <div className="flex items-center justify-between gap-1">
+                        <div>
+                          <div className="text-xs text-white font-medium">
+                            {l.assignedTo?.name || l.assignedByName || "Sales Consultant"}
+                          </div>
+                          <div className="text-[10px] text-slate-400">
+                            {l.assignedTo?.role || "SALES_CONSULTANT"}
+                          </div>
+                        </div>
+                        {canReassign && (
+                          <button
+                            type="button"
+                            onClick={() => openReassignModal(l)}
+                            className="p-1 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded transition cursor-pointer"
+                            title="Manually reassign lead (Admin / Sales Manager only)"
+                          >
+                            <UserPlus className="w-3.5 h-3.5 text-cyan-400" />
+                          </button>
+                        )}
                       </div>
-                      <div className="text-[10px] text-slate-400">SALES_CONSULTANT</div>
                     </td>
 
                     {/* 8. Actions (Call, View & Action, Delete) */}
@@ -400,10 +464,47 @@ export default function LeadsPage({ onNavigateToQuotation }) {
               <div><b>Contact:</b> {selectedLeadDetails.contactName} ({selectedLeadDetails.phone})</div>
               <div><b>Email:</b> {selectedLeadDetails.email || "N/A"}</div>
               <div><b>Location:</b> {selectedLeadDetails.city}, {selectedLeadDetails.state}</div>
-              <div><b>Product Requirement:</b> {selectedLeadDetails.productName} (Qty: {selectedLeadDetails.quantity})</div>
-              <div><b>Assigned Consultant:</b> {selectedLeadDetails.assignedTo?.name || selectedLeadDetails.assignedByName}</div>
+              <div><b>Product Requirement:</b> {selectedLeadDetails.productName} (Total Qty: {selectedLeadDetails.quantity})</div>
+
+              {/* Items Breakdown if multiple */}
+              {selectedLeadDetails.items && selectedLeadDetails.items.length > 0 && (
+                <div className="p-2.5 bg-[#0a1226] rounded-xl border border-slate-800 text-[11px] space-y-1">
+                  <div className="font-bold text-slate-300">Detailed Product Line Items:</div>
+                  {selectedLeadDetails.items.map((it, idx) => (
+                    <div key={it.id || idx} className="flex justify-between text-slate-300">
+                      <span>• {it.productName || it.product?.name} ({it.productSku || it.product?.sku})</span>
+                      <span className="font-mono font-bold text-cyan-300">Qty: {it.quantity}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              <div><b>Assigned Consultant:</b> {selectedLeadDetails.assignedTo?.name || selectedLeadDetails.assignedByName} ({selectedLeadDetails.assignedTo?.role || "SALES_CONSULTANT"})</div>
               <div><b>Current Stage:</b> {selectedLeadDetails.stage}</div>
               <div><b>Activity Notes:</b> {selectedLeadDetails.lastActivityNote || "No notes yet"}</div>
+
+              {/* Previous Call Logs in Detail View */}
+              <div className="mt-3 pt-3 border-t border-slate-800">
+                <div className="font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Previous Call Logs ({selectedLeadDetails.callLogs?.length || 0})</span>
+                </div>
+                {selectedLeadDetails.callLogs && selectedLeadDetails.callLogs.length > 0 ? (
+                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                    {selectedLeadDetails.callLogs.map((log) => (
+                      <div key={log.id} className="p-2 bg-[#081024] rounded-lg border border-slate-800 text-[11px]">
+                        <div className="flex justify-between text-white font-medium">
+                          <span>Outcome: <b className={log.outcome === "ANSWERED" || log.quoteRequested ? "text-emerald-400" : "text-amber-400"}>{log.outcome}</b></span>
+                          <span className="text-[10px] text-slate-400">{new Date(log.loggedAt || log.createdAt).toLocaleDateString()}</span>
+                        </div>
+                        {log.discussionHighlights && <p className="text-slate-300 italic mt-0.5">"{log.discussionHighlights}"</p>}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-slate-500 italic text-[11px]">No calls logged yet for this lead.</div>
+                )}
+              </div>
             </div>
             <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
               <button
@@ -425,6 +526,62 @@ export default function LeadsPage({ onNavigateToQuotation }) {
                 Close
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Manual Reassign Modal */}
+      {reassignModalLead && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-md rounded-2xl p-6 text-xs text-slate-200 shadow-2xl">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+              <h3 className="text-sm font-bold text-white">Manual Lead Reassignment</h3>
+              <button
+                type="button"
+                onClick={() => setReassignModalLead(null)}
+                className="text-slate-400 hover:text-white"
+              >
+                ✕
+              </button>
+            </div>
+            <form onSubmit={handleReassignSubmit} className="space-y-4 mt-4">
+              <div className="p-3 bg-[#0a1226] rounded-xl border border-slate-800">
+                <div className="font-semibold text-white">{reassignModalLead.code} · {reassignModalLead.customerName}</div>
+                <div className="text-[11px] text-slate-400 mt-0.5">Currently assigned to: <span className="text-cyan-300 font-semibold">{reassignModalLead.assignedTo?.name || reassignModalLead.assignedByName}</span></div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Select New Consultant *</label>
+                <select
+                  value={selectedConsultantId}
+                  onChange={(e) => setSelectedConsultantId(e.target.value)}
+                  className="w-full bg-[#081022] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                >
+                  <option value="">-- Choose User --</option>
+                  {consultantsList.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name} ({c.role})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+                <button
+                  type="button"
+                  onClick={() => setReassignModalLead(null)}
+                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-md"
+                >
+                  Reassign Lead
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
