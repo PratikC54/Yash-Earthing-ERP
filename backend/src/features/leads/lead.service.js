@@ -52,8 +52,13 @@ export async function getAutoAssignedConsultant() {
   return fallback || { id: 1, name: "System Admin" };
 }
 
-export async function getLeads({ search, stage, source, priority, page = 1, limit = 50 }) {
+export async function getLeads({ search, stage, source, priority, page = 1, limit = 50 }, user = null) {
   const where = {};
+
+  // If logged-in user is SALES_CONSULTANT, strictly restrict to their assigned leads
+  if (user && user.role === "SALES_CONSULTANT") {
+    where.assignedToId = user.id;
+  }
 
   if (search) {
     where.OR = [
@@ -78,13 +83,16 @@ export async function getLeads({ search, stage, source, priority, page = 1, limi
   }
 
   const skip = (Number(page) - 1) * Number(limit);
-  const [total, leads] = await Promise.all([
+  const [total, rawLeads] = await Promise.all([
     prisma.lead.count({ where }),
     prisma.lead.findMany({
       where,
       include: {
         assignedTo: {
           select: { id: true, name: true, email: true, phone: true, role: true },
+        },
+        items: {
+          include: { product: true },
         },
         quotations: {
           select: { id: true, quotationNo: true, status: true, total: true },
@@ -95,6 +103,25 @@ export async function getLeads({ search, stage, source, priority, page = 1, limi
       take: Number(limit),
     }),
   ]);
+
+  // Fetch call logs for these leads
+  const leadIds = rawLeads.map((l) => l.id);
+  const callLogs = await prisma.callLog.findMany({
+    where: { leadId: { in: leadIds } },
+    orderBy: { loggedAt: "desc" },
+  });
+
+  // Group call logs by leadId
+  const callLogsByLead = {};
+  for (const log of callLogs) {
+    if (!callLogsByLead[log.leadId]) callLogsByLead[log.leadId] = [];
+    callLogsByLead[log.leadId].push(log);
+  }
+
+  const leads = rawLeads.map((l) => ({
+    ...l,
+    callLogs: callLogsByLead[l.id] || [],
+  }));
 
   return { total, page: Number(page), limit: Number(limit), leads };
 }
@@ -124,7 +151,12 @@ export async function getLeadById(id) {
     throw error;
   }
 
-  return lead;
+  const callLogs = await prisma.callLog.findMany({
+    where: { leadId: lead.id },
+    orderBy: { loggedAt: "desc" },
+  });
+
+  return { ...lead, callLogs };
 }
 
 export async function createLead(data, creatorUser = null) {
@@ -169,10 +201,10 @@ export async function createLead(data, creatorUser = null) {
       alternatePhone: data.alternatePhone || null,
       city: data.city || "Pune",
       state: data.state || "Maharashtra",
-      productSku: data.productSku || "YEC-CBR-172",
-      productName: data.productName || "Copper Bonding Receptacle",
-      variant: data.variant || "Standard Heavy Duty",
-      quantity: data.quantity ? Number(data.quantity) : 1,
+      productSku: data.productSku || (data.items?.[0]?.productSku) || "YEC-CBR-172",
+      productName: data.productName || (data.items?.[0]?.productName) || "Copper Bonding Receptacle",
+      variant: data.variant || (data.items?.[0]?.variant) || "Standard Heavy Duty",
+      quantity: data.quantity ? Number(data.quantity) : (data.items?.reduce((acc, it) => acc + Number(it.quantity || 1), 0) || 1),
       expectedValue: data.expectedValue ? Number(data.expectedValue) : 0,
       intent: data.intent || "Positive",
       sentiment: data.sentiment || "High Priority",
@@ -192,7 +224,23 @@ export async function createLead(data, creatorUser = null) {
     },
   });
 
-  return lead;
+  // Create multiple LeadItems if provided
+  if (Array.isArray(data.items) && data.items.length > 0) {
+    for (const item of data.items) {
+      await prisma.leadItem.create({
+        data: {
+          leadId: lead.id,
+          productId: item.productId ? Number(item.productId) : null,
+          productName: item.productName || item.name || "Earthing Product",
+          productSku: item.productSku || item.sku || null,
+          variant: item.variant || null,
+          quantity: Number(item.quantity || 1),
+        },
+      }).catch(() => null);
+    }
+  }
+
+  return getLeadById(lead.id);
 }
 
 export async function updateLead(id, data) {
@@ -213,6 +261,54 @@ export async function updateLead(id, data) {
   });
 
   return updated;
+}
+
+export async function reassignLead(id, { assignedToId, assignedByName }, user) {
+  const targetUser = await prisma.user.findUnique({
+    where: { id: Number(assignedToId) },
+    select: { id: true, name: true, role: true, email: true },
+  });
+
+  if (!targetUser) {
+    const error = new Error("Selected consultant not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const updated = await prisma.lead.update({
+    where: { id: Number(id) },
+    data: {
+      assignedToId: targetUser.id,
+      assignedByName: targetUser.name,
+      lastActivityNote: `Lead manually reassigned to ${targetUser.name} (${targetUser.role}) by ${user?.name || "Admin"}`,
+    },
+    include: {
+      assignedTo: {
+        select: { id: true, name: true, email: true, phone: true, role: true },
+      },
+      quotations: true,
+    },
+  });
+
+  return updated;
+}
+
+export async function getProductsCatalog() {
+  const products = await prisma.product.findMany({
+    where: { isActive: true },
+    select: {
+      id: true,
+      name: true,
+      sku: true,
+      variant: true,
+      listPrice: true,
+      hsnCode: true,
+      unitOfMeasure: true,
+      description: true,
+    },
+    orderBy: { name: "asc" },
+  });
+  return products;
 }
 
 export async function deleteLead(id) {
@@ -283,10 +379,15 @@ export async function logCall(leadId, callData, callerUser) {
   return { log, isSuccess, stage: isSuccess ? "REQUIREMENT_CAPTURED" : "CONTACTED" };
 }
 
-export async function getFollowups({ search }) {
+export async function getFollowups({ search }, user = null) {
   const where = {
     nextFollowUpAt: { not: null },
   };
+
+  // If logged-in user is SALES_CONSULTANT, strictly restrict to their assigned leads
+  if (user && user.role === "SALES_CONSULTANT") {
+    where.assignedToId = user.id;
+  }
 
   if (search) {
     where.OR = [
@@ -313,13 +414,13 @@ export async function getPipelineStats() {
   const [totalLeads, inDiscussion, quotesRequested, poConfirmed, totalPipeline] = await Promise.all([
     prisma.lead.count(),
     prisma.lead.count({
-      where: { stage: { in: ["CONTACTED", "REQUIREMENT_CAPTURED", "QUALIFIED", "FOLLOW_UP_SCHEDULED"] } },
+      where: { stage: { in: ["CONTACTED", "QUALIFIED", "REQUIREMENT_CAPTURED"] } },
     }),
     prisma.lead.count({
-      where: { stage: { in: ["QUOTATION_REQUESTED", "QUOTATION_SENT"] } },
+      where: { stage: { in: ["QUOTATION_DRAFT", "QUOTATION_SENT", "NEGOTIATION"] } },
     }),
     prisma.lead.count({
-      where: { stage: { in: ["PO_RECEIVED", "ORDER_CONFIRMED"] } },
+      where: { stage: { in: ["PO_RECEIVED", "CONVERTED"] } },
     }),
     prisma.lead.aggregate({
       _sum: { expectedValue: true },
@@ -331,7 +432,7 @@ export async function getPipelineStats() {
     inDiscussion,
     quotesRequested,
     poConfirmed,
-    totalPipelineValue: totalPipeline._sum.expectedValue || 0,
+    totalPipelineValue: Number(totalPipeline._sum.expectedValue || 0),
   };
 }
 
