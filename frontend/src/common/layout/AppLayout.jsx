@@ -4,6 +4,7 @@ import Sidebar from './Sidebar'
 import AddModuleModal from './AddModuleModal'
 import OperationsOverview from '../../features/dashboard/OperationsOverview'
 import EngineeringDashboard from '../../features/engineering/EngineeringDashboard'
+import FinanceDashboard from '../../features/finance/FinanceDashboard'
 import { initialNavSections, currentUser } from '../../data/navigationModules'
 
 export default function AppLayout() {
@@ -55,6 +56,8 @@ export default function AppLayout() {
         <main className="flex-1 overflow-y-auto">
           {activeModuleId === 'engineering' ? (
             <EngineeringDashboard />
+          ) : activeModuleId === 'finance' ? (
+            <FinanceDashboard />
           ) : (
             <OperationsOverview subModuleTitle={`${activeModule} Overview`} />
           )}

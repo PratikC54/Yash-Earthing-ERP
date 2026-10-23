@@ -27,6 +27,19 @@ export const initialNavSections = [
       },
     ],
   },
+  {
+    id: 'commercial',
+    title: 'COMMERCIAL & FINANCE',
+    items: [
+      {
+        id: 'finance',
+        name: 'M6 · Finance & Commercial',
+        icon: 'Landmark',
+        badge: 'M6',
+        active: false,
+      },
+    ],
+  },
 ]
 
 export const currentUser = {
