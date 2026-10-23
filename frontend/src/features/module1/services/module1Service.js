@@ -42,8 +42,23 @@ export const module1Service = {
     return res.data;
   },
 
+  async getProductsCatalog() {
+    const res = await api.get("/leads/products");
+    return res.data;
+  },
+
   async bulkImportLeads(leadsArray) {
     const res = await api.post("/leads/import", { leads: leadsArray });
+    return res.data;
+  },
+
+  async reassignLead(id, data) {
+    const res = await api.patch(`/leads/${id}/assign`, data);
+    return res.data;
+  },
+
+  async getConsultants() {
+    const res = await api.get("/users/approvals?status=APPROVED");
     return res.data;
   },
 
@@ -71,6 +86,10 @@ export const module1Service = {
   async finalizeProformaInvoice(id) {
     const res = await api.post(`/quotations/${id}/finalize-pi`);
     return res.data;
+  },
+
+  async finalizePI(id) {
+    return this.finalizeProformaInvoice(id);
   },
 
   async sendQuotationEmail(id, emailData) {
@@ -107,6 +126,10 @@ export const module1Service = {
   async checkInventory(orderId) {
     const res = await api.post(`/orders/${orderId}/check-inventory`);
     return res.data;
+  },
+
+  async checkStockAndReserve(orderId) {
+    return this.checkInventory(orderId);
   },
 
   async updateSalesOrder(id, data) {
