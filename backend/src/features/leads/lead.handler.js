@@ -6,14 +6,16 @@ import {
   getLeadById,
   getLeads,
   getPipelineStats,
+  getProductsCatalog,
   logCall,
+  reassignLead,
   updateLead,
 } from "./lead.service.js";
 
 export async function handleGetLeads(req, res, next) {
   try {
     const { search, stage, source, priority, page, limit } = req.query;
-    const result = await getLeads({ search, stage, source, priority, page, limit });
+    const result = await getLeads({ search, stage, source, priority, page, limit }, req.user);
     return res.status(200).json({ success: true, data: result });
   } catch (error) {
     next(error);
@@ -53,6 +55,20 @@ export async function handleUpdateLead(req, res, next) {
   }
 }
 
+export async function handleReassignLead(req, res, next) {
+  try {
+    const { id } = req.params;
+    const updated = await reassignLead(id, req.body, req.user);
+    return res.status(200).json({
+      success: true,
+      message: `Lead successfully reassigned to ${updated.assignedTo?.name || "Consultant"}`,
+      data: updated,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
 export async function handleDeleteLead(req, res, next) {
   try {
     const { id } = req.params;
@@ -82,8 +98,17 @@ export async function handleLogCall(req, res, next) {
 export async function handleGetFollowups(req, res, next) {
   try {
     const { search } = req.query;
-    const followups = await getFollowups({ search });
+    const followups = await getFollowups({ search }, req.user);
     return res.status(200).json({ success: true, data: followups });
+  } catch (error) {
+    next(error);
+  }
+}
+
+export async function handleGetProductsCatalog(_req, res, next) {
+  try {
+    const products = await getProductsCatalog();
+    return res.status(200).json({ success: true, data: products });
   } catch (error) {
     next(error);
   }
