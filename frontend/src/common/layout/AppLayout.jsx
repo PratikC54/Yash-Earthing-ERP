@@ -44,7 +44,7 @@ export default function AppLayout() {
   }
 
   return (
-    <div className="w-screen h-screen flex overflow-hidden bg-[#141d30] font-sans antialiased selection:bg-emerald-500 selection:text-white">
+    <div className="w-screen h-screen flex overflow-hidden bg-[#070e1e] font-sans antialiased selection:bg-blue-600 selection:text-white">
       {/* Left Sidebar (Desktop Persistent + Mobile Slide-out Drawer) */}
       <Sidebar
         sections={sections}
@@ -57,8 +57,8 @@ export default function AppLayout() {
       />
 
       {/* Right Content Area: Navbar + Main Middle Box */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#edf1f7]">
-        {/* Top Navbar matching the sidebar deep navy color */}
+      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#070e1e]">
+        {/* Top Navbar matching the cyber steel theme */}
         <Navbar
           activeModule={activeModule}
           onToggleMobileSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}

@@ -2,41 +2,41 @@ import React from "react";
 
 const statusConfig = {
   // Common / Vendor
-  ACTIVE: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200/60", dot: "bg-emerald-500", label: "Active" },
-  INACTIVE: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200/60", dot: "bg-rose-500", label: "Inactive" },
+  ACTIVE: { bg: "bg-emerald-600/20", text: "text-emerald-300", border: "border-emerald-500/40", dot: "bg-emerald-400", label: "Active" },
+  INACTIVE: { bg: "bg-rose-500/10", text: "text-rose-300", border: "border-rose-500/30", dot: "bg-rose-400", label: "Inactive" },
 
   // PR / RFQ
-  DRAFT: { bg: "bg-slate-100", text: "text-slate-700", border: "border-slate-200/70", dot: "bg-slate-400", label: "Draft" },
-  SUBMITTED: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200/60", dot: "bg-amber-500", label: "Submitted" },
-  APPROVED: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200/60", dot: "bg-emerald-500", label: "Approved" },
-  REJECTED: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200/60", dot: "bg-rose-500", label: "Rejected" },
-  CONVERTED: { bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200/60", dot: "bg-purple-500", label: "Converted" },
+  DRAFT: { bg: "bg-slate-800/60", text: "text-slate-300", border: "border-slate-700/60", dot: "bg-slate-400", label: "Draft" },
+  SUBMITTED: { bg: "bg-amber-500/10", text: "text-amber-300", border: "border-amber-500/30", dot: "bg-amber-400", label: "Submitted" },
+  APPROVED: { bg: "bg-emerald-600/20", text: "text-emerald-300", border: "border-emerald-500/40", dot: "bg-emerald-400", label: "Approved" },
+  REJECTED: { bg: "bg-rose-500/10", text: "text-rose-300", border: "border-rose-500/30", dot: "bg-rose-400", label: "Rejected" },
+  CONVERTED: { bg: "bg-indigo-500/10", text: "text-indigo-300", border: "border-indigo-500/30", dot: "bg-indigo-400", label: "Converted" },
 
   // RFQ specific
-  SENT: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200/60", dot: "bg-blue-500", label: "Sent" },
-  QUOTATIONS_RECEIVED: { bg: "bg-indigo-50", text: "text-indigo-700", border: "border-indigo-200/60", dot: "bg-indigo-500", label: "Quotes Received" },
-  EVALUATED: { bg: "bg-cyan-50", text: "text-cyan-700", border: "border-cyan-200/60", dot: "bg-cyan-500", label: "Evaluated" },
-  AWARDED: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200/60", dot: "bg-emerald-500", label: "Awarded" },
-  CANCELLED: { bg: "bg-rose-50", text: "text-rose-700", border: "border-rose-200/60", dot: "bg-rose-500", label: "Cancelled" },
+  SENT: { bg: "bg-blue-500/10", text: "text-blue-300", border: "border-blue-500/30", dot: "bg-blue-400", label: "Sent" },
+  QUOTATIONS_RECEIVED: { bg: "bg-indigo-500/10", text: "text-indigo-300", border: "border-indigo-500/30", dot: "bg-indigo-400", label: "Quotes Received" },
+  EVALUATED: { bg: "bg-cyan-500/10", text: "text-cyan-300", border: "border-cyan-500/30", dot: "bg-cyan-400", label: "Evaluated" },
+  AWARDED: { bg: "bg-emerald-600/20", text: "text-emerald-300", border: "border-emerald-500/40", dot: "bg-emerald-400", label: "Awarded" },
+  CANCELLED: { bg: "bg-rose-500/10", text: "text-rose-300", border: "border-rose-500/30", dot: "bg-rose-400", label: "Cancelled" },
 
   // PO specific
-  PENDING_APPROVAL: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200/60", dot: "bg-amber-500", label: "Pending Approval" },
-  PARTIALLY_RECEIVED: { bg: "bg-sky-50", text: "text-sky-700", border: "border-sky-200/60", dot: "bg-sky-500", label: "Partially Received" },
-  RECEIVED: { bg: "bg-teal-50", text: "text-teal-700", border: "border-teal-200/60", dot: "bg-teal-500", label: "Received" },
-  CLOSED: { bg: "bg-slate-100", text: "text-slate-600", border: "border-slate-200/70", dot: "bg-slate-400", label: "Closed" },
+  PENDING_APPROVAL: { bg: "bg-amber-500/10", text: "text-amber-300", border: "border-amber-500/30", dot: "bg-amber-400", label: "Pending Approval" },
+  PARTIALLY_RECEIVED: { bg: "bg-sky-500/10", text: "text-sky-300", border: "border-sky-500/30", dot: "bg-sky-400", label: "Partially Received" },
+  RECEIVED: { bg: "bg-teal-500/10", text: "text-teal-300", border: "border-teal-500/30", dot: "bg-teal-400", label: "Received" },
+  CLOSED: { bg: "bg-slate-800/60", text: "text-slate-400", border: "border-slate-700/60", dot: "bg-slate-500", label: "Closed" },
 
   // Goods Receipt specific
-  UNDER_INSPECTION: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200/60", dot: "bg-amber-500", label: "Under Inspection" },
-  ACCEPTED: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200/60", dot: "bg-emerald-500", label: "Accepted" },
-  PARTIALLY_ACCEPTED: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200/60", dot: "bg-blue-500", label: "Partially Accepted" },
+  UNDER_INSPECTION: { bg: "bg-amber-500/10", text: "text-amber-300", border: "border-amber-500/30", dot: "bg-amber-400", label: "Under Inspection" },
+  ACCEPTED: { bg: "bg-emerald-600/20", text: "text-emerald-300", border: "border-emerald-500/40", dot: "bg-emerald-400", label: "Accepted" },
+  PARTIALLY_ACCEPTED: { bg: "bg-blue-500/10", text: "text-blue-300", border: "border-blue-500/30", dot: "bg-blue-400", label: "Partially Accepted" },
 };
 
 export default function StatusBadge({ status }) {
   const norm = String(status || "").toUpperCase();
   const cfg = statusConfig[norm] || {
-    bg: "bg-slate-100",
-    text: "text-slate-700",
-    border: "border-slate-200/70",
+    bg: "bg-slate-800/60",
+    text: "text-slate-300",
+    border: "border-slate-700/60",
     dot: "bg-slate-400",
     label: status || "Unknown",
   };

@@ -18,8 +18,8 @@ export default function DeliveryDatePicker({
   return (
     <div className={`space-y-1 ${className}`}>
       {label && (
-        <label htmlFor={name} className="block text-slate-700 font-semibold text-xs">
-          {label} {required && <span className="text-rose-500">*</span>}
+        <label htmlFor={name} className="block text-slate-300 font-semibold text-xs">
+          {label} {required && <span className="text-rose-400">*</span>}
         </label>
       )}
       <div className="relative">
@@ -31,12 +31,12 @@ export default function DeliveryDatePicker({
           onChange={onChange}
           min={minDate}
           required={required}
-          className={`w-full bg-[#f8fafc] border text-slate-800 text-xs rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-emerald-500 transition cursor-pointer [color-scheme:light] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-70 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 ${
-            error ? 'border-rose-400 focus:ring-rose-500' : 'border-slate-200'
+          className={`w-full bg-[#0a1020] border text-slate-100 text-xs rounded-xl px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 transition cursor-pointer [color-scheme:dark] [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-80 [&::-webkit-calendar-picker-indicator]:hover:opacity-100 ${
+            error ? 'border-rose-500 focus:ring-rose-500' : 'border-slate-800'
           }`}
         />
       </div>
-      {error && <p className="text-[11px] text-rose-500 font-medium">{error}</p>}
+      {error && <p className="text-[11px] text-rose-400 font-medium">{error}</p>}
     </div>
   );
 }

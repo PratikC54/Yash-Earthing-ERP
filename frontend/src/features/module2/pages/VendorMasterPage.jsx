@@ -238,19 +238,19 @@ export default function VendorMasterPage() {
   };
 
   return (
-    <div className="p-6 sm:p-8 space-y-6 bg-[#edf1f7] text-slate-800 min-h-full">
+    <div className="p-6 sm:p-8 space-y-6 bg-[#070e1e] text-slate-100 min-h-full">
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/60 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-cyan-400 flex items-center justify-center border border-blue-500/20 shadow-2xs">
               <Users className="w-4 h-4" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">
               Vendor Directory
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 font-normal mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 font-normal mt-1">
             Supplier master records, contact credentials, compliance, and delivery performance metrics
           </p>
         </div>
@@ -258,7 +258,7 @@ export default function VendorMasterPage() {
         <button
           type="button"
           onClick={openCreateModal}
-          className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#141d30] text-white hover:bg-slate-800 active:scale-98 transition shadow-sm cursor-pointer"
+          className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-600/30 active:scale-98 transition cursor-pointer"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Add New Vendor</span>
@@ -266,8 +266,8 @@ export default function VendorMasterPage() {
       </div>
 
       {actionSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{actionSuccess}</span>
         </div>
       )}
@@ -275,9 +275,9 @@ export default function VendorMasterPage() {
       {error && <ErrorAlert message={error} onRetry={fetchVendors} />}
 
       {/* Filter & Search Bar */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)] flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="bg-[#10182f] rounded-2xl p-4 border border-[#1e2a4a] flex flex-col md:flex-row gap-3 items-center justify-between shadow-lg">
         <div className="relative w-full md:w-80">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={search}
@@ -286,7 +286,7 @@ export default function VendorMasterPage() {
               setPagination((p) => ({ ...p, page: 1 }));
             }}
             placeholder="Search vendor name, code, city, GSTIN..."
-            className="w-full bg-[#f8fafc] text-xs text-slate-800 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+            className="w-full bg-[#0a1020] text-xs text-slate-100 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-800 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
           />
         </div>
 
@@ -298,7 +298,7 @@ export default function VendorMasterPage() {
               setCategoryFilter(e.target.value);
               setPagination((p) => ({ ...p, page: 1 }));
             }}
-            className="bg-[#f8fafc] text-xs text-slate-700 px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition cursor-pointer"
+            className="bg-[#0a1020] text-xs text-slate-200 px-3 py-2 rounded-xl border border-slate-800 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition cursor-pointer"
           >
             <option value="">All Categories</option>
             <option value="Raw Materials">Raw Materials</option>
@@ -309,12 +309,12 @@ export default function VendorMasterPage() {
           </select>
 
           {/* Status Filter */}
-          <div className="inline-flex rounded-xl p-0.5 bg-slate-100 border border-slate-200 text-xs font-medium">
+          <div className="inline-flex rounded-xl p-0.5 bg-[#0a1020] border border-slate-800 text-xs font-medium">
             <button
               type="button"
               onClick={() => setStatusFilter("all")}
               className={`px-3 py-1 rounded-lg transition cursor-pointer ${
-                statusFilter === "all" ? "bg-white text-slate-900 font-semibold shadow-2xs" : "text-slate-600 hover:text-slate-900"
+                statusFilter === "all" ? "bg-slate-800 text-cyan-300 font-bold shadow-2xs" : "text-slate-400 hover:text-slate-200"
               }`}
             >
               All
@@ -323,7 +323,7 @@ export default function VendorMasterPage() {
               type="button"
               onClick={() => setStatusFilter("active")}
               className={`px-3 py-1 rounded-lg transition cursor-pointer ${
-                statusFilter === "active" ? "bg-white text-slate-900 font-semibold shadow-2xs" : "text-slate-600 hover:text-slate-900"
+                statusFilter === "active" ? "bg-slate-800 text-emerald-300 font-bold shadow-2xs" : "text-slate-400 hover:text-slate-200"
               }`}
             >
               Active
@@ -332,7 +332,7 @@ export default function VendorMasterPage() {
               type="button"
               onClick={() => setStatusFilter("inactive")}
               className={`px-3 py-1 rounded-lg transition cursor-pointer ${
-                statusFilter === "inactive" ? "bg-white text-slate-900 font-semibold shadow-2xs" : "text-slate-600 hover:text-slate-900"
+                statusFilter === "inactive" ? "bg-slate-800 text-slate-300 font-bold shadow-2xs" : "text-slate-400 hover:text-slate-200"
               }`}
             >
               Inactive
@@ -342,7 +342,7 @@ export default function VendorMasterPage() {
       </div>
 
       {/* Vendors Display: Responsive Cards on Mobile (< 768px), Table on Desktop */}
-      <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)] overflow-hidden">
+      <div className="bg-[#10182f] rounded-2xl border border-[#1e2a4a] overflow-hidden shadow-lg">
         {loading ? (
           <LoadingSkeleton rows={6} />
         ) : vendors.length === 0 ? (
@@ -356,17 +356,17 @@ export default function VendorMasterPage() {
         ) : (
           <>
             {/* Mobile Cards List (< md screens) */}
-            <div className="block md:hidden divide-y divide-slate-100">
+            <div className="block md:hidden divide-y divide-slate-800">
               {vendors.map((vendor) => (
                 <div
                   key={vendor.id}
                   onClick={() => setSelectedVendor(vendor)}
-                  className="p-4 space-y-3 hover:bg-slate-50 transition cursor-pointer"
+                  className="p-4 space-y-3 hover:bg-slate-800/40 transition cursor-pointer"
                 >
                   <div className="flex items-start justify-between">
                     <div>
-                      <span className="font-mono text-xs font-bold text-blue-600 block">{vendor.code}</span>
-                      <h4 className="text-sm font-bold text-slate-900 mt-0.5">{vendor.name}</h4>
+                      <span className="font-mono text-xs font-bold text-cyan-300 block">{vendor.code}</span>
+                      <h4 className="text-sm font-bold text-white mt-0.5">{vendor.name}</h4>
                       {vendor.gstin && (
                         <span className="text-[10px] font-mono text-slate-400 block">GSTIN: {vendor.gstin}</span>
                       )}
@@ -374,53 +374,53 @@ export default function VendorMasterPage() {
                     <StatusBadge status={vendor.isActive ? "ACTIVE" : "INACTIVE"} />
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600 pt-1 border-t border-slate-100/80">
+                  <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-300 pt-1 border-t border-slate-800/80">
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase font-semibold">Category</span>
-                      <span className="font-medium text-slate-800">{vendor.category || "General"}</span>
+                      <span className="font-medium text-slate-200">{vendor.category || "General"}</span>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase font-semibold">Location</span>
-                      <span className="font-medium text-slate-800">{vendor.city || "—"}</span>
+                      <span className="font-medium text-slate-200">{vendor.city || "—"}</span>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase font-semibold">Contact</span>
-                      <span className="font-medium text-slate-800 truncate block">{vendor.contactName || "—"}</span>
+                      <span className="font-medium text-slate-200 truncate block">{vendor.contactName || "—"}</span>
                     </div>
                     <div>
                       <span className="text-slate-400 block text-[10px] uppercase font-semibold">Phone</span>
-                      <span className="font-medium font-mono text-slate-800">{vendor.phone || "—"}</span>
+                      <span className="font-medium font-mono text-slate-200">{vendor.phone || "—"}</span>
                     </div>
                   </div>
 
                   {/* Mobile Actions Bar */}
                   <div
-                    className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-100"
+                    className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <button
                       type="button"
                       onClick={() => setSelectedVendor(vendor)}
-                      className="px-2.5 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg flex items-center space-x-1"
+                      className="px-2.5 py-1.5 text-xs font-medium text-slate-300 bg-slate-800 hover:bg-slate-700 rounded-xl border border-slate-700 flex items-center space-x-1"
                     >
-                      <Eye className="w-3.5 h-3.5 text-slate-500" />
+                      <Eye className="w-3.5 h-3.5 text-slate-400" />
                       <span>View</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => openEditModal(vendor)}
-                      className="px-2.5 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg flex items-center space-x-1"
+                      className="px-2.5 py-1.5 text-xs font-semibold text-cyan-300 bg-cyan-950/40 hover:bg-cyan-900/50 rounded-xl border border-cyan-800/50 flex items-center space-x-1"
                     >
-                      <Edit2 className="w-3.5 h-3.5 text-blue-600" />
+                      <Edit2 className="w-3.5 h-3.5 text-cyan-400" />
                       <span>Edit</span>
                     </button>
                     <button
                       type="button"
                       onClick={() => handleToggleActive(vendor)}
-                      className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg flex items-center space-x-1 ${
+                      className={`px-2.5 py-1.5 text-xs font-semibold rounded-xl border flex items-center space-x-1 ${
                         vendor.isActive
-                          ? "bg-amber-50 text-amber-700 hover:bg-amber-100"
-                          : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+                          ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+                          : "bg-emerald-600/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-600/30"
                       }`}
                     >
                       {vendor.isActive ? (
@@ -438,7 +438,7 @@ export default function VendorMasterPage() {
                     <button
                       type="button"
                       onClick={() => handleDeleteVendor(vendor)}
-                      className="p-1.5 rounded-lg text-rose-500 hover:bg-rose-50 transition"
+                      className="p-1.5 rounded-xl text-rose-400 hover:bg-rose-950/40 border border-transparent hover:border-rose-900/50 transition"
                       title="Permanently Delete Vendor"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -452,7 +452,7 @@ export default function VendorMasterPage() {
             <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/70 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                  <tr className="border-b border-slate-800 bg-[#0b1329] text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                     <th className="py-3 px-4 font-semibold">CODE</th>
                     <th className="py-3 px-4 font-semibold">COMPANY NAME</th>
                     <th className="py-3 px-4 font-semibold">CATEGORY</th>
@@ -464,17 +464,17 @@ export default function VendorMasterPage() {
                     <th className="py-3 px-4 font-semibold text-right">ACTIONS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-800">
                   {vendors.map((vendor) => (
                     <tr
                       key={vendor.id}
-                      className="hover:bg-slate-50/80 transition-colors group cursor-pointer"
+                      className="hover:bg-slate-800/40 transition-colors group cursor-pointer"
                       onClick={() => setSelectedVendor(vendor)}
                     >
-                      <td className="py-3 px-4 font-mono font-semibold text-blue-600">
+                      <td className="py-3 px-4 font-mono font-bold text-cyan-300">
                         {vendor.code}
                       </td>
-                      <td className="py-3 px-4 font-semibold text-slate-900">
+                      <td className="py-3 px-4 font-semibold text-white">
                         <div>{vendor.name}</div>
                         {vendor.gstin && (
                           <div className="text-[10px] font-mono text-slate-400 font-normal">
@@ -482,32 +482,32 @@ export default function VendorMasterPage() {
                           </div>
                         )}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-300">
                         {vendor.category || "General"}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-300">
                         {vendor.city ? `${vendor.city}${vendor.state ? `, ${vendor.state}` : ""}` : "—"}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-300">
                         <div>{vendor.contactName || "—"}</div>
-                        {vendor.phone && <div className="text-[10px] text-slate-400">{vendor.phone}</div>}
+                        {vendor.phone && <div className="text-[10px] text-slate-400 font-mono">{vendor.phone}</div>}
                       </td>
                       <td className="py-3 px-4 text-center font-mono">
                         {vendor.onTimeDeliveryPercent != null ? (
-                          <span className="font-semibold text-slate-700">
+                          <span className="font-semibold text-slate-200">
                             {Number(vendor.onTimeDeliveryPercent).toFixed(1)}%
                           </span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-slate-500">—</span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-center font-mono">
                         {vendor.qualityScore != null ? (
-                          <span className="font-semibold text-slate-700">
+                          <span className="font-semibold text-slate-200">
                             {Number(vendor.qualityScore).toFixed(1)}%
                           </span>
                         ) : (
-                          <span className="text-slate-400">—</span>
+                          <span className="text-slate-500">—</span>
                         )}
                       </td>
                       <td className="py-3 px-4">
@@ -520,7 +520,7 @@ export default function VendorMasterPage() {
                         <button
                           type="button"
                           onClick={() => setSelectedVendor(vendor)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition cursor-pointer"
                           title="View Details"
                         >
                           <Eye className="w-3.5 h-3.5" />
@@ -528,7 +528,7 @@ export default function VendorMasterPage() {
                         <button
                           type="button"
                           onClick={() => openEditModal(vendor)}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-slate-800 transition cursor-pointer"
                           title="Edit Vendor"
                         >
                           <Edit2 className="w-3.5 h-3.5" />
@@ -538,8 +538,8 @@ export default function VendorMasterPage() {
                           onClick={() => handleToggleActive(vendor)}
                           className={`p-1.5 rounded-lg transition cursor-pointer ${
                             vendor.isActive
-                              ? "text-slate-400 hover:text-amber-600 hover:bg-amber-50"
-                              : "text-slate-400 hover:text-emerald-600 hover:bg-emerald-50"
+                              ? "text-slate-400 hover:text-amber-400 hover:bg-slate-800"
+                              : "text-slate-400 hover:text-emerald-400 hover:bg-slate-800"
                           }`}
                           title={vendor.isActive ? "Deactivate Vendor" : "Reactivate Vendor"}
                         >
@@ -552,7 +552,7 @@ export default function VendorMasterPage() {
                         <button
                           type="button"
                           onClick={() => handleDeleteVendor(vendor)}
-                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-slate-800 transition cursor-pointer"
                           title="Permanently Delete Vendor"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -568,7 +568,7 @@ export default function VendorMasterPage() {
 
         {/* Pagination Bar */}
         {pagination.totalPages > 1 && (
-          <div className="p-4 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
+          <div className="p-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-400 bg-[#0b1329]/50">
             <span>
               Showing page {pagination.page} of {pagination.totalPages} ({pagination.total} total vendors)
             </span>
@@ -577,7 +577,7 @@ export default function VendorMasterPage() {
                 type="button"
                 disabled={pagination.page <= 1}
                 onClick={() => setPagination((p) => ({ ...p, page: p.page - 1 }))}
-                className="px-3 py-1 rounded-lg border border-slate-200 disabled:opacity-40 hover:bg-slate-50 transition cursor-pointer"
+                className="px-3 py-1 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 disabled:opacity-30 hover:bg-slate-700 transition cursor-pointer"
               >
                 Previous
               </button>
@@ -585,7 +585,7 @@ export default function VendorMasterPage() {
                 type="button"
                 disabled={pagination.page >= pagination.totalPages}
                 onClick={() => setPagination((p) => ({ ...p, page: p.page + 1 }))}
-                className="px-3 py-1 rounded-lg border border-slate-200 disabled:opacity-40 hover:bg-slate-50 transition cursor-pointer"
+                className="px-3 py-1 rounded-lg border border-slate-700 bg-slate-800 text-slate-200 disabled:opacity-30 hover:bg-slate-700 transition cursor-pointer"
               >
                 Next
               </button>
@@ -596,20 +596,20 @@ export default function VendorMasterPage() {
 
       {/* Detail Drawer */}
       {selectedVendor && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/50 backdrop-blur-2xs transition-all animate-in fade-in">
-          <div className="bg-white w-full max-w-md h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/60 backdrop-blur-2xs transition-all animate-in fade-in">
+          <div className="bg-[#10182f] border-l border-[#1e2a4a] text-slate-100 w-full max-w-md h-full shadow-2xl p-6 overflow-y-auto flex flex-col justify-between animate-in slide-in-from-right duration-200">
             <div>
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 font-bold flex items-center justify-center text-sm shadow-2xs">
+                  <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-cyan-300 font-mono font-bold flex items-center justify-center text-sm border border-blue-500/20 shadow-2xs">
                     {selectedVendor.code.substring(0, 3)}
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-slate-900 leading-tight">
+                    <h3 className="text-base font-bold text-white leading-tight">
                       {selectedVendor.name}
                     </h3>
                     <div className="flex items-center space-x-2 mt-0.5">
-                      <span className="font-mono text-xs text-blue-600 font-semibold">{selectedVendor.code}</span>
+                      <span className="font-mono text-xs text-cyan-300 font-bold">{selectedVendor.code}</span>
                       <StatusBadge status={selectedVendor.isActive ? "ACTIVE" : "INACTIVE"} />
                     </div>
                   </div>
@@ -617,7 +617,7 @@ export default function VendorMasterPage() {
                 <button
                   type="button"
                   onClick={() => setSelectedVendor(null)}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                  className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -625,17 +625,17 @@ export default function VendorMasterPage() {
 
               {/* Performance Cards */}
               <div className="grid grid-cols-2 gap-3 my-5">
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+                <div className="p-3.5 rounded-xl bg-[#0a1020] border border-slate-800">
                   <div className="text-[10px] font-bold text-slate-400 uppercase">On-Time Delivery</div>
-                  <div className="text-lg font-bold text-slate-900 mt-1">
+                  <div className="text-lg font-mono font-bold text-white mt-1">
                     {selectedVendor.onTimeDeliveryPercent != null
                       ? `${Number(selectedVendor.onTimeDeliveryPercent).toFixed(1)}%`
                       : "No data"}
                   </div>
                 </div>
-                <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/70">
+                <div className="p-3.5 rounded-xl bg-[#0a1020] border border-slate-800">
                   <div className="text-[10px] font-bold text-slate-400 uppercase">Quality Score</div>
-                  <div className="text-lg font-bold text-slate-900 mt-1">
+                  <div className="text-lg font-mono font-bold text-white mt-1">
                     {selectedVendor.qualityScore != null
                       ? `${Number(selectedVendor.qualityScore).toFixed(1)}%`
                       : "No data"}
@@ -649,50 +649,50 @@ export default function VendorMasterPage() {
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     Primary Contact
                   </span>
-                  <div className="flex items-center space-x-2 text-slate-700">
+                  <div className="flex items-center space-x-2 text-slate-200">
                     <Users className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="font-medium">{selectedVendor.contactName || "Not assigned"}</span>
                   </div>
                   {selectedVendor.phone && (
-                    <div className="flex items-center space-x-2 text-slate-700">
+                    <div className="flex items-center space-x-2 text-slate-200">
                       <Phone className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                      <span>{selectedVendor.phone}</span>
+                      <span className="font-mono">{selectedVendor.phone}</span>
                     </div>
                   )}
                   {selectedVendor.email && (
-                    <div className="flex items-center space-x-2 text-slate-700">
+                    <div className="flex items-center space-x-2 text-slate-200">
                       <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                       <span>{selectedVendor.email}</span>
                     </div>
                   )}
                 </div>
 
-                <div className="space-y-2 pt-3 border-t border-slate-100">
+                <div className="space-y-2 pt-3 border-t border-slate-800">
                   <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                     Statutory & Payment Terms
                   </span>
-                  <div className="grid grid-cols-2 gap-2 text-slate-700">
+                  <div className="grid grid-cols-2 gap-2 text-slate-200">
                     <div>
                       <span className="text-slate-400 text-[11px] block">GSTIN</span>
-                      <span className="font-mono font-semibold">{selectedVendor.gstin || "—"}</span>
+                      <span className="font-mono font-bold text-cyan-300">{selectedVendor.gstin || "—"}</span>
                     </div>
                     <div>
                       <span className="text-slate-400 text-[11px] block">PAN</span>
-                      <span className="font-mono font-semibold">{selectedVendor.pan || "—"}</span>
+                      <span className="font-mono font-bold text-cyan-300">{selectedVendor.pan || "—"}</span>
                     </div>
                     <div className="col-span-2">
                       <span className="text-slate-400 text-[11px] block">Payment Terms</span>
-                      <span className="font-medium">{selectedVendor.paymentTerms || "Standard 30 Days"}</span>
+                      <span className="font-medium text-slate-200">{selectedVendor.paymentTerms || "Standard 30 Days"}</span>
                     </div>
                   </div>
                 </div>
 
                 {selectedVendor.notes && (
-                  <div className="pt-3 border-t border-slate-100">
+                  <div className="pt-3 border-t border-slate-800">
                     <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
                       Internal Notes
                     </span>
-                    <p className="mt-1 text-slate-600 bg-slate-50 p-2.5 rounded-lg border border-slate-200/60">
+                    <p className="mt-1 text-slate-300 bg-[#0a1020] p-2.5 rounded-lg border border-slate-800">
                       {selectedVendor.notes}
                     </p>
                   </div>
@@ -701,24 +701,24 @@ export default function VendorMasterPage() {
             </div>
 
             {/* Actions */}
-            <div className="pt-4 border-t border-slate-100 flex items-center space-x-2">
+            <div className="pt-4 border-t border-slate-800 flex items-center space-x-2">
               <button
                 type="button"
                 onClick={() => {
                   openEditModal(selectedVendor);
                   setSelectedVendor(null);
                 }}
-                className="flex-1 py-2 px-3 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 transition cursor-pointer text-xs text-center"
+                className="flex-1 py-2 px-3 rounded-xl border border-slate-700 bg-slate-800 text-slate-200 font-semibold hover:bg-slate-700 transition cursor-pointer text-xs text-center"
               >
                 Edit Vendor
               </button>
               <button
                 type="button"
                 onClick={() => handleToggleActive(selectedVendor)}
-                className={`py-2 px-3 rounded-xl font-semibold transition cursor-pointer text-xs ${
+                className={`py-2 px-3 rounded-xl font-semibold transition cursor-pointer text-xs border ${
                   selectedVendor.isActive
-                    ? "bg-amber-50 text-amber-700 border border-amber-200 hover:bg-amber-100"
-                    : "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                    ? "bg-amber-500/10 text-amber-300 border-amber-500/30 hover:bg-amber-500/20"
+                    : "bg-emerald-600/20 text-emerald-300 border-emerald-500/40 hover:bg-emerald-600/30"
                 }`}
               >
                 {selectedVendor.isActive ? "Deactivate" : "Activate"}
@@ -726,7 +726,7 @@ export default function VendorMasterPage() {
               <button
                 type="button"
                 onClick={() => handleDeleteVendor(selectedVendor)}
-                className="py-2 px-3 rounded-xl font-semibold bg-rose-50 text-rose-700 border border-rose-200 hover:bg-rose-100 transition cursor-pointer text-xs"
+                className="py-2 px-3 rounded-xl font-semibold bg-rose-500/10 text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 transition cursor-pointer text-xs"
                 title="Permanently Delete"
               >
                 Delete
@@ -738,23 +738,23 @@ export default function VendorMasterPage() {
 
       {/* Create / Edit Form Modal */}
       {isFormOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-2xs p-4">
-          <div className="bg-white border border-slate-200 w-full max-w-lg rounded-2xl shadow-2xl p-6 text-slate-800 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-2xs p-4">
+          <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-lg rounded-2xl shadow-2xl p-6 text-slate-100 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white">
                 {editingVendor ? `Edit Vendor: ${editingVendor.name}` : "Register New Vendor"}
               </h3>
               <button
                 type="button"
                 onClick={() => setIsFormOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             {formErrors.general && (
-              <div className="mt-3 p-2.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+              <div className="mt-3 p-2.5 rounded-lg bg-rose-950/40 border border-rose-500/40 text-rose-300 text-xs font-medium">
                 {formErrors.general}
               </div>
             )}
@@ -762,8 +762,8 @@ export default function VendorMasterPage() {
             <form onSubmit={handleFormSubmit} className="mt-4 space-y-3.5 text-xs">
               <div className="grid grid-cols-2 gap-3">
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Vendor Code <span className="text-rose-500">*</span>
+                  <label className="block text-slate-300 font-semibold mb-1">
+                    Vendor Code <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -773,18 +773,18 @@ export default function VendorMasterPage() {
                     value={vendorFormData.code}
                     onChange={handleFormFieldChange}
                     placeholder="e.g. VEND-COP-01"
-                    className="w-full bg-[#f8fafc] disabled:bg-slate-100 border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono focus:outline-none focus:ring-1 focus:ring-emerald-500 uppercase"
+                    className="w-full bg-[#0a1020] disabled:opacity-50 border border-slate-800 rounded-xl px-3 py-2 text-cyan-300 font-mono font-bold focus:outline-none focus:border-cyan-500 uppercase"
                   />
-                  {formErrors.code && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.code}</p>}
+                  {formErrors.code && <p className="text-rose-400 text-[11px] mt-0.5">{formErrors.code}</p>}
                 </div>
 
                 <div className="col-span-2 sm:col-span-1">
-                  <label className="block text-slate-700 font-semibold mb-1">Category</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Category</label>
                   <select
                     name="category"
                     value={vendorFormData.category}
                     onChange={handleFormFieldChange}
-                    className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                    className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-200 focus:outline-none focus:border-cyan-500 cursor-pointer"
                   >
                     <option value="Raw Materials">Raw Materials</option>
                     <option value="Bought-Out Parts">Bought-Out Parts</option>
@@ -795,8 +795,8 @@ export default function VendorMasterPage() {
                 </div>
 
                 <div className="col-span-2">
-                  <label className="block text-slate-700 font-semibold mb-1">
-                    Company Name <span className="text-rose-500">*</span>
+                  <label className="block text-slate-300 font-semibold mb-1">
+                    Company Name <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="text"
@@ -805,109 +805,109 @@ export default function VendorMasterPage() {
                     value={vendorFormData.name}
                     onChange={handleFormFieldChange}
                     placeholder="e.g. Yash Metal & Alloys Pvt Ltd"
-                    className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
                   />
-                  {formErrors.name && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.name}</p>}
+                  {formErrors.name && <p className="text-rose-400 text-[11px] mt-0.5">{formErrors.name}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Contact Person</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Contact Person</label>
                   <input
                     type="text"
                     name="contactName"
                     value={vendorFormData.contactName}
                     onChange={handleFormFieldChange}
                     placeholder="e.g. Rajesh Kumar"
-                    className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Phone Number</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Phone Number</label>
                   <input
                     type="tel"
                     name="phone"
                     value={vendorFormData.phone}
                     onChange={handleFormFieldChange}
                     placeholder="e.g. +91 9876543210"
-                    className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Email</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Email</label>
                   <input
                     type="email"
                     name="email"
                     value={vendorFormData.email}
                     onChange={handleFormFieldChange}
                     placeholder="e.g. sales@vendor.com"
-                    className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
                   />
-                  {formErrors.email && <p className="text-rose-500 text-[11px] mt-0.5">{formErrors.email}</p>}
+                  {formErrors.email && <p className="text-rose-400 text-[11px] mt-0.5">{formErrors.email}</p>}
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">City</label>
+                  <label className="block text-slate-300 font-semibold mb-1">City</label>
                   <input
                     type="text"
                     name="city"
                     value={vendorFormData.city}
                     onChange={handleFormFieldChange}
                     placeholder="e.g. Pune"
-                    className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">GSTIN</label>
+                  <label className="block text-slate-300 font-semibold mb-1">GSTIN</label>
                   <input
                     type="text"
                     name="gstin"
                     value={vendorFormData.gstin}
                     onChange={handleFormFieldChange}
                     placeholder="e.g. 27AABCV1234F1Z5"
-                    className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 font-mono uppercase focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-cyan-300 font-mono font-bold uppercase focus:outline-none focus:border-cyan-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-slate-700 font-semibold mb-1">Payment Terms</label>
+                  <label className="block text-slate-300 font-semibold mb-1">Payment Terms</label>
                   <input
                     type="text"
                     name="paymentTerms"
                     value={vendorFormData.paymentTerms}
                     onChange={handleFormFieldChange}
                     placeholder="e.g. Net 30, Advance 50%"
-                    className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                    className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Internal Notes</label>
+                <label className="block text-slate-300 font-semibold mb-1">Internal Notes</label>
                 <textarea
                   name="notes"
                   rows={2}
                   value={vendorFormData.notes}
                   onChange={handleFormFieldChange}
                   placeholder="Notes on delivery reliability, quality certifications, or special agreements..."
-                  className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsFormOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 rounded-xl bg-[#141d30] hover:bg-slate-800 text-white font-semibold transition cursor-pointer shadow-sm disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-md shadow-blue-600/30 transition cursor-pointer disabled:opacity-50"
                 >
                   {submitting ? "Saving..." : editingVendor ? "Update Vendor" : "Create Vendor"}
                 </button>

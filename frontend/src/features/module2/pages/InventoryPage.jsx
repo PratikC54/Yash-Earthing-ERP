@@ -116,27 +116,27 @@ export default function InventoryPage() {
   const lowStockCount = inventoryList.filter((item) => item.isLowStock).length;
 
   return (
-    <div className="p-6 sm:p-8 space-y-6 bg-[#edf1f7] text-slate-800 min-h-full">
+    <div className="p-6 sm:p-8 space-y-6 bg-[#070e1e] text-slate-100 min-h-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/60 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-cyan-400 flex items-center justify-center border border-blue-500/20 shadow-2xs">
               <Box className="w-4 h-4" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">
               Inventory & Material Stock Ledger
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 font-normal mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 font-normal mt-1">
             Physical stock balances, order reservations, derived available stock, and immutable ledger movements
           </p>
         </div>
       </div>
 
       {actionSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{actionSuccess}</span>
         </div>
       )}
@@ -145,58 +145,58 @@ export default function InventoryPage() {
 
       {/* Stock Balance Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+        <div className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
             Total Physical Stock
           </span>
-          <div className="text-2xl font-bold text-slate-900 mt-2 font-mono">
+          <div className="text-2xl font-bold text-white mt-2 font-mono">
             {totalPhysical.toLocaleString()}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Warehouse storage count</span>
+          <span className="text-[11px] text-slate-400 mt-1 block">Warehouse storage count</span>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+        <div className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
             Reserved for Work Orders
           </span>
-          <div className="text-2xl font-bold text-amber-600 mt-2 font-mono">
+          <div className="text-2xl font-bold text-amber-400 mt-2 font-mono">
             {totalReserved.toLocaleString()}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Allocated to production</span>
+          <span className="text-[11px] text-slate-400 mt-1 block">Allocated to production</span>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-blue-200/80 bg-blue-50/20 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
-          <span className="text-[11px] font-bold text-blue-600 uppercase tracking-wider block">
+        <div className="bg-blue-950/40 rounded-2xl p-4 sm:p-5 border border-blue-500/30 shadow-lg">
+          <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block">
             Free Available Stock
           </span>
-          <div className="text-2xl font-bold text-blue-900 mt-2 font-mono">
+          <div className="text-2xl font-bold text-cyan-300 mt-2 font-mono">
             {totalAvailable.toLocaleString()}
           </div>
-          <span className="text-[11px] text-blue-600 font-medium mt-1 block">
+          <span className="text-[11px] text-cyan-400 font-medium mt-1 block">
             Derived: Physical − Reserved
           </span>
         </div>
 
-        <div className="bg-white rounded-2xl p-4 sm:p-5 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)]">
+        <div className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
             Low-Stock Alert Items
           </span>
-          <div className="text-2xl font-bold text-rose-600 mt-2 font-mono">
+          <div className="text-2xl font-bold text-rose-400 mt-2 font-mono">
             {lowStockCount}
           </div>
-          <span className="text-[11px] text-slate-500 mt-1 block">Below configured reorder level</span>
+          <span className="text-[11px] text-slate-400 mt-1 block">Below configured reorder level</span>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex items-center space-x-3 border-b border-slate-200">
+      <div className="flex items-center space-x-3 border-b border-slate-800">
         <button
           type="button"
           onClick={() => setActiveTab("stock")}
           className={`pb-3 text-xs font-bold uppercase tracking-wider transition cursor-pointer border-b-2 ${
             activeTab === "stock"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "border-cyan-400 text-cyan-300"
+              : "border-transparent text-slate-400 hover:text-slate-200"
           }`}
         >
           Stock Balances ({inventoryList.length})
@@ -206,8 +206,8 @@ export default function InventoryPage() {
           onClick={() => setActiveTab("movements")}
           className={`pb-3 text-xs font-bold uppercase tracking-wider transition cursor-pointer border-b-2 ${
             activeTab === "movements"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "border-cyan-400 text-cyan-300"
+              : "border-transparent text-slate-400 hover:text-slate-200"
           }`}
         >
           Movement Ledger History ({movementsList.length})
@@ -215,15 +215,15 @@ export default function InventoryPage() {
       </div>
 
       {/* Search & Filters */}
-      <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)] flex flex-col md:flex-row gap-3 items-center justify-between">
+      <div className="bg-[#10182f] rounded-2xl p-4 border border-[#1e2a4a] flex flex-col md:flex-row gap-3 items-center justify-between shadow-lg">
         <div className="relative w-full md:w-80">
-          <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <Search className="w-3.5 h-3.5 text-slate-500 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             placeholder="Search SKU, product name, category..."
-            className="w-full bg-[#f8fafc] text-xs text-slate-800 placeholder-slate-400 pl-8 pr-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-500 transition"
+            className="w-full bg-[#0a1020] text-xs text-slate-100 placeholder-slate-500 pl-8 pr-3 py-2 rounded-xl border border-slate-800 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition"
           />
         </div>
 
@@ -233,11 +233,11 @@ export default function InventoryPage() {
             onClick={() => setLowStockFilter(!lowStockFilter)}
             className={`inline-flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-semibold border transition cursor-pointer shadow-2xs ${
               lowStockFilter
-                ? "bg-rose-50 border-rose-300 text-rose-700"
-                : "bg-white border-slate-200 text-slate-700 hover:bg-slate-50"
+                ? "bg-rose-500/20 border-rose-500/40 text-rose-300"
+                : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
             }`}
           >
-            <AlertTriangle className="w-3.5 h-3.5" />
+            <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
             <span>Show Low Stock Only ({lowStockCount})</span>
           </button>
         )}
@@ -245,7 +245,7 @@ export default function InventoryPage() {
 
       {/* Tab 1: Stock Balances Table */}
       {activeTab === "stock" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="bg-[#10182f] rounded-2xl border border-[#1e2a4a] shadow-lg overflow-hidden">
           {loading ? (
             <LoadingSkeleton rows={5} />
           ) : inventoryList.length === 0 ? (
@@ -258,7 +258,7 @@ export default function InventoryPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/70 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                  <tr className="border-b border-slate-800 bg-[#0b1329] text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                     <th className="py-3 px-4 font-semibold">SKU / CODE</th>
                     <th className="py-3 px-4 font-semibold">PRODUCT NAME</th>
                     <th className="py-3 px-4 font-semibold">LOCATION</th>
@@ -270,38 +270,38 @@ export default function InventoryPage() {
                     <th className="py-3 px-4 font-semibold text-right">ACTIONS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-800">
                   {inventoryList.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-mono font-semibold text-blue-600">
+                    <tr key={item.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3 px-4 font-mono font-bold text-cyan-300">
                         {item.product?.sku}
                       </td>
-                      <td className="py-3 px-4 font-semibold text-slate-900">
+                      <td className="py-3 px-4 font-semibold text-white">
                         {item.product?.name}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-300">
                         {item.warehouseLocation}
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-800 text-right">
+                      <td className="py-3 px-4 font-mono text-slate-200 text-right">
                         {item.physicalQuantity}
                       </td>
-                      <td className="py-3 px-4 font-mono text-amber-600 text-right">
+                      <td className="py-3 px-4 font-mono text-amber-400 text-right">
                         {item.reservedQuantity}
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-blue-900 text-right">
+                      <td className="py-3 px-4 font-mono font-bold text-cyan-300 text-right">
                         {item.availableQuantity}
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-500 text-right">
+                      <td className="py-3 px-4 font-mono text-slate-400 text-right">
                         {item.reorderLevel}
                       </td>
                       <td className="py-3 px-4">
                         {item.isLowStock ? (
-                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                            <AlertTriangle className="w-3 h-3 text-rose-500" />
+                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-500/10 text-rose-300 border border-rose-500/30">
+                            <AlertTriangle className="w-3 h-3 text-rose-400" />
                             <span>Low Stock</span>
                           </span>
                         ) : (
-                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          <span className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-600/20 text-emerald-300 border border-emerald-500/40">
                             <span>Adequate</span>
                           </span>
                         )}
@@ -310,7 +310,7 @@ export default function InventoryPage() {
                         <button
                           type="button"
                           onClick={() => setAdjustmentModal(item)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 hover:bg-slate-200 font-semibold transition cursor-pointer text-[11px]"
+                          className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 font-semibold transition cursor-pointer text-[11px]"
                         >
                           Manage Stock
                         </button>
@@ -326,7 +326,7 @@ export default function InventoryPage() {
 
       {/* Tab 2: Movement Ledger History */}
       {activeTab === "movements" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="bg-[#10182f] rounded-2xl border border-[#1e2a4a] shadow-lg overflow-hidden">
           {loading ? (
             <LoadingSkeleton rows={5} />
           ) : movementsList.length === 0 ? (
@@ -339,7 +339,7 @@ export default function InventoryPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/70 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                  <tr className="border-b border-slate-800 bg-[#0b1329] text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                     <th className="py-3 px-4 font-semibold">DATE & TIME</th>
                     <th className="py-3 px-4 font-semibold">PRODUCT</th>
                     <th className="py-3 px-4 font-semibold">MOVEMENT TYPE</th>
@@ -348,41 +348,41 @@ export default function InventoryPage() {
                     <th className="py-3 px-4 font-semibold">REFERENCE & NOTES</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-800">
                   {movementsList.map((m) => (
-                    <tr key={m.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 text-slate-600 font-mono text-[11px]">
+                    <tr key={m.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3 px-4 text-slate-400 font-mono text-[11px]">
                         {new Date(m.createdAt).toLocaleString()}
                       </td>
-                      <td className="py-3 px-4 font-semibold text-slate-900">
+                      <td className="py-3 px-4 font-semibold text-white">
                         <div>{m.product?.name}</div>
-                        <span className="font-mono text-[10px] text-slate-400">{m.product?.sku}</span>
+                        <span className="font-mono text-[10px] font-bold text-cyan-300">{m.product?.sku}</span>
                       </td>
                       <td className="py-3 px-4">
                         <span
                           className={`inline-flex items-center space-x-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                             m.movementType === "STOCK_IN"
-                              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                              ? "bg-emerald-600/20 text-emerald-300 border-emerald-500/40"
                               : m.movementType === "RESERVATION"
-                              ? "bg-amber-50 text-amber-700 border-amber-200"
-                              : "bg-blue-50 text-blue-700 border-blue-200"
+                              ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
+                              : "bg-blue-500/10 text-cyan-300 border-blue-500/30"
                           }`}
                         >
                           {m.movementType === "STOCK_IN" ? (
-                            <ArrowDownLeft className="w-3 h-3 text-emerald-600" />
+                            <ArrowDownLeft className="w-3 h-3 text-emerald-400" />
                           ) : (
-                            <ArrowUpRight className="w-3 h-3 text-amber-600" />
+                            <ArrowUpRight className="w-3 h-3 text-amber-400" />
                           )}
                           <span>{m.movementType}</span>
                         </span>
                       </td>
-                      <td className="py-3 px-4 font-mono font-bold text-slate-900 text-right">
+                      <td className="py-3 px-4 font-mono font-bold text-white text-right">
                         {m.movementType === "STOCK_IN" ? `+${Number(m.quantity)}` : `${Number(m.quantity)}`}
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-600">
+                      <td className="py-3 px-4 font-mono font-bold text-cyan-300">
                         {m.batchNumber || "—"}
                       </td>
-                      <td className="py-3 px-4 text-slate-600 max-w-xs truncate">
+                      <td className="py-3 px-4 text-slate-300 max-w-xs truncate">
                         {m.notes || m.referenceType || "—"}
                       </td>
                     </tr>
@@ -396,46 +396,46 @@ export default function InventoryPage() {
 
       {/* Stock Reservation / Adjustment Modal */}
       {adjustmentModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-2xs p-4">
-          <div className="bg-white border border-slate-200 w-full max-w-md rounded-2xl shadow-2xl p-6 text-slate-800 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-2xs p-4">
+          <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-md rounded-2xl shadow-2xl p-6 text-slate-100 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
               <div>
-                <h3 className="text-base font-bold text-slate-900">Stock Allocation & Ledger</h3>
-                <span className="font-mono text-xs text-blue-600">
+                <h3 className="text-base font-bold text-white">Stock Allocation & Ledger</h3>
+                <span className="font-mono text-xs text-cyan-300 font-bold">
                   {adjustmentModal.product?.name} ({adjustmentModal.product?.sku})
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setAdjustmentModal(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
 
             <form onSubmit={handleRecordAdjustment} className="mt-4 space-y-4 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/70 grid grid-cols-2 gap-2 text-center">
+              <div className="p-3 bg-[#0a1020] rounded-xl border border-slate-800 grid grid-cols-2 gap-2 text-center">
                 <div>
                   <span className="text-slate-400 text-[10px] uppercase font-bold block">Physical</span>
-                  <span className="font-mono font-bold text-slate-800 text-sm">
+                  <span className="font-mono font-bold text-white text-sm">
                     {adjustmentModal.physicalQuantity}
                   </span>
                 </div>
                 <div>
-                  <span className="text-blue-600 text-[10px] uppercase font-bold block">Available</span>
-                  <span className="font-mono font-bold text-blue-900 text-sm">
+                  <span className="text-cyan-400 text-[10px] uppercase font-bold block">Available</span>
+                  <span className="font-mono font-bold text-cyan-300 text-sm">
                     {adjustmentModal.availableQuantity}
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Movement Type</label>
+                <label className="block text-slate-300 font-semibold mb-1">Movement Type</label>
                 <select
                   name="movementType"
                   required
-                  className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                  className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 cursor-pointer"
                 >
                   <option value="RESERVATION">Reserve Stock (for Work Order)</option>
                   <option value="RELEASE_RESERVATION">Release Reserved Stock</option>
@@ -444,39 +444,39 @@ export default function InventoryPage() {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Quantity</label>
+                <label className="block text-slate-300 font-semibold mb-1">Quantity</label>
                 <input
                   type="number"
                   name="quantity"
                   min="1"
                   required
                   placeholder="e.g. 50"
-                  className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold"
+                  className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 font-semibold font-mono"
                 />
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Reason / Reference</label>
+                <label className="block text-slate-300 font-semibold mb-1">Reason / Reference</label>
                 <input
                   type="text"
                   name="notes"
                   placeholder="e.g. Work Order #WO-302 allocation"
-                  className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setAdjustmentModal(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submittingAdj}
-                  className="px-5 py-2 rounded-xl bg-[#141d30] hover:bg-slate-800 text-white font-semibold transition cursor-pointer shadow-sm disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-md shadow-blue-600/30 transition cursor-pointer disabled:opacity-50"
                 >
                   {submittingAdj ? "Saving..." : "Record Movement"}
                 </button>

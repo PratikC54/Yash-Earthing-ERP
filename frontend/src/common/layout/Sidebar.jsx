@@ -43,18 +43,18 @@ export default function Sidebar({
   const [searchQuery, setSearchQuery] = useState('')
 
   const sidebarContent = (
-    <aside className="w-64 bg-[#141d30] text-slate-300 flex flex-col h-full border-r border-slate-800/90 select-none shrink-0 transition-all duration-200">
+    <aside className="w-64 bg-gradient-to-b from-[#07162c] to-[#08172e] text-slate-300 flex flex-col h-full border-r border-[#1b2f56] select-none shrink-0 transition-all duration-200">
       {/* Top Branding */}
-      <div className="px-5 py-5 flex items-center justify-between border-b border-slate-800/60">
+      <div className="px-5 py-5 flex items-center justify-between border-b border-[#1b2f56]/60">
         <div className="flex items-center space-x-3">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-900/30">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center shadow-md shadow-blue-600/30">
             <Globe className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="text-white font-bold text-base tracking-tight leading-none">
               Yash ERP
             </div>
-            <div className="text-[9px] font-semibold text-emerald-400 tracking-wider mt-1 uppercase">
+            <div className="text-[9px] font-semibold text-cyan-400 tracking-wider mt-1 uppercase">
               Industrial Earthing Solutions
             </div>
           </div>

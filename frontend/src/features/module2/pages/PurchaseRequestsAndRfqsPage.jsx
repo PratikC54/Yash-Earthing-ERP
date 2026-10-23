@@ -229,19 +229,19 @@ export default function PurchaseRequestsAndRfqsPage() {
   };
 
   return (
-    <div className="p-6 sm:p-8 space-y-6 bg-[#edf1f7] text-slate-800 min-h-full">
+    <div className="p-6 sm:p-8 space-y-6 bg-[#070e1e] text-slate-100 min-h-full">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100/60 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-cyan-400 flex items-center justify-center border border-blue-500/20 shadow-2xs">
               <ShoppingCart className="w-4 h-4" />
             </div>
-            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-tight">
+            <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight leading-tight">
               Requisitions & Sourcing (RFQs)
             </h1>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 font-normal mt-1">
+          <p className="text-xs sm:text-sm text-slate-400 font-normal mt-1">
             Material demand processing, vendor bidding, quote comparative analysis, and award execution
           </p>
         </div>
@@ -250,7 +250,7 @@ export default function PurchaseRequestsAndRfqsPage() {
           <button
             type="button"
             onClick={() => setIsPrModalOpen(true)}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#141d30] text-white hover:bg-slate-800 active:scale-98 transition shadow-sm cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-600/30 active:scale-98 transition cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Create Purchase Request</span>
@@ -259,7 +259,7 @@ export default function PurchaseRequestsAndRfqsPage() {
           <button
             type="button"
             onClick={() => handleCreateRfqFromPr(null)}
-            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-semibold bg-[#141d30] text-white hover:bg-slate-800 active:scale-98 transition shadow-sm cursor-pointer"
+            className="inline-flex items-center space-x-1.5 px-4 py-2 rounded-xl text-xs font-bold bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-md shadow-blue-600/30 active:scale-98 transition cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Create RFQ</span>
@@ -268,8 +268,8 @@ export default function PurchaseRequestsAndRfqsPage() {
       </div>
 
       {actionSuccess && (
-        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center space-x-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           <span>{actionSuccess}</span>
         </div>
       )}
@@ -277,14 +277,14 @@ export default function PurchaseRequestsAndRfqsPage() {
       {error && <ErrorAlert message={error} onRetry={activeTab === "prs" ? fetchPrs : fetchRfqs} />}
 
       {/* Tabs */}
-      <div className="flex items-center space-x-3 border-b border-slate-200">
+      <div className="flex items-center space-x-3 border-b border-slate-800">
         <button
           type="button"
           onClick={() => setActiveTab("prs")}
           className={`pb-3 text-xs font-bold uppercase tracking-wider transition cursor-pointer border-b-2 ${
             activeTab === "prs"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "border-cyan-400 text-cyan-300"
+              : "border-transparent text-slate-400 hover:text-slate-200"
           }`}
         >
           Purchase Requests ({prs.length})
@@ -294,8 +294,8 @@ export default function PurchaseRequestsAndRfqsPage() {
           onClick={() => setActiveTab("rfqs")}
           className={`pb-3 text-xs font-bold uppercase tracking-wider transition cursor-pointer border-b-2 ${
             activeTab === "rfqs"
-              ? "border-blue-600 text-blue-600"
-              : "border-transparent text-slate-500 hover:text-slate-800"
+              ? "border-cyan-400 text-cyan-300"
+              : "border-transparent text-slate-400 hover:text-slate-200"
           }`}
         >
           RFQs & Quotations ({rfqs.length})
@@ -304,7 +304,7 @@ export default function PurchaseRequestsAndRfqsPage() {
 
       {/* Tab 1: Purchase Requisitions */}
       {activeTab === "prs" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="bg-[#10182f] rounded-2xl border border-[#1e2a4a] shadow-lg overflow-hidden">
           {loading ? (
             <LoadingSkeleton rows={5} />
           ) : prs.length === 0 ? (
@@ -319,7 +319,7 @@ export default function PurchaseRequestsAndRfqsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/70 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                  <tr className="border-b border-slate-800 bg-[#0b1329] text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                     <th className="py-3 px-4 font-semibold">REQUEST NO</th>
                     <th className="py-3 px-4 font-semibold">DATE</th>
                     <th className="py-3 px-4 font-semibold">REQUIRED BY</th>
@@ -328,19 +328,19 @@ export default function PurchaseRequestsAndRfqsPage() {
                     <th className="py-3 px-4 font-semibold text-right">ACTIONS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-800">
                   {prs.map((pr) => (
-                    <tr key={pr.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-mono font-semibold text-blue-600">
+                    <tr key={pr.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3 px-4 font-mono font-bold text-cyan-300">
                         {pr.requestNo}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-300">
                         {new Date(pr.createdAt).toLocaleDateString()}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-300">
                         {pr.requiredBy ? new Date(pr.requiredBy).toLocaleDateString() : "Immediate"}
                       </td>
-                      <td className="py-3 px-4 text-slate-700 font-medium">
+                      <td className="py-3 px-4 text-slate-200 font-medium">
                         {pr.items?.length || 0} line items
                       </td>
                       <td className="py-3 px-4">
@@ -351,7 +351,7 @@ export default function PurchaseRequestsAndRfqsPage() {
                           <button
                             type="button"
                             onClick={() => handleUpdatePrStatus(pr.id, "SUBMITTED")}
-                            className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-semibold border border-blue-200/60 hover:bg-blue-100 transition cursor-pointer text-[11px]"
+                            className="px-2.5 py-1 rounded-xl bg-blue-500/10 text-cyan-300 font-semibold border border-blue-500/30 hover:bg-blue-500/20 transition cursor-pointer text-[11px]"
                           >
                             Submit
                           </button>
@@ -361,14 +361,14 @@ export default function PurchaseRequestsAndRfqsPage() {
                             <button
                               type="button"
                               onClick={() => handleUpdatePrStatus(pr.id, "APPROVED")}
-                              className="px-2.5 py-1 rounded-lg bg-emerald-50 text-emerald-700 font-semibold border border-emerald-200/60 hover:bg-emerald-100 transition cursor-pointer text-[11px]"
+                              className="px-2.5 py-1 rounded-xl bg-emerald-600/20 text-emerald-300 font-semibold border border-emerald-500/40 hover:bg-emerald-600/30 transition cursor-pointer text-[11px]"
                             >
                               Approve
                             </button>
                             <button
                               type="button"
                               onClick={() => handleUpdatePrStatus(pr.id, "REJECTED")}
-                              className="px-2.5 py-1 rounded-lg bg-rose-50 text-rose-700 font-semibold border border-rose-200/60 hover:bg-rose-100 transition cursor-pointer text-[11px]"
+                              className="px-2.5 py-1 rounded-xl bg-rose-500/10 text-rose-300 font-semibold border border-rose-500/30 hover:bg-rose-500/20 transition cursor-pointer text-[11px]"
                             >
                               Reject
                             </button>
@@ -378,7 +378,7 @@ export default function PurchaseRequestsAndRfqsPage() {
                           <button
                             type="button"
                             onClick={() => handleCreateRfqFromPr(pr.id)}
-                            className="px-2.5 py-1 rounded-lg bg-[#141d30] text-white font-semibold hover:bg-slate-800 transition cursor-pointer text-[11px]"
+                            className="px-2.5 py-1 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold transition cursor-pointer text-[11px] shadow-sm shadow-blue-600/20"
                           >
                             Generate RFQ
                           </button>
@@ -395,7 +395,7 @@ export default function PurchaseRequestsAndRfqsPage() {
 
       {/* Tab 2: RFQs & Quotations */}
       {activeTab === "rfqs" && (
-        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_10px_rgba(0,0,0,0.03)] overflow-hidden">
+        <div className="bg-[#10182f] rounded-2xl border border-[#1e2a4a] shadow-lg overflow-hidden">
           {loading ? (
             <LoadingSkeleton rows={5} />
           ) : rfqs.length === 0 ? (
@@ -410,7 +410,7 @@ export default function PurchaseRequestsAndRfqsPage() {
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs">
                 <thead>
-                  <tr className="border-b border-slate-100 bg-slate-50/70 text-[10px] font-bold tracking-wider text-slate-400 uppercase">
+                  <tr className="border-b border-slate-800 bg-[#0b1329] text-[10px] font-bold tracking-wider text-slate-400 uppercase">
                     <th className="py-3 px-4 font-semibold">RFQ NUMBER</th>
                     <th className="py-3 px-4 font-semibold">ORIGIN PR</th>
                     <th className="py-3 px-4 font-semibold">DUE DATE</th>
@@ -419,19 +419,19 @@ export default function PurchaseRequestsAndRfqsPage() {
                     <th className="py-3 px-4 font-semibold text-right">ACTIONS</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100">
+                <tbody className="divide-y divide-slate-800">
                   {rfqs.map((rfq) => (
-                    <tr key={rfq.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="py-3 px-4 font-mono font-semibold text-blue-600">
+                    <tr key={rfq.id} className="hover:bg-slate-800/40 transition-colors">
+                      <td className="py-3 px-4 font-mono font-bold text-cyan-300">
                         {rfq.rfqNo}
                       </td>
-                      <td className="py-3 px-4 font-mono text-slate-600">
+                      <td className="py-3 px-4 font-mono font-medium text-slate-300">
                         {rfq.purchaseRequest?.requestNo || "Standalone"}
                       </td>
-                      <td className="py-3 px-4 text-slate-600">
+                      <td className="py-3 px-4 text-slate-300">
                         {rfq.dueAt ? new Date(rfq.dueAt).toLocaleDateString() : "Open"}
                       </td>
-                      <td className="py-3 px-4 text-slate-800 font-semibold">
+                      <td className="py-3 px-4 text-white font-semibold">
                         {rfq._count?.responses || 0} Quotes
                       </td>
                       <td className="py-3 px-4">
@@ -442,7 +442,7 @@ export default function PurchaseRequestsAndRfqsPage() {
                           <button
                             type="button"
                             onClick={() => openQuoteModal(rfq)}
-                            className="px-2.5 py-1 rounded-lg bg-blue-50 text-blue-700 font-semibold border border-blue-200/60 hover:bg-blue-100 transition cursor-pointer text-[11px]"
+                            className="px-2.5 py-1 rounded-xl bg-blue-500/10 text-cyan-300 font-semibold border border-blue-500/30 hover:bg-blue-500/20 transition cursor-pointer text-[11px]"
                           >
                             Log Quote
                           </button>
@@ -451,7 +451,7 @@ export default function PurchaseRequestsAndRfqsPage() {
                           <button
                             type="button"
                             onClick={() => openComparisonModal(rfq.id)}
-                            className="px-2.5 py-1 rounded-lg bg-[#141d30] text-white font-semibold hover:bg-slate-800 transition cursor-pointer text-[11px]"
+                            className="px-2.5 py-1 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold transition cursor-pointer text-[11px]"
                           >
                             Compare & Award
                           </button>
@@ -468,14 +468,14 @@ export default function PurchaseRequestsAndRfqsPage() {
 
       {/* PR Create Modal */}
       {isPrModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-2xs p-4">
-          <div className="bg-white border border-slate-200 w-full max-w-lg rounded-2xl shadow-2xl p-6 text-slate-800 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">Create Purchase Requisition</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-2xs p-4">
+          <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-lg rounded-2xl shadow-2xl p-6 text-slate-100 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white">Create Purchase Requisition</h3>
               <button
                 type="button"
                 onClick={() => setIsPrModalOpen(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -489,23 +489,23 @@ export default function PurchaseRequestsAndRfqsPage() {
               />
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Purpose / Notes</label>
+                <label className="block text-slate-300 font-semibold mb-1">Purpose / Notes</label>
                 <textarea
                   name="notes"
                   rows={2}
                   placeholder="e.g. Earthing electrode production batch #2026-B"
-                  className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                  className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
                 />
               </div>
 
               {/* Items List */}
               <div>
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-slate-700 font-semibold">Material Line Items</label>
+                  <label className="text-slate-300 font-semibold">Material Line Items</label>
                   <button
                     type="button"
                     onClick={() => setPrItems([...prItems, { productId: 1, quantity: 50, notes: "" }])}
-                    className="text-emerald-600 hover:text-emerald-800 font-semibold flex items-center space-x-1"
+                    className="text-cyan-400 hover:text-cyan-300 font-semibold flex items-center space-x-1"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Add Item</span>
@@ -514,9 +514,9 @@ export default function PurchaseRequestsAndRfqsPage() {
 
                 <div className="space-y-2 max-h-48 overflow-y-auto pr-1">
                   {prItems.map((item, idx) => (
-                    <div key={idx} className="flex items-center justify-between space-x-3 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                    <div key={idx} className="flex items-center justify-between space-x-3 bg-[#0a1020] p-2.5 rounded-xl border border-slate-800">
                       <div className="flex-1">
-                        <label className="text-[10px] text-slate-500 block mb-0.5">Product ID</label>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Product ID</label>
                         <input
                           type="number"
                           placeholder="Product ID"
@@ -526,14 +526,14 @@ export default function PurchaseRequestsAndRfqsPage() {
                             copy[idx].productId = Math.max(1, Number(e.target.value) || 1);
                             setPrItems(copy);
                           }}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-2.5 py-1 text-slate-800 font-semibold"
+                          className="w-full bg-[#10182f] border border-slate-700 rounded-lg px-2.5 py-1 text-cyan-300 font-mono font-bold"
                           required
                           min="1"
                         />
                       </div>
 
                       <div className="shrink-0 text-right">
-                        <label className="text-[10px] text-slate-500 block mb-0.5">Quantity</label>
+                        <label className="text-[10px] text-slate-400 block mb-0.5">Quantity</label>
                         <QuantityControl
                           value={item.quantity}
                           min={1}
@@ -550,7 +550,7 @@ export default function PurchaseRequestsAndRfqsPage() {
                           <button
                             type="button"
                             onClick={() => setPrItems(prItems.filter((_, i) => i !== idx))}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-slate-800 rounded-lg transition cursor-pointer"
                             title="Remove item"
                             aria-label="Remove item"
                           >
@@ -563,17 +563,17 @@ export default function PurchaseRequestsAndRfqsPage() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setIsPrModalOpen(false)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#141d30] hover:bg-slate-800 text-white font-semibold transition cursor-pointer shadow-sm"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-md shadow-blue-600/30 transition cursor-pointer"
                 >
                   Submit Requisition
                 </button>
@@ -585,16 +585,16 @@ export default function PurchaseRequestsAndRfqsPage() {
 
       {/* Record Vendor Quotation Modal */}
       {quoteModalRfq && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-2xs p-4">
-          <div className="bg-white border border-slate-200 w-full max-w-lg rounded-2xl shadow-2xl p-6 text-slate-800 animate-in fade-in zoom-in-95">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
-              <h3 className="text-base font-bold text-slate-900">
-                Log Quotation for RFQ: {quoteModalRfq.rfqNo}
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-2xs p-4">
+          <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-lg rounded-2xl shadow-2xl p-6 text-slate-100 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
+              <h3 className="text-base font-bold text-white">
+                Log Quotation for RFQ: <span className="font-mono text-cyan-300">{quoteModalRfq.rfqNo}</span>
               </h3>
               <button
                 type="button"
                 onClick={() => setQuoteModalRfq(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -602,11 +602,11 @@ export default function PurchaseRequestsAndRfqsPage() {
 
             <form onSubmit={handleSubmitQuote} className="mt-4 space-y-4 text-xs">
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Select Quoting Vendor</label>
+                <label className="block text-slate-300 font-semibold mb-1">Select Quoting Vendor</label>
                 <select
                   name="vendorId"
                   required
-                  className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer"
+                  className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 cursor-pointer"
                 >
                   {vendorsList.map((v) => (
                     <option key={v.id} value={v.id}>
@@ -617,20 +617,20 @@ export default function PurchaseRequestsAndRfqsPage() {
               </div>
 
               <div>
-                <label className="block text-slate-700 font-semibold mb-1">Quotation Valid Until</label>
+                <label className="block text-slate-300 font-semibold mb-1">Quotation Valid Until</label>
                 <input
                   type="date"
                   name="validUntil"
-                  className="w-full bg-[#f8fafc] border border-slate-200 rounded-xl px-3 py-2 text-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full bg-[#0a1020] border border-slate-800 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500 [color-scheme:dark]"
                 />
               </div>
 
               {/* Items Pricing */}
               <div>
-                <label className="block text-slate-700 font-semibold mb-2">Item Pricing & Taxes</label>
+                <label className="block text-slate-300 font-semibold mb-2">Item Pricing & Taxes</label>
                 <div className="space-y-2 max-h-48 overflow-y-auto">
                   {quoteItems.map((item, idx) => (
-                    <div key={idx} className="grid grid-cols-3 gap-2 bg-slate-50 p-2.5 rounded-xl border border-slate-200/70">
+                    <div key={idx} className="grid grid-cols-3 gap-2 bg-[#0a1020] p-2.5 rounded-xl border border-slate-800">
                       <div>
                         <span className="text-[10px] text-slate-400 block">Quantity</span>
                         <input
@@ -641,7 +641,7 @@ export default function PurchaseRequestsAndRfqsPage() {
                             copy[idx].quantity = Number(e.target.value);
                             setQuoteItems(copy);
                           }}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1"
+                          className="w-full bg-[#10182f] border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono"
                         />
                       </div>
                       <div>
@@ -654,7 +654,7 @@ export default function PurchaseRequestsAndRfqsPage() {
                             copy[idx].unitPrice = Number(e.target.value);
                             setQuoteItems(copy);
                           }}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1 font-semibold"
+                          className="w-full bg-[#10182f] border border-slate-700 rounded-lg px-2 py-1 font-mono font-bold text-cyan-300"
                         />
                       </div>
                       <div>
@@ -667,7 +667,7 @@ export default function PurchaseRequestsAndRfqsPage() {
                             copy[idx].taxPercent = Number(e.target.value);
                             setQuoteItems(copy);
                           }}
-                          className="w-full bg-white border border-slate-200 rounded-lg px-2 py-1"
+                          className="w-full bg-[#10182f] border border-slate-700 rounded-lg px-2 py-1 text-slate-100 font-mono"
                         />
                       </div>
                     </div>
@@ -675,17 +675,17 @@ export default function PurchaseRequestsAndRfqsPage() {
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-slate-100 flex items-center justify-end space-x-2">
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
                 <button
                   type="button"
                   onClick={() => setQuoteModalRfq(null)}
-                  className="px-4 py-2 rounded-xl border border-slate-200 text-slate-600 hover:bg-slate-50 font-semibold transition cursor-pointer"
+                  className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-[#141d30] hover:bg-slate-800 text-white font-semibold transition cursor-pointer shadow-sm"
+                  className="px-5 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold shadow-md shadow-blue-600/30 transition cursor-pointer"
                 >
                   Save Quotation
                 </button>
@@ -697,21 +697,21 @@ export default function PurchaseRequestsAndRfqsPage() {
 
       {/* Side-by-Side Quotation Comparison & Award Matrix Modal */}
       {comparisonModalRfqId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-2xs p-4">
-          <div className="bg-white border border-slate-200 w-full max-w-4xl rounded-2xl shadow-2xl p-6 text-slate-800 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between pb-3.5 border-b border-slate-100">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-2xs p-4">
+          <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-4xl rounded-2xl shadow-2xl p-6 text-slate-100 animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
               <div>
-                <h3 className="text-base font-bold text-slate-900">
+                <h3 className="text-base font-bold text-white">
                   Quotation Comparison & Sourcing Award
                 </h3>
-                <span className="text-xs text-slate-500 font-mono">
+                <span className="text-xs text-cyan-300 font-mono font-bold">
                   RFQ: {comparisonData?.rfqNo}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => setComparisonModalRfqId(null)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -729,14 +729,14 @@ export default function PurchaseRequestsAndRfqsPage() {
               <div className="mt-5 space-y-5">
                 {/* Lowest bidder highlight */}
                 {comparisonData.lowestBidder && (
-                  <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200/80 flex items-center justify-between text-xs">
+                  <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 flex items-center justify-between text-xs">
                     <div className="flex items-center space-x-2">
-                      <TrendingDown className="w-4 h-4 text-emerald-600" />
-                      <span className="font-semibold text-emerald-900">
+                      <TrendingDown className="w-4 h-4 text-emerald-400" />
+                      <span className="font-semibold text-emerald-300">
                         Lowest Commercial Bid: {comparisonData.lowestBidder.vendorName}
                       </span>
                     </div>
-                    <span className="font-mono font-bold text-emerald-800">
+                    <span className="font-mono font-bold text-emerald-300 text-sm">
                       ₹{comparisonData.lowestBidder.amount.toLocaleString()}
                     </span>
                   </div>
@@ -752,52 +752,52 @@ export default function PurchaseRequestsAndRfqsPage() {
                         key={c.responseId}
                         className={`p-4 rounded-2xl border transition flex flex-col justify-between ${
                           isLowest
-                            ? "bg-blue-50/40 border-blue-300 shadow-sm"
-                            : "bg-white border-slate-200"
+                            ? "bg-blue-950/30 border-blue-500/50 shadow-md shadow-blue-500/10"
+                            : "bg-[#0a1020] border-slate-800"
                         }`}
                       >
                         <div>
                           <div className="flex items-center justify-between mb-2">
-                            <span className="font-bold text-sm text-slate-900">{c.vendorName}</span>
+                            <span className="font-bold text-sm text-white">{c.vendorName}</span>
                             {isLowest && (
-                              <span className="px-2 py-0.5 rounded-md bg-emerald-100 text-emerald-800 font-bold text-[10px]">
+                              <span className="px-2 py-0.5 rounded-md bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 font-bold text-[10px]">
                                 L1 Bidder
                               </span>
                             )}
                           </div>
-                          <span className="font-mono text-xs text-blue-600">{c.vendorCode}</span>
+                          <span className="font-mono text-xs font-bold text-cyan-300">{c.vendorCode}</span>
 
                           {/* Vendor stats */}
-                          <div className="grid grid-cols-2 gap-2 my-3 text-[11px] bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+                          <div className="grid grid-cols-2 gap-2 my-3 text-[11px] bg-[#10182f] p-2.5 rounded-xl border border-slate-800">
                             <div>
                               <span className="text-slate-400 block">On-Time %</span>
-                              <span className="font-semibold">
+                              <span className="font-semibold text-slate-200">
                                 {c.onTimeDeliveryPercent ? `${c.onTimeDeliveryPercent}%` : "—"}
                               </span>
                             </div>
                             <div>
                               <span className="text-slate-400 block">Quality</span>
-                              <span className="font-semibold">
+                              <span className="font-semibold text-slate-200">
                                 {c.qualityScore ? `${c.qualityScore}%` : "—"}
                               </span>
                             </div>
                           </div>
 
                           {/* Line item breakdown */}
-                          <div className="space-y-1.5 text-xs border-t border-slate-100 pt-2">
+                          <div className="space-y-1.5 text-xs border-t border-slate-800 pt-2">
                             {c.items.map((it, idx) => (
-                              <div key={idx} className="flex justify-between text-slate-600 text-[11px]">
+                              <div key={idx} className="flex justify-between text-slate-300 text-[11px]">
                                 <span>{it.quantity} units @ ₹{it.unitPrice}</span>
-                                <span className="font-mono font-medium">₹{it.lineTotal.toLocaleString()}</span>
+                                <span className="font-mono font-medium text-cyan-300">₹{it.lineTotal.toLocaleString()}</span>
                               </div>
                             ))}
                           </div>
                         </div>
 
-                        <div className="mt-4 pt-3 border-t border-slate-200/80 flex items-center justify-between">
+                        <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
                           <div>
                             <span className="text-[10px] text-slate-400 block">Total Quoted</span>
-                            <span className="text-base font-bold text-slate-900 font-mono">
+                            <span className="text-base font-bold text-white font-mono">
                               ₹{c.totalAmount.toLocaleString()}
                             </span>
                           </div>
@@ -806,7 +806,7 @@ export default function PurchaseRequestsAndRfqsPage() {
                             <button
                               type="button"
                               onClick={() => handleAwardRfq(comparisonData.rfqId, c.vendorId)}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs transition cursor-pointer shadow-2xs"
+                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs transition cursor-pointer shadow-md shadow-blue-600/30"
                             >
                               <Award className="w-3.5 h-3.5" />
                               <span>Award PO</span>
