@@ -191,7 +191,7 @@ export default function SmartDataExtractionModal({ isOpen, onClose, onImportSucc
                 onClick={loadSample}
                 className="text-blue-600 hover:text-blue-800 font-bold underline flex items-center space-x-1"
               >
-                <span>✨ Load Pre-filled Sample Data</span>
+                <span>Load Pre-filled Sample Data</span>
               </button>
             </div>
 
@@ -281,7 +281,7 @@ export default function SmartDataExtractionModal({ isOpen, onClose, onImportSucc
                           {row.matchedCustomer ? (
                             <div>
                               <span className="text-emerald-700 font-bold text-[11px]">
-                                ✓ {row.matchedCustomer.name}
+                                Matched: {row.matchedCustomer.name}
                               </span>
                               {row.matchedInvoice && (
                                 <div className="text-[10px] text-blue-600">
@@ -291,11 +291,11 @@ export default function SmartDataExtractionModal({ isOpen, onClose, onImportSucc
                             </div>
                           ) : row.matchedVendor ? (
                             <span className="text-emerald-700 font-bold text-[11px]">
-                              ✓ {row.matchedVendor.name}
+                              Matched: {row.matchedVendor.name}
                             </span>
                           ) : (
                             <span className="text-amber-600 font-semibold text-[10px]">
-                              ⚠ Unmatched (will create advance)
+                              Unmatched (will create advance)
                             </span>
                           )}
                         </td>

@@ -1,12 +1,28 @@
 // Official GST Tax Invoice Generator for Yash Group ERP M6
 export function generateTaxInvoiceHtml(invoice, companyProfile, paymentTerms) {
   const isInterState = invoice.taxType === 'INTER_STATE' || (invoice.placeOfSupply && invoice.placeOfSupply !== companyProfile.stateCode);
-  const now = new Date(invoice.invoiceDate).toLocaleDateString('en-IN', {
-    day: '2-digit', month: 'short', year: 'numeric'
-  });
-  const due = new Date(invoice.dueDate).toLocaleDateString('en-IN', {
-    day: '2-digit', month: 'short', year: 'numeric'
-  });
+  const formatDateStr = (d) => {
+    if (!d) return '—';
+    try {
+      const parts = String(d).split('-');
+      if (parts.length === 3 && parts[0].length === 4) {
+        const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+        const mIdx = parseInt(parts[1], 10) - 1;
+        if (mIdx >= 0 && mIdx < 12) {
+          return `${parts[2]} ${months[mIdx]} ${parts[0]}`;
+        }
+      }
+      const dt = new Date(d);
+      if (!isNaN(dt.getTime())) {
+        return dt.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+      }
+      return String(d);
+    } catch {
+      return String(d);
+    }
+  };
+  const now = formatDateStr(invoice.invoiceDate);
+  const due = formatDateStr(invoice.dueDate);
 
   const itemRows = (invoice.items || []).map((it, idx) => `
     <tr>
@@ -147,7 +163,7 @@ export function generateTaxInvoiceHtml(invoice, companyProfile, paymentTerms) {
       var btn = document.getElementById('dl-btn');
       var originalHtml = btn ? btn.innerHTML : '';
       if (btn) {
-        btn.innerHTML = '⏳ Generating Official GST Tax Invoice PDF...';
+        btn.innerHTML = 'Generating Statutory GST Invoice PDF...';
         btn.style.opacity = '0.7';
         btn.disabled = true;
       }
@@ -163,7 +179,7 @@ export function generateTaxInvoiceHtml(invoice, companyProfile, paymentTerms) {
       if (typeof html2pdf !== 'undefined') {
         html2pdf().set(opt).from(element).save().then(function() {
           if (btn) {
-            btn.innerHTML = '✅ PDF Downloaded (Click to re-download)';
+            btn.innerHTML = 'PDF Downloaded (Click to re-download)';
             btn.style.opacity = '1';
             btn.disabled = false;
           }
@@ -194,14 +210,14 @@ export function generateTaxInvoiceHtml(invoice, companyProfile, paymentTerms) {
   <div class="no-print">
     <div style="display: flex; align-items: center; gap: 10px;">
       <button id="dl-btn" class="download-btn" onclick="downloadInvoicePdf()">
-        ⬇️ Download Official GST Invoice PDF (.PDF)
+        Download Official GST Invoice (.PDF)
       </button>
       <button class="print-btn-secondary" onclick="window.print()">
-        🖨️ Print Invoice (Ctrl+P)
+        Print Statutory Invoice (Ctrl+P)
       </button>
     </div>
     <div style="font-size: 11px; color: #64748b; font-family: monospace;">
-      <span style="color: #059669; font-weight: bold;">● STATUTORY COMPLIANCE:</span> CGST Rules (Rule 46) / GSTIN Validated
+      <span style="color: #059669; font-weight: bold;">STATUTORY COMPLIANCE:</span> CGST Rules (Rule 46) / Standard Tax Invoice
     </div>
   </div>
 
@@ -229,11 +245,11 @@ export function generateTaxInvoiceHtml(invoice, companyProfile, paymentTerms) {
           <div style="font-size: 14px; font-weight: bold; color: #0284c7; font-family: monospace;">
             Invoice No: ${invoice.invoiceNo}
           </div>
-          <div style="font-size: 11px; margin-top: 3px;">
-            <strong>Date:</strong> ${now}
+          <div style="font-size: 12px; margin-top: 4px; color: #0f172a;">
+            <strong>Invoice Date:</strong> <span style="font-family: Arial, sans-serif; font-weight: bold; color: #0f172a;">${now}</span>
           </div>
-          <div style="font-size: 11px; margin-top: 2px; color: #dc2626; font-weight: bold;">
-            <strong>Due Date:</strong> ${due}
+          <div style="font-size: 12px; margin-top: 3px; color: #dc2626;">
+            <strong>Payment Due:</strong> <span style="font-family: Arial, sans-serif; font-weight: bold; color: #dc2626;">${due}</span>
           </div>
           <div style="font-size: 10px; color: #64748b; font-family: monospace; margin-top: 4px;">
             Sales Order: <strong>${invoice.orderNo || 'SO-2026-REF'}</strong><br>

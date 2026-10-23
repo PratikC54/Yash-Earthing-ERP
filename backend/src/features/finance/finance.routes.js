@@ -6,6 +6,11 @@ const router = Router();
 // Dashboard & Critical Actions
 router.get('/dashboard', financeController.getDashboardSummary);
 
+// Unified Customer Billing & Receivables Register
+router.get('/register', financeController.getUnifiedRegister);
+router.patch('/register/:id', financeController.updateUnifiedRegisterItem);
+router.patch('/todos/:id/toggle', financeController.toggleTodoItem);
+
 // Billing Eligibility & Upstream Dispatch
 router.get('/billable', financeController.getBillableOrders);
 
@@ -38,6 +43,7 @@ router.post('/import/ingest', financeController.ingestImportData);
 
 // Costing & Margins (M6.3)
 router.get('/costing', financeController.getJobCosting);
+router.patch('/costing/:id', financeController.updateProfitabilityRegisterItem);
 
 // Admin Configuration
 router.get('/settings', financeController.getSettings);

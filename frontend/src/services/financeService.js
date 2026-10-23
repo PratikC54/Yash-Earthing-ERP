@@ -9,6 +9,22 @@ export const financeService = {
     return res.data;
   },
 
+  // Unified Customer Billing & Receivables Register
+  getUnifiedRegister: async () => {
+    const res = await api.get(`${BASE_URL}/register`);
+    return res.data;
+  },
+
+  updateUnifiedRegisterItem: async (id, updateData) => {
+    const res = await api.patch(`${BASE_URL}/register/${id}`, updateData);
+    return res.data;
+  },
+
+  toggleTodoItem: async (id) => {
+    const res = await api.patch(`${BASE_URL}/todos/${id}/toggle`);
+    return res.data;
+  },
+
   // Billable Orders from Upstream Dispatches
   getBillableOrders: async () => {
     const res = await api.get(`${BASE_URL}/billable`);
@@ -115,6 +131,11 @@ export const financeService = {
 
   ingestImportData: async (importType, rows) => {
     const res = await api.post(`${BASE_URL}/import/ingest`, { importType, rows });
+    return res.data;
+  },
+
+  updateProfitabilityItem: async (id, updateData) => {
+    const res = await api.patch(`${BASE_URL}/costing/${id}`, updateData);
     return res.data;
   }
 };

@@ -89,8 +89,87 @@ export const financeController = {
           unallocatedCredit: totalUnallocatedCredit,
           dsoDays: 28 // Days Sales Outstanding
         },
+        demoKpis: db.demoKpis || {
+          invoiced: 948000,
+          collected: 344000,
+          collectedPercent: 36,
+          receivable: 604000,
+          overdue: 118000,
+          dsoDays: 38
+        },
+        dailyTodos: db.dailyTodos || [],
+        targetAchievement: db.targetAchievement || {
+          collectionsCurrent: 604000,
+          collectionsTarget: 800000,
+          dailyAchievementPercent: 76,
+          weeklyPercent: 80,
+          monthlyPercent: 73
+        },
         criticalActions: criticalActions.slice(0, 8)
       }
+    });
+  },
+
+  // ===================== 1B. UNIFIED CUSTOMER BILLING REGISTER =====================
+  getUnifiedRegister: (req, res) => {
+    const db = financeDb.read();
+    res.status(200).json({
+      success: true,
+      data: db.unifiedRegister || []
+    });
+  },
+
+  updateUnifiedRegisterItem: (req, res) => {
+    const db = financeDb.read();
+    const { id } = req.params;
+    const itemIdx = (db.unifiedRegister || []).findIndex(r => r.id === id || r.orderNo === id);
+    if (itemIdx === -1) {
+      return res.status(404).json({ success: false, message: 'Register item not found.' });
+    }
+
+    const current = db.unifiedRegister[itemIdx];
+    const updated = {
+      ...current,
+      ...req.body
+    };
+
+    // Auto-recalculate balance if invoiceValue or paid changed
+    if (req.body.invoiceValue !== undefined || req.body.paid !== undefined) {
+      const val = Number(updated.invoiceValue) || 0;
+      const pd = Number(updated.paid) || 0;
+      updated.balance = Math.max(0, val - pd);
+      if (updated.balance === 0 && val > 0) {
+        updated.status = 'Paid in Full';
+      } else if (pd > 0 && updated.balance > 0) {
+        updated.status = 'Part Paid';
+      }
+    }
+
+    db.unifiedRegister[itemIdx] = updated;
+    financeDb.write(db);
+    financeDb.logAudit(req.user?.name || "Finance Manager", "UPDATE_REGISTER_ITEM", "Register", id, `Updated register item ${updated.orderNo}`);
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: `Record ${updated.orderNo} updated successfully.`
+    });
+  },
+
+  toggleTodoItem: (req, res) => {
+    const db = financeDb.read();
+    const { id } = req.params;
+    const todo = (db.dailyTodos || []).find(t => t.id === id);
+    if (!todo) {
+      return res.status(404).json({ success: false, message: 'Todo item not found.' });
+    }
+
+    todo.isCompleted = !todo.isCompleted;
+    financeDb.write(db);
+
+    res.status(200).json({
+      success: true,
+      data: todo
     });
   },
 
@@ -699,9 +778,59 @@ export const financeController = {
       };
     });
 
+    if (db.profitabilityRegister && db.profitabilityRegister.length > 0) {
+      return res.status(200).json({
+        success: true,
+        data: db.profitabilityRegister
+      });
+    }
+
     res.status(200).json({
       success: true,
       data: jobResults
+    });
+  },
+
+  updateProfitabilityRegisterItem: (req, res) => {
+    const db = financeDb.read();
+    const { id } = req.params;
+    const list = db.profitabilityRegister || [];
+    const itemIdx = list.findIndex(r => r.id === id || r.orderNo === id);
+    if (itemIdx === -1) {
+      return res.status(404).json({ success: false, message: 'Job costing record not found.' });
+    }
+
+    const current = list[itemIdx];
+    const revenue = req.body.revenue !== undefined ? Math.max(0, Number(req.body.revenue)) : current.revenue;
+    const material = req.body.material !== undefined ? Math.max(0, Number(req.body.material)) : current.material;
+    const production = req.body.production !== undefined ? Math.max(0, Number(req.body.production)) : current.production;
+    const logistics = req.body.logistics !== undefined ? Math.max(0, Number(req.body.logistics)) : current.logistics;
+    const installation = req.body.installation !== undefined ? Math.max(0, Number(req.body.installation)) : current.installation;
+    const totalCost = material + production + logistics + installation;
+    const grossProfit = Math.max(0, revenue - totalCost);
+    const margin = revenue > 0 ? Math.round((grossProfit / revenue) * 100) + '%' : '0%';
+
+    const updated = {
+      ...current,
+      ...req.body,
+      revenue,
+      material,
+      production,
+      logistics,
+      installation,
+      grossProfit,
+      margin
+    };
+
+    list[itemIdx] = updated;
+    db.profitabilityRegister = list;
+    financeDb.write(db);
+    financeDb.logAudit(req.user?.name || "Management", "UPDATE_PROFITABILITY", "ProfitabilityRegister", id, `Updated job costing for ${updated.orderNo} (${updated.customerName})`);
+
+    res.status(200).json({
+      success: true,
+      data: updated,
+      message: `Job costing record ${updated.orderNo} updated successfully.`
     });
   },
 

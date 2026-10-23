@@ -10,7 +10,6 @@ import {
   Printer,
   Download,
   ShieldCheck,
-  ShieldAlert,
   ArrowRight,
   TrendingUp,
   Percent,
@@ -18,7 +17,6 @@ import {
   Building2,
   Calendar,
   AlertCircle,
-  ExternalLink,
   Users,
   Search,
   Filter,
@@ -29,7 +27,8 @@ import {
   Unlock,
   FileDown,
   UploadCloud,
-  X
+  X,
+  ChevronRight
 } from 'lucide-react';
 import { financeService } from '../../services/financeService';
 import GenerateInvoiceModal from './GenerateInvoiceModal';
@@ -46,23 +45,30 @@ export default function FinanceDashboard() {
   const [vendorBills, setVendorBills] = useState([]);
   const [jobCosting, setJobCosting] = useState([]);
   const [settings, setSettings] = useState(null);
+
+  // Search & Filter states for each tab
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
+  const [searchQueryReceipts, setSearchQueryReceipts] = useState('');
+  const [methodFilterReceipts, setMethodFilterReceipts] = useState('ALL');
+  const [searchQueryPayables, setSearchQueryPayables] = useState('');
+  const [statusFilterPayables, setStatusFilterPayables] = useState('ALL');
+  const [searchQueryCosting, setSearchQueryCosting] = useState('');
+  const [statusFilterCosting, setStatusFilterCosting] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Role Simulation State (RBAC)
-  // Options: 'ADMIN' | 'FINANCE_MGR' | 'ACCOUNTS_EXEC' | 'SALES_OWNER' | 'AUDITOR'
+  // Role-Based Access Control (RBAC) - clean SVG icons, ZERO text emojis
   const [currentRole, setCurrentRole] = useState('ADMIN');
 
-  // Modals
+  // Modals state
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [isVendorBillModalOpen, setIsVendorBillModalOpen] = useState(false);
   const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
 
-  // Settings Edit State
+  // Admin Settings live editing form
   const [isEditingSettings, setIsEditingSettings] = useState(false);
   const [companyForm, setCompanyForm] = useState({
     legalName: '',
@@ -117,7 +123,7 @@ export default function FinanceDashboard() {
       }
     } catch (err) {
       console.error('Failed to load finance records:', err);
-      setError('Unable to load finance records from server.');
+      setError('Unable to load finance records from local database.');
     } finally {
       setLoading(false);
     }
@@ -128,7 +134,7 @@ export default function FinanceDashboard() {
     setTimeout(() => setSuccessMsg(''), 4000);
   };
 
-  // PDF Download Trigger
+  // Statutory PDF Download Trigger (Official GST Rule 46 Tax Invoice)
   const handleDownloadInvoicePdf = (invId) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
     window.open(`${baseUrl}/finance/invoices/${invId}/pdf?download=true`, '_blank');
@@ -139,7 +145,7 @@ export default function FinanceDashboard() {
     const isNowDisputed = !inv.isDisputed;
     let reason = '';
     if (isNowDisputed) {
-      reason = prompt('Enter reason for commercial or quality dispute:', inv.disputeReason || 'Rate or dispatch quantity variance under review');
+      reason = prompt('Enter commercial or dispatch reason for dispute:', inv.disputeReason || 'Rate or quantity discrepancy under verification');
       if (reason === null) return;
     }
 
@@ -148,7 +154,7 @@ export default function FinanceDashboard() {
         isDisputed: isNowDisputed,
         disputeReason: isNowDisputed ? reason : null
       });
-      showNotification(`Invoice ${inv.invoiceNo} marked as ${isNowDisputed ? 'DISPUTED' : 'RESOLVED'}.`);
+      showNotification(`Invoice ${inv.invoiceNo} dispute status updated.`);
       loadAllData();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to update invoice.');
@@ -157,15 +163,15 @@ export default function FinanceDashboard() {
 
   const handleCancelInvoice = async (inv) => {
     if (currentRole !== 'ADMIN') {
-      alert('Only Admin users are permitted to cancel or void statutory GST invoices.');
+      alert('Permission Denied: Only Admin users can cancel or void statutory GST invoices.');
       return;
     }
-    const reason = prompt(`Enter cancellation reason for Invoice ${inv.invoiceNo}:`, 'Customer order cancelled / Revised invoice required');
+    const reason = prompt(`Cancellation reason for ${inv.invoiceNo}:`, 'Order revised by client / Re-invoicing required');
     if (!reason) return;
 
     try {
       await financeService.cancelInvoice(inv.id, reason);
-      showNotification(`Invoice ${inv.invoiceNo} cancelled. Order unbilled quantities restored.`);
+      showNotification(`Invoice ${inv.invoiceNo} cancelled. Invoiced quantity restored on sales order.`);
       loadAllData();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to cancel invoice.');
@@ -175,16 +181,16 @@ export default function FinanceDashboard() {
   // ===================== CRUD: RECEIPTS =====================
   const handleDeleteReceipt = async (rec) => {
     if (currentRole !== 'ADMIN') {
-      alert('Only Admin users are permitted to delete or reverse verified payment receipts.');
+      alert('Permission Denied: Only Admin users can delete or reverse verified payment receipts.');
       return;
     }
-    if (!window.confirm(`Are you sure you want to delete receipt ${rec.receiptNo} of ₹${rec.amount.toLocaleString()}? All invoice balances will be restored.`)) {
+    if (!window.confirm(`Reverse receipt ${rec.receiptNo} of ₹${rec.amount.toLocaleString('en-IN')}? Invoice balances will be automatically restored.`)) {
       return;
     }
 
     try {
       await financeService.deleteReceipt(rec.id);
-      showNotification(`Receipt ${rec.receiptNo} deleted and invoice balances restored.`);
+      showNotification(`Receipt ${rec.receiptNo} reversed and invoice balance restored.`);
       loadAllData();
     } catch (err) {
       alert(err.response?.data?.message || 'Failed to delete receipt.');
@@ -204,7 +210,7 @@ export default function FinanceDashboard() {
 
   const handleDeleteVendorBill = async (bill) => {
     if (currentRole !== 'ADMIN') {
-      alert('Only Admin users are permitted to delete vendor bills.');
+      alert('Permission Denied: Only Admin users can delete vendor bills.');
       return;
     }
     if (!window.confirm(`Delete vendor bill ${bill.billNo}?`)) return;
@@ -220,7 +226,7 @@ export default function FinanceDashboard() {
 
   const handlePayVendor = async (billId, amount) => {
     if (currentRole === 'AUDITOR' || currentRole === 'SALES_OWNER') {
-      alert('Access Restricted: Only Finance Manager and Admin can release vendor disbursements.');
+      alert('Permission Denied: Only Finance Manager and Admin can release vendor disbursements.');
       return;
     }
     const ref = prompt('Enter Bank Payment UTR / Transaction Reference:');
@@ -243,7 +249,7 @@ export default function FinanceDashboard() {
   const handleSaveCompanySettings = async (e) => {
     e.preventDefault();
     if (currentRole !== 'ADMIN') {
-      alert('Only Admin users can modify Statutory Company Profile.');
+      alert('Permission Denied: Only Admin users can modify Statutory Company Profile.');
       return;
     }
 
@@ -262,34 +268,23 @@ export default function FinanceDashboard() {
         }
       });
       setIsEditingSettings(false);
-      showNotification('Company Profile and Bank details updated successfully.');
+      showNotification('Company Profile and Bank details saved to local database.');
       loadAllData();
     } catch (err) {
       alert('Failed to update company settings.');
     }
   };
 
-  // ===================== CSV EXPORT ENGINE =====================
-  const exportToCsv = (filename, rows) => {
-    if (!rows || !rows.length) return;
-    const separator = ',';
-    const keys = Object.keys(rows[0]);
-    const csvContent =
-      keys.join(separator) +
-      '\n' +
-      rows
-        .map((row) => {
-          return keys
-            .map((k) => {
-              let cell = row[k] === null || row[k] === undefined ? '' : row[k];
-              cell = cell instanceof Date ? cell.toLocaleString() : cell.toString().replace(/"/g, '""');
-              if (cell.search(/("|,|\n)/g) >= 0) cell = `"${cell}"`;
-              return cell;
-            })
-            .join(separator);
-        })
-        .join('\n');
+  // ===================== EXCEL-SAFE CSV EXPORT (FIXES ######## DATE ISSUE) =====================
+  const exportToExcelSafeCsv = (filename, headers, rowData) => {
+    if (!rowData || !rowData.length) return;
 
+    const csvRows = [
+      headers.join(','),
+      ...rowData.map(r => r.join(','))
+    ];
+
+    const csvContent = csvRows.join('\r\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
@@ -297,58 +292,157 @@ export default function FinanceDashboard() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showNotification(`Exported ${rows.length} records to ${filename}`);
+    showNotification(`Exported ${rowData.length} records to ${filename}`);
   };
 
-  const handleExportInvoices = () => {
-    const rows = filteredInvoices.map((inv) => ({
-      Invoice_No: inv.invoiceNo,
-      Date: inv.invoiceDate,
-      Customer: inv.customerSnapshot?.name,
-      GSTIN: inv.customerSnapshot?.gstin,
-      Place_Of_Supply: inv.placeOfSupply,
-      Order_No: inv.orderNo,
-      PO_No: inv.poNumber,
-      Taxable_Total: inv.taxableTotal,
-      CGST: inv.cgstTotal,
-      SGST: inv.sgstTotal,
-      IGST: inv.igstTotal,
-      Grand_Total: inv.grandTotal,
-      Paid_Amount: inv.paidAmount,
-      Balance_Due: inv.balanceAmount,
-      Due_Date: inv.dueDate,
-      Status: inv.derivedStatus
-    }));
-    exportToCsv(`GST_Invoices_${new Date().toISOString().split('T')[0]}.csv`, rows);
+  const handleExportInvoicesCsv = () => {
+    const headers = [
+      'Invoice_No',
+      'Invoice_Date',
+      'Customer_Name',
+      'Customer_GSTIN',
+      'Place_Of_Supply',
+      'Sales_Order_No',
+      'Customer_PO_No',
+      'Taxable_Value_INR',
+      'CGST_INR',
+      'SGST_INR',
+      'IGST_INR',
+      'Grand_Total_INR',
+      'Paid_Amount_INR',
+      'Balance_Due_INR',
+      'Payment_Due_Date',
+      'Billing_Status'
+    ];
+
+    const rows = filteredInvoices.map(inv => [
+      `"${inv.invoiceNo || ''}"`,
+      // Excel-safe text format: ="" prevents Excel from rendering ##### on date column
+      `="${inv.invoiceDate || ''}"`,
+      `"${(inv.customerSnapshot?.name || '').replace(/"/g, '""')}"`,
+      `"${inv.customerSnapshot?.gstin || ''}"`,
+      `"${inv.placeOfSupply || '27'}"`,
+      `"${inv.orderNo || ''}"`,
+      `"${inv.poNumber || ''}"`,
+      Number(inv.taxableTotal || 0),
+      Number(inv.cgstTotal || 0),
+      Number(inv.sgstTotal || 0),
+      Number(inv.igstTotal || 0),
+      Number(inv.grandTotal || 0),
+      Number(inv.paidAmount || 0),
+      Number(inv.balanceAmount || 0),
+      // Excel-safe text format: ="" prevents Excel from rendering ##### on due date
+      `="${inv.dueDate || ''}"`,
+      `"${inv.derivedStatus || inv.status || 'ISSUED'}"`
+    ]);
+
+    exportToExcelSafeCsv(`GST_Invoices_${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
   };
 
-  const handleExportAgeing = () => {
-    const rows = ageingList.map((ag) => ({
-      Customer: ag.customerName,
-      Current_Not_Due: ag.current,
-      Days_1_30: ag.days1_30,
-      Days_31_60: ag.days31_60,
-      Days_61_90: ag.days61_90,
-      Days_90_Plus: ag.days90Plus,
-      Total_Outstanding: ag.totalOutstanding,
-      Credit_Limit: ag.creditLimit,
-      Headroom: ag.creditLimit - ag.totalOutstanding
-    }));
-    exportToCsv(`Receivables_Ageing_${new Date().toISOString().split('T')[0]}.csv`, rows);
+  const handleExportAgeingCsv = () => {
+    const headers = [
+      'Customer_Name',
+      'Current_Not_Due_INR',
+      'Days_1_30_INR',
+      'Days_31_60_INR',
+      'Days_61_90_INR',
+      'Days_90_Plus_INR',
+      'Total_Outstanding_INR',
+      'Credit_Limit_INR',
+      'Credit_Headroom_INR'
+    ];
+
+    const rows = ageingList.map(ag => [
+      `"${(ag.customerName || '').replace(/"/g, '""')}"`,
+      Number(ag.current || 0),
+      Number(ag.days1_30 || 0),
+      Number(ag.days31_60 || 0),
+      Number(ag.days61_90 || 0),
+      Number(ag.days90Plus || 0),
+      Number(ag.totalOutstanding || 0),
+      Number(ag.creditLimit || 0),
+      Number((ag.creditLimit || 0) - (ag.totalOutstanding || 0))
+    ]);
+
+    exportToExcelSafeCsv(`Receivables_Ageing_${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+  };
+
+  const handleExportVendorBillsCsv = () => {
+    const headers = [
+      'Bill_No',
+      'Bill_Date',
+      'Vendor_Name',
+      'PO_Number',
+      'GRN_Number',
+      'Taxable_Amount_INR',
+      'GST_Amount_INR',
+      'Total_Amount_INR',
+      'Paid_Amount_INR',
+      'Balance_Due_INR',
+      'Due_Date',
+      '3_Way_Match_Status',
+      'Approval_Status'
+    ];
+
+    const rows = filteredVendorBills.map(vb => [
+      `"${vb.billNo || ''}"`,
+      `="${vb.billDate || ''}"`,
+      `"${(vb.vendorName || '').replace(/"/g, '""')}"`,
+      `"${vb.poNumber || ''}"`,
+      `"${vb.grnNumber || ''}"`,
+      Number(vb.taxableAmount || 0),
+      Number(vb.gstAmount || 0),
+      Number(vb.totalAmount || 0),
+      Number(vb.paidAmount || 0),
+      Number(vb.balanceAmount || 0),
+      `="${vb.dueDate || ''}"`,
+      `"${vb.matchResult || 'PENDING'}"`,
+      `"${vb.status || 'DRAFT'}"`
+    ]);
+
+    exportToExcelSafeCsv(`Vendor_Payables_${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+  };
+
+  const handleExportJobCostingCsv = () => {
+    const headers = [
+      'Job_Ref',
+      'Customer_Name',
+      'Taxable_Revenue_INR',
+      'Material_Cost_INR',
+      'Labour_Overheads_INR',
+      'Total_Actual_Cost_INR',
+      'Actual_Gross_Margin_INR',
+      'Gross_Margin_Percent'
+    ];
+
+    const rows = filteredJobCosting.map(jc => [
+      `"${jc.jobRef || ''}"`,
+      `"${(jc.customerName || '').replace(/"/g, '""')}"`,
+      Number(jc.taxableRevenue || 0),
+      Number(jc.materialCost || 0),
+      Number(jc.labourCost || 0),
+      Number(jc.totalCost || 0),
+      Number(jc.grossMargin || 0),
+      canViewMargins ? `"${jc.grossMarginPercent || 0}%"` : '"RESTRICTED"'
+    ]);
+
+    exportToExcelSafeCsv(`Job_Costing_Margins_${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
   };
 
   // Filtered invoices by role & search
-  const filteredInvoices = invoices.filter((inv) => {
-    // If sales owner, only show their accounts (e.g., Tata Power, Adani)
+  const filteredInvoices = invoices.filter(inv => {
     if (currentRole === 'SALES_OWNER') {
-      const allowed = ['cust_tata_power', 'cust_adani_solar'];
+      const allowed = ['cust_tata_power', 'cust_adani_solar', 'cust_suryagrid', 'cust_pragati', 'cust_greenarc'];
       if (!allowed.includes(inv.customerId)) return false;
     }
 
-    const matchesSearch =
-      inv.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      inv.customerSnapshot?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (inv.orderNo && inv.orderNo.toLowerCase().includes(searchQuery.toLowerCase()));
+    const q = searchQuery.toLowerCase().trim();
+    const matchesSearch = !q ||
+      inv.invoiceNo?.toLowerCase().includes(q) ||
+      inv.customerSnapshot?.name?.toLowerCase().includes(q) ||
+      (inv.orderNo && inv.orderNo.toLowerCase().includes(q)) ||
+      (inv.poNumber && inv.poNumber.toLowerCase().includes(q)) ||
+      (inv.customerSnapshot?.gstin && inv.customerSnapshot.gstin.toLowerCase().includes(q));
 
     const matchesStatus =
       statusFilter === 'ALL' ||
@@ -358,17 +452,73 @@ export default function FinanceDashboard() {
     return matchesSearch && matchesStatus;
   });
 
+  // Filtered receipts
+  const filteredReceipts = receipts.filter(rec => {
+    const q = searchQueryReceipts.toLowerCase().trim();
+    const matchesSearch = !q ||
+      rec.receiptNo?.toLowerCase().includes(q) ||
+      rec.referenceNo?.toLowerCase().includes(q) ||
+      rec.customerId?.toLowerCase().includes(q) ||
+      rec.bank?.toLowerCase().includes(q) ||
+      rec.notes?.toLowerCase().includes(q);
+
+    const matchesMethod = methodFilterReceipts === 'ALL' || rec.method === methodFilterReceipts;
+    return matchesSearch && matchesMethod;
+  });
+
+  // Filtered ageing list
+  const filteredAgeing = ageingList.filter(ag => {
+    const q = searchQueryReceipts.toLowerCase().trim();
+    return !q ||
+      ag.customerName?.toLowerCase().includes(q) ||
+      ag.customerId?.toLowerCase().includes(q);
+  });
+
+  // Filtered vendor bills
+  const filteredVendorBills = vendorBills.filter(vb => {
+    const q = searchQueryPayables.toLowerCase().trim();
+    const matchesSearch = !q ||
+      vb.billNo?.toLowerCase().includes(q) ||
+      vb.vendorName?.toLowerCase().includes(q) ||
+      vb.poNumber?.toLowerCase().includes(q) ||
+      vb.grnNumber?.toLowerCase().includes(q);
+
+    const matchesStatus =
+      statusFilterPayables === 'ALL' ||
+      vb.matchResult === statusFilterPayables ||
+      vb.status === statusFilterPayables;
+
+    return matchesSearch && matchesStatus;
+  });
+
+  // Filtered job costing
+  const filteredJobCosting = jobCosting.filter(jc => {
+    const q = searchQueryCosting.toLowerCase().trim();
+    const matchesSearch = !q ||
+      jc.jobRef?.toLowerCase().includes(q) ||
+      jc.customerName?.toLowerCase().includes(q);
+
+    const marginPct = Number(jc.grossMarginPercent) || 0;
+    const matchesStatus =
+      statusFilterCosting === 'ALL' ||
+      (statusFilterCosting === 'HIGH' && marginPct >= 50) ||
+      (statusFilterCosting === 'MEDIUM' && marginPct >= 30 && marginPct < 50) ||
+      (statusFilterCosting === 'LOW' && marginPct < 30);
+
+    return matchesSearch && matchesStatus;
+  });
+
   const kpis = dashboardData?.kpis || {
-    totalRevenue: 383500,
+    totalRevenue: 427500,
     totalReceivables: 184530,
     overdueReceivables: 53550,
     totalPayables: 230100,
-    avgMarginPercent: 70,
+    avgMarginPercent: 73.1,
     unallocatedCredit: 50000,
     dsoDays: 28
   };
 
-  // Role permissions helpers
+  // Role permissions
   const canCreate = currentRole === 'ADMIN' || currentRole === 'FINANCE_MGR' || currentRole === 'ACCOUNTS_EXEC';
   const canDelete = currentRole === 'ADMIN';
   const canViewMargins = currentRole === 'ADMIN' || currentRole === 'FINANCE_MGR';
@@ -377,37 +527,7 @@ export default function FinanceDashboard() {
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
-      {/* Dynamic Role Simulation Header */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg text-white flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="flex items-center space-x-3">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
-            <Users className="w-4 h-4" />
-          </div>
-          <div>
-            <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-              Active User Role Simulation (RBAC Layer)
-            </div>
-            <div className="text-[11px] text-slate-400">
-              Switches permissions, action authorizations, and proprietary cost visibility in real time
-            </div>
-          </div>
-        </div>
 
-        <div className="flex items-center space-x-2">
-          <label className="text-xs font-semibold text-slate-300">Viewing As:</label>
-          <select
-            value={currentRole}
-            onChange={(e) => setCurrentRole(e.target.value)}
-            className="bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-3 py-1.5 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
-          >
-            <option value="ADMIN">👑 Super Admin / HR (Full CRUD & Margins)</option>
-            <option value="FINANCE_MGR">💼 Finance Manager (Anita Deshmukh)</option>
-            <option value="ACCOUNTS_EXEC">📋 Accounts Executive (Pooja Rao)</option>
-            <option value="SALES_OWNER">🤝 Sales Commercial (Vikram Malhotra)</option>
-            <option value="AUDITOR">🔍 Auditor / Tax Inspector (Read-Only)</option>
-          </select>
-        </div>
-      </div>
 
       {/* Success Notification Banner */}
       {successMsg && (
@@ -417,7 +537,7 @@ export default function FinanceDashboard() {
         </div>
       )}
 
-      {/* Module Title Banner & Strategic Handshake Strip */}
+      {/* Module Title Banner & Strategic Handshake Strip (Matching Module 3 UI/UX) */}
       <div className="bg-[#141d30] border border-slate-800 rounded-2xl p-6 shadow-xl text-white">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
@@ -433,20 +553,21 @@ export default function FinanceDashboard() {
               Final operational link in 10-step ERP: GST Invoicing from M1/M2 Dispatches, Receivables Ageing, 3-Way Payables Match & Job Margins.
             </p>
           </div>
+
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setIsExtractModalOpen(true)}
               className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 font-bold rounded-xl text-xs shadow-sm transition flex items-center space-x-1.5"
             >
               <UploadCloud className="w-4 h-4 text-cyan-400" />
-              <span>⚡ Smart Import (CSV/Excel)</span>
+              <span>Smart Import (CSV/Excel)</span>
             </button>
 
             {canCreate && (
               <>
                 <button
                   onClick={() => setIsInvoiceModalOpen(true)}
-                  className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5"
+                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5"
                 >
                   <Plus className="w-4 h-4" />
                   <span>+ Generate Invoice</span>
@@ -464,30 +585,30 @@ export default function FinanceDashboard() {
         </div>
 
         {/* Relational Process Flow Strip */}
-        <div className="mt-5 pt-4 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2 text-xs font-medium">
-          <div className="flex items-center space-x-2 text-blue-400">
-            <span className="w-5 h-5 rounded-full bg-blue-600/30 text-blue-400 flex items-center justify-center font-bold text-[10px]">1</span>
-            <span>Billing Plan & Eligibility (M1/M2)</span>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-600" />
-          <div className="flex items-center space-x-2 text-cyan-400">
-            <span className="w-5 h-5 rounded-full bg-cyan-600/30 text-cyan-400 flex items-center justify-center font-bold text-[10px]">2</span>
-            <span>GST Tax Invoice (CGST/SGST/IGST)</span>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-600" />
-          <div className="flex items-center space-x-2 text-emerald-400">
-            <span className="w-5 h-5 rounded-full bg-emerald-600/30 text-emerald-400 flex items-center justify-center font-bold text-[10px]">3</span>
-            <span>Collections, TDS & Ageing</span>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-600" />
-          <div className="flex items-center space-x-2 text-purple-400">
-            <span className="w-5 h-5 rounded-full bg-purple-600/30 text-purple-400 flex items-center justify-center font-bold text-[10px]">4</span>
-            <span>3-Way Match Payables (M2)</span>
-          </div>
-          <ArrowRight className="w-3.5 h-3.5 text-slate-600" />
-          <div className="flex items-center space-x-2 text-amber-400">
-            <span className="w-5 h-5 rounded-full bg-amber-600/30 text-amber-400 flex items-center justify-center font-bold text-[10px]">5</span>
-            <span>Job Costing & Margins (M3)</span>
+        <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center space-x-3 text-xs overflow-x-auto pb-1">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
+            Workflow Stream:
+          </span>
+          <div className="flex items-center space-x-2 shrink-0">
+            <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-semibold flex items-center space-x-1.5">
+              <span>01. Billing Plan & Eligibility (M1/M2)</span>
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+            <span className="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-semibold flex items-center space-x-1.5">
+              <span>02. GST Tax Invoice (CGST/SGST/IGST)</span>
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+            <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold flex items-center space-x-1.5">
+              <span>03. Collections, TDS & Ageing</span>
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+            <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 font-semibold flex items-center space-x-1.5">
+              <span>04. 3-Way Match Payables (M2)</span>
+            </span>
+            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
+            <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold flex items-center space-x-1.5">
+              <span>05. Job Costing & Margins (M3)</span>
+            </span>
           </div>
         </div>
       </div>
@@ -507,7 +628,7 @@ export default function FinanceDashboard() {
               <div key={act.id} className="p-2.5 bg-white border border-amber-200/80 rounded-lg flex justify-between items-center">
                 <div>
                   <div className="font-bold text-slate-900">{act.title}</div>
-                  <div className="text-[11px] text-slate-500 font-medium">{act.customer} · Amount: <strong className="font-mono text-red-600">₹{act.amount.toLocaleString()}</strong></div>
+                  <div className="text-[11px] text-slate-500 font-medium">{act.customer} · Amount: <strong className="font-mono text-red-600">₹{act.amount.toLocaleString('en-IN')}</strong></div>
                 </div>
                 <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
                   ACTION DUE
@@ -518,67 +639,72 @@ export default function FinanceDashboard() {
         </div>
       )}
 
-      {/* 4 Live Operational KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      {/* 4 Live Operational KPI Cards (Matching Module 3 Card Design) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* KPI 1: Revenue */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-          <div className="flex justify-between items-center text-slate-500 text-xs font-semibold">
-            <span>Taxable Revenue (Net)</span>
-            <TrendingUp className="w-4 h-4 text-blue-600" />
+        <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Taxable Revenue (Net)</div>
+            <div className="text-2xl font-black text-slate-900 mt-1 font-mono">
+              ₹{kpis.totalRevenue.toLocaleString('en-IN')}
+            </div>
+            <div className="text-[11px] text-emerald-600 font-semibold mt-1">Active Billing · Dispatches</div>
           </div>
-          <div className="text-2xl font-extrabold text-slate-900 font-mono">
-            ₹{kpis.totalRevenue.toLocaleString()}
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center font-bold">
+            <TrendingUp className="w-5 h-5" />
           </div>
-          <p className="text-[11px] text-slate-500 flex items-center space-x-1">
-            <span className="text-emerald-600 font-bold">● Active Billing</span>
-            <span>· All delivered dispatches</span>
-          </p>
         </div>
 
         {/* KPI 2: Receivables */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-          <div className="flex justify-between items-center text-slate-500 text-xs font-semibold">
-            <span>Outstanding Receivables</span>
-            <Clock className="w-4 h-4 text-amber-600" />
+        <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Outstanding Receivables</div>
+            <div className="text-2xl font-black text-amber-700 mt-1 font-mono">
+              ₹{kpis.totalReceivables.toLocaleString('en-IN')}
+            </div>
+            <div className="text-[11px] text-red-600 font-semibold mt-1">
+              Overdue: ₹{kpis.overdueReceivables.toLocaleString('en-IN')}
+            </div>
           </div>
-          <div className="text-2xl font-extrabold text-amber-700 font-mono">
-            ₹{kpis.totalReceivables.toLocaleString()}
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center font-bold">
+            <Clock className="w-5 h-5" />
           </div>
-          <p className="text-[11px] text-slate-500">
-            Overdue past terms: <strong className="text-red-600 font-mono">₹{kpis.overdueReceivables.toLocaleString()}</strong>
-          </p>
         </div>
 
         {/* KPI 3: Vendor Payables */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-          <div className="flex justify-between items-center text-slate-500 text-xs font-semibold">
-            <span>Vendor Payables (3-Way)</span>
-            <Building2 className="w-4 h-4 text-purple-600" />
+        <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Vendor Payables (3-Way)</div>
+            <div className="text-2xl font-black text-purple-900 mt-1 font-mono">
+              {canViewPayables ? `₹${kpis.totalPayables.toLocaleString('en-IN')}` : 'RESTRICTED'}
+            </div>
+            <div className="text-[11px] text-blue-600 font-semibold mt-1">
+              Advance: ₹{kpis.unallocatedCredit.toLocaleString('en-IN')}
+            </div>
           </div>
-          <div className="text-2xl font-extrabold text-purple-900 font-mono">
-            {canViewPayables ? `₹${kpis.totalPayables.toLocaleString()}` : '🔒 RESTRICTED'}
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center font-bold">
+            <Building2 className="w-5 h-5" />
           </div>
-          <p className="text-[11px] text-slate-500">
-            Unallocated Client Advance: <strong className="text-blue-600 font-mono">₹{kpis.unallocatedCredit.toLocaleString()}</strong>
-          </p>
         </div>
 
         {/* KPI 4: Job Costing / Margin */}
-        <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
-          <div className="flex justify-between items-center text-slate-500 text-xs font-semibold">
-            <span>Gross Profit Margin</span>
-            <Percent className="w-4 h-4 text-emerald-600" />
+        <div className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-sm flex items-center justify-between">
+          <div>
+            <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Gross Profit Margin</div>
+            <div className="text-2xl font-black text-emerald-700 mt-1 font-mono">
+              {canViewMargins ? `${kpis.avgMarginPercent}%` : 'RESTRICTED'}
+            </div>
+            <div className="text-[11px] text-slate-500 font-medium mt-1">
+              {canViewMargins ? 'BOM Snapshot vs Actuals' : 'Proprietary Costing'}
+            </div>
           </div>
-          <div className="text-2xl font-extrabold text-emerald-700 font-mono">
-            {canViewMargins ? `${kpis.avgMarginPercent}%` : '🔒 RESTRICTED'}
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold">
+            <Percent className="w-5 h-5" />
           </div>
-          <p className="text-[11px] text-slate-500">
-            {canViewMargins ? 'M3 BOM Cost Snapshot vs Actual Ledger' : 'Proprietary Company Costing'}
-          </p>
         </div>
       </div>
 
-      {/* Main Tab Controls */}
+      {/* Main Tab Controls (Exact Module 3 Underlined Tab Design) */}
       <div className="flex border-b border-slate-200 space-x-1 text-xs font-bold overflow-x-auto">
         <button
           onClick={() => setActiveTab('invoices')}
@@ -601,7 +727,7 @@ export default function FinanceDashboard() {
           }`}
         >
           <IndianRupee className="w-4 h-4" />
-          <span>M6.1 Collections & Ageing ({receipts.length})</span>
+          <span>M6.1 Collections & Ageing ({filteredReceipts.length})</span>
         </button>
 
         {canViewPayables && (
@@ -614,7 +740,7 @@ export default function FinanceDashboard() {
             }`}
           >
             <Building2 className="w-4 h-4" />
-            <span>M6.2 Payables & 3-Way Match ({vendorBills.length})</span>
+            <span>M6.2 Payables & 3-Way Match ({filteredVendorBills.length})</span>
           </button>
         )}
 
@@ -627,7 +753,7 @@ export default function FinanceDashboard() {
           }`}
         >
           <Percent className="w-4 h-4" />
-          <span>M6.3 Costing & Job Margins</span>
+          <span>M6.3 Costing & Job Margins ({filteredJobCosting.length})</span>
         </button>
 
         {canViewSettings && (
@@ -678,9 +804,9 @@ export default function FinanceDashboard() {
 
             <div className="flex items-center space-x-2">
               <button
-                onClick={handleExportInvoices}
+                onClick={handleExportInvoicesCsv}
                 className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition flex items-center space-x-1"
-                title="Export filtered invoices to CSV"
+                title="Export complete details to Excel-safe CSV (No ##### on dates)"
               >
                 <FileDown className="w-3.5 h-3.5" />
                 <span>Export CSV</span>
@@ -698,7 +824,7 @@ export default function FinanceDashboard() {
             </div>
           </div>
 
-          {/* Invoices Table with Full CRUD */}
+          {/* Invoices Table */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
@@ -708,10 +834,10 @@ export default function FinanceDashboard() {
                   <th className="py-3 px-3">Order / PO</th>
                   <th className="py-3 px-3">Due Date</th>
                   <th className="py-3 px-3 text-right">Taxable Total</th>
-                  <th className="py-3 px-3 text-right">Grand Total</th>
+                  <th className="py-3 px-3 text-right">Grand Total (inc GST)</th>
                   <th className="py-3 px-3 text-right">Balance Due</th>
                   <th className="py-3 px-3 text-center">Status</th>
-                  <th className="py-3 px-4 text-center">Actions & CRUD</th>
+                  <th className="py-3 px-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -722,7 +848,7 @@ export default function FinanceDashboard() {
                       <div className="text-[10px] text-slate-400 font-normal">{inv.invoiceDate}</div>
                       {inv.isDisputed && (
                         <span className="inline-block mt-0.5 px-1.5 py-0.2 bg-amber-100 text-amber-800 text-[9px] font-bold rounded">
-                          ⚠ Disputed
+                          Disputed
                         </span>
                       )}
                     </td>
@@ -747,14 +873,14 @@ export default function FinanceDashboard() {
                       )}
                     </td>
                     <td className="py-3 px-3 text-right font-mono text-slate-700">
-                      ₹{inv.taxableTotal.toLocaleString()}
+                      ₹{Number(inv.taxableTotal).toLocaleString('en-IN')}
                     </td>
                     <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">
-                      ₹{inv.grandTotal.toLocaleString()}
+                      ₹{Number(inv.grandTotal).toLocaleString('en-IN')}
                     </td>
                     <td className="py-3 px-3 text-right font-mono font-bold">
                       <span className={inv.balanceAmount > 0 ? (inv.isOverdue ? 'text-red-600' : 'text-amber-700') : 'text-emerald-700'}>
-                        ₹{inv.balanceAmount.toLocaleString()}
+                        ₹{Number(inv.balanceAmount).toLocaleString('en-IN')}
                       </span>
                     </td>
                     <td className="py-3 px-3 text-center">
@@ -777,7 +903,7 @@ export default function FinanceDashboard() {
                         <button
                           onClick={() => handleDownloadInvoicePdf(inv.id)}
                           title="Download Statutory GST Tax Invoice (PDF)"
-                          className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded font-bold text-[10px] transition inline-flex items-center space-x-0.5"
+                          className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded font-bold text-[10px] transition inline-flex items-center space-x-1"
                         >
                           <Printer className="w-3 h-3" />
                           <span>PDF</span>
@@ -813,30 +939,62 @@ export default function FinanceDashboard() {
       {/* ==================== TAB 2: RECEIPTS & COLLECTIONS ==================== */}
       {activeTab === 'receipts' && (
         <div className="space-y-6">
+          {/* Action & Filter Toolbar for Tab 2 */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-72">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search customer, receipt no, UTR, bank..."
+                  value={searchQueryReceipts}
+                  onChange={(e) => setSearchQueryReceipts(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <select
+                value={methodFilterReceipts}
+                onChange={(e) => setMethodFilterReceipts(e.target.value)}
+                className="px-3 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 focus:border-blue-500 focus:outline-none font-medium"
+              >
+                <option value="ALL">All Payment Methods</option>
+                <option value="NEFT">NEFT Transfer</option>
+                <option value="RTGS">RTGS Transfer</option>
+                <option value="UPI">UPI Instant</option>
+                <option value="CHEQUE">Bank Cheque</option>
+                <option value="CASH">Cash Deposit</option>
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleExportAgeingCsv}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition flex items-center space-x-1"
+                title="Export complete customer ageing analysis to Excel CSV"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span>Export Ageing</span>
+              </button>
+
+              {canCreate && (
+                <button
+                  onClick={() => setIsReceiptModalOpen(true)}
+                  className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Record Payment</span>
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Customer Ageing Matrix */}
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
             <div className="flex justify-between items-center">
               <div>
                 <h3 className="text-sm font-bold text-slate-900">Customer Receivables Ageing Matrix</h3>
                 <p className="text-xs text-slate-500">Live breakdown of customer debt across statutory ageing periods</p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={handleExportAgeing}
-                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition flex items-center space-x-1"
-                >
-                  <FileDown className="w-3.5 h-3.5" />
-                  <span>Export Ageing</span>
-                </button>
-                {canCreate && (
-                  <button
-                    onClick={() => setIsReceiptModalOpen(true)}
-                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>+ Record Payment</span>
-                  </button>
-                )}
               </div>
             </div>
 
@@ -855,17 +1013,17 @@ export default function FinanceDashboard() {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 font-mono">
-                  {ageingList.map((ag) => (
+                  {filteredAgeing.map((ag) => (
                     <tr key={ag.customerId} className="hover:bg-slate-50">
                       <td className="py-3 px-3 font-sans font-bold text-slate-900">{ag.customerName}</td>
-                      <td className="py-3 px-3 text-right text-slate-700">₹{ag.current.toLocaleString()}</td>
-                      <td className="py-3 px-3 text-right text-amber-700">₹{ag.days1_30.toLocaleString()}</td>
-                      <td className="py-3 px-3 text-right text-orange-700">₹{ag.days31_60.toLocaleString()}</td>
-                      <td className="py-3 px-3 text-right text-rose-700">₹{ag.days61_90.toLocaleString()}</td>
-                      <td className="py-3 px-3 text-right text-red-700 font-bold">₹{ag.days90Plus.toLocaleString()}</td>
-                      <td className="py-3 px-3 text-right font-bold text-slate-900">₹{ag.totalOutstanding.toLocaleString()}</td>
+                      <td className="py-3 px-3 text-right text-slate-700">₹{Number(ag.current).toLocaleString('en-IN')}</td>
+                      <td className="py-3 px-3 text-right text-amber-700">₹{Number(ag.days1_30).toLocaleString('en-IN')}</td>
+                      <td className="py-3 px-3 text-right text-orange-700">₹{Number(ag.days31_60).toLocaleString('en-IN')}</td>
+                      <td className="py-3 px-3 text-right text-rose-700">₹{Number(ag.days61_90).toLocaleString('en-IN')}</td>
+                      <td className="py-3 px-3 text-right text-red-700 font-bold">₹{Number(ag.days90Plus).toLocaleString('en-IN')}</td>
+                      <td className="py-3 px-3 text-right font-bold text-slate-900">₹{Number(ag.totalOutstanding).toLocaleString('en-IN')}</td>
                       <td className="py-3 px-3 text-right text-emerald-700 font-bold">
-                        ₹{(ag.creditLimit - ag.totalOutstanding).toLocaleString()}
+                        ₹{Number(ag.creditLimit - ag.totalOutstanding).toLocaleString('en-IN')}
                       </td>
                     </tr>
                   ))}
@@ -874,7 +1032,7 @@ export default function FinanceDashboard() {
             </div>
           </div>
 
-          {/* Receipt Register Table with Delete CRUD */}
+          {/* Receipt Register Table */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <div className="p-4 border-b border-slate-200 font-bold text-sm text-slate-900">
               Verified Receipt Register (Collections & TDS Logs)
@@ -894,7 +1052,7 @@ export default function FinanceDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-mono">
-                {receipts.map((rec) => (
+                {filteredReceipts.map((rec) => (
                   <tr key={rec.id} className="hover:bg-slate-50">
                     <td className="py-3 px-4 font-bold text-emerald-700">{rec.receiptNo}</td>
                     <td className="py-3 px-4 font-sans font-semibold text-slate-900">
@@ -905,9 +1063,9 @@ export default function FinanceDashboard() {
                       {rec.method} ({rec.bank})
                     </td>
                     <td className="py-3 px-3 text-slate-600">{rec.referenceNo}</td>
-                    <td className="py-3 px-3 text-right font-bold text-slate-900">₹{rec.amount.toLocaleString()}</td>
+                    <td className="py-3 px-3 text-right font-bold text-slate-900">₹{Number(rec.amount).toLocaleString('en-IN')}</td>
                     <td className="py-3 px-3 text-right font-bold text-blue-700">
-                      {rec.unallocatedAmount > 0 ? `₹${rec.unallocatedAmount.toLocaleString()}` : '—'}
+                      {rec.unallocatedAmount > 0 ? `₹${Number(rec.unallocatedAmount).toLocaleString('en-IN')}` : '—'}
                     </td>
                     <td className="py-3 px-3 text-center font-sans">
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
@@ -936,20 +1094,53 @@ export default function FinanceDashboard() {
       {/* ==================== TAB 3: PAYABLES & VENDOR BILLS ==================== */}
       {activeTab === 'payables' && canViewPayables && (
         <div className="space-y-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Vendor Bills & 3-Way Match Registry</h2>
-              <p className="text-xs text-slate-500">Cross-verified against M2 PO quantities and GRN inspection reports</p>
-            </div>
-            {canCreate && (
-              <button
-                onClick={() => setIsVendorBillModalOpen(true)}
-                className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
+          {/* Action & Filter Toolbar for Tab 3 */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-72">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search vendor, bill no, PO, GRN..."
+                  value={searchQueryPayables}
+                  onChange={(e) => setSearchQueryPayables(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <select
+                value={statusFilterPayables}
+                onChange={(e) => setStatusFilterPayables(e.target.value)}
+                className="px-3 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 focus:border-blue-500 focus:outline-none font-medium"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Enter Vendor Bill</span>
+                <option value="ALL">All Match Statuses</option>
+                <option value="MATCHED">Matched (3-Way Verified)</option>
+                <option value="MISMATCH">Price / Qty Mismatch</option>
+                <option value="PENDING_VERIFICATION">Pending Verification</option>
+                <option value="APPROVED">Approved for Payment</option>
+              </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleExportVendorBillsCsv}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition flex items-center space-x-1"
+                title="Export complete vendor payables to Excel CSV"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span>Export Payables</span>
               </button>
-            )}
+
+              {canCreate && (
+                <button
+                  onClick={() => setIsVendorBillModalOpen(true)}
+                  className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Enter Vendor Bill</span>
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -963,11 +1154,11 @@ export default function FinanceDashboard() {
                   <th className="py-3 px-3 text-right">Balance Due</th>
                   <th className="py-3 px-3 text-center">3-Way Match</th>
                   <th className="py-3 px-3 text-center">Status</th>
-                  <th className="py-3 px-4 text-center">Action & CRUD</th>
+                  <th className="py-3 px-4 text-center">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {vendorBills.map((vb) => (
+                {filteredVendorBills.map((vb) => (
                   <tr key={vb.id} className="hover:bg-slate-50">
                     <td className="py-3 px-4">
                       <div className="font-bold text-slate-900">{vb.vendorName}</div>
@@ -978,8 +1169,8 @@ export default function FinanceDashboard() {
                       <div className="text-[10px] text-slate-400">{vb.grnNumber}</div>
                     </td>
                     <td className="py-3 px-3 font-mono text-slate-700">{vb.dueDate}</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">₹{vb.totalAmount.toLocaleString()}</td>
-                    <td className="py-3 px-3 text-right font-mono font-bold text-red-600">₹{vb.balanceAmount.toLocaleString()}</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">₹{Number(vb.totalAmount).toLocaleString('en-IN')}</td>
+                    <td className="py-3 px-3 text-right font-mono font-bold text-red-600">₹{Number(vb.balanceAmount).toLocaleString('en-IN')}</td>
                     <td className="py-3 px-3 text-center">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
                         vb.matchResult === 'MATCHED'
@@ -1035,17 +1226,49 @@ export default function FinanceDashboard() {
       {/* ==================== TAB 4: JOB COSTING & MARGINS ==================== */}
       {activeTab === 'costing' && (
         <div className="space-y-4">
-          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
-            <div>
-              <h2 className="text-sm font-bold text-slate-900">Job Costing & Gross Margin Analysis (M6.3 Handshake)</h2>
-              <p className="text-xs text-slate-500">Cross-compares M3 released BOM frozen cost against live production issues and expenses</p>
+          {/* Action & Filter Toolbar for Tab 4 */}
+          <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3 w-full md:w-auto">
+              <div className="relative flex-1 md:w-72">
+                <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search job ref, customer entity..."
+                  value={searchQueryCosting}
+                  onChange={(e) => setSearchQueryCosting(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                />
+              </div>
+
+              <select
+                value={statusFilterCosting}
+                onChange={(e) => setStatusFilterCosting(e.target.value)}
+                className="px-3 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 focus:border-blue-500 focus:outline-none font-medium"
+              >
+                <option value="ALL">All Profit Margins</option>
+                <option value="HIGH">High Margin (&ge; 50%)</option>
+                <option value="MEDIUM">Target Margin (30%–49%)</option>
+                <option value="LOW">Low Margin (&lt; 30%)</option>
+              </select>
             </div>
-            {!canViewMargins && (
-              <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg flex items-center space-x-1">
-                <Lock className="w-3.5 h-3.5" />
-                <span>Proprietary Costing Hidden</span>
-              </span>
-            )}
+
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={handleExportJobCostingCsv}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition flex items-center space-x-1"
+                title="Export complete job costing and margins to Excel CSV"
+              >
+                <FileDown className="w-3.5 h-3.5" />
+                <span>Export Costing</span>
+              </button>
+
+              {!canViewMargins && (
+                <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg flex items-center space-x-1">
+                  <Lock className="w-3.5 h-3.5" />
+                  <span>Proprietary Costing Hidden</span>
+                </span>
+              )}
+            </div>
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -1063,22 +1286,22 @@ export default function FinanceDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-mono">
-                {jobCosting.map((jc) => (
+                {filteredJobCosting.map((jc) => (
                   <tr key={jc.jobRef} className="hover:bg-slate-50">
                     <td className="py-3.5 px-4 font-bold text-blue-700">{jc.jobRef}</td>
                     <td className="py-3.5 px-4 font-sans font-semibold text-slate-900">{jc.customerName}</td>
-                    <td className="py-3.5 px-3 text-right font-bold text-slate-900">₹{jc.taxableRevenue.toLocaleString()}</td>
+                    <td className="py-3.5 px-3 text-right font-bold text-slate-900">₹{Number(jc.taxableRevenue).toLocaleString('en-IN')}</td>
                     <td className="py-3.5 px-3 text-right text-slate-700">
-                      {canViewMargins ? `₹${jc.materialCost.toLocaleString()}` : '***'}
+                      {canViewMargins ? `₹${Number(jc.materialCost).toLocaleString('en-IN')}` : '***'}
                     </td>
                     <td className="py-3.5 px-3 text-right text-slate-700">
-                      {canViewMargins ? `₹${(jc.labourCost + jc.expenseCost).toLocaleString()}` : '***'}
+                      {canViewMargins ? `₹${Number(jc.labourCost + jc.expenseCost).toLocaleString('en-IN')}` : '***'}
                     </td>
                     <td className="py-3.5 px-3 text-right font-bold text-purple-900">
-                      {canViewMargins ? `₹${jc.totalActualCost.toLocaleString()}` : '***'}
+                      {canViewMargins ? `₹${Number(jc.totalActualCost).toLocaleString('en-IN')}` : '***'}
                     </td>
                     <td className="py-3.5 px-3 text-right font-bold text-emerald-700">
-                      {canViewMargins ? `₹${jc.grossMargin.toLocaleString()}` : '🔒 RESTRICTED'}
+                      {canViewMargins ? `₹${Number(jc.grossMargin).toLocaleString('en-IN')}` : 'RESTRICTED'}
                     </td>
                     <td className="py-3.5 px-3 text-center font-sans">
                       {canViewMargins ? (

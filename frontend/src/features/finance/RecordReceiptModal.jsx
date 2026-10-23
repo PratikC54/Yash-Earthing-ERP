@@ -239,7 +239,7 @@ export default function RecordReceiptModal({ isOpen, onClose, onReceiptRecorded,
                 onClick={handleAutoAllocate}
                 className="text-xs font-bold text-blue-600 hover:text-blue-700"
               >
-                ⚡ Auto-Allocate FIFO
+                Auto-Allocate FIFO
               </button>
             </div>
 

@@ -232,7 +232,7 @@ export default function GenerateInvoiceModal({ isOpen, onClose, onInvoiceCreated
                             value={it.qty}
                             onChange={(e) => handleQtyChange(idx, e.target.value)}
                             disabled={selectedOrder.hasOpenQcHold}
-                            className="w-20 px-2 py-1 text-center font-mono font-bold border border-slate-300 rounded-md focus:border-blue-500 focus:outline-none"
+                            className="w-20 px-2 py-1 text-center font-mono font-bold bg-white text-slate-900 border border-slate-300 rounded-md focus:bg-white focus:text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none"
                           />
                         </td>
                         <td className="py-3 px-2 text-right font-mono text-slate-700">₹{it.rate}</td>
@@ -255,12 +255,12 @@ export default function GenerateInvoiceModal({ isOpen, onClose, onInvoiceCreated
                 <select
                   value={paymentTermsId}
                   onChange={(e) => setPaymentTermsId(e.target.value)}
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none font-medium"
+                  className="w-full px-3 py-2 text-xs bg-white text-slate-900 border border-slate-300 rounded-lg font-bold focus:bg-white focus:text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none"
                 >
-                  <option value="term_net30">Net 30 Days (Standard Commercial)</option>
-                  <option value="term_net15">Net 15 Days (EPC Solar Standard)</option>
-                  <option value="term_advance">100% Advance Payment</option>
-                  <option value="term_milestone">Milestone: 40% Adv / 50% Dispatch / 10% Testing</option>
+                  <option value="term_net30" className="text-slate-900">Net 30 Days (Standard Commercial)</option>
+                  <option value="term_net15" className="text-slate-900">Net 15 Days (EPC Solar Standard)</option>
+                  <option value="term_advance" className="text-slate-900">100% Advance Payment</option>
+                  <option value="term_milestone" className="text-slate-900">Milestone: 40% Adv / 50% Dispatch / 10% Testing</option>
                 </select>
               </div>
 
@@ -271,7 +271,7 @@ export default function GenerateInvoiceModal({ isOpen, onClose, onInvoiceCreated
                   value={poNumber}
                   onChange={(e) => setPoNumber(e.target.value)}
                   placeholder="e.g. PO-TP-2026-8819"
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none font-mono"
+                  className="w-full px-3 py-2 text-xs bg-white text-slate-900 border border-slate-300 placeholder:text-slate-500 font-mono font-bold focus:bg-white focus:text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none"
                 />
               </div>
 
@@ -282,7 +282,7 @@ export default function GenerateInvoiceModal({ isOpen, onClose, onInvoiceCreated
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="LR No / Vehicle No / Delivery site notes"
-                  className="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full px-3 py-2 text-xs bg-white text-slate-900 border border-slate-300 placeholder:text-slate-500 font-medium focus:bg-white focus:text-slate-900 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none"
                 />
               </div>
             </div>
