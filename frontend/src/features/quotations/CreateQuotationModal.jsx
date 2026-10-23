@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { X, Plus, Trash2, FileText, AlertCircle, Percent, Truck } from "lucide-react";
+import { engineeringService } from "../../services/engineeringService";
 
 const CATALOG_PRODUCTS = [
   {
@@ -77,6 +78,7 @@ const STANDARD_DELIVERY_TERMS = [
 
 export default function CreateQuotationModal({ isOpen, onClose, leads = [], onSubmit }) {
   const [selectedLeadId, setSelectedLeadId] = useState(() => leads[0]?.id || "");
+  const [catalogProducts, setCatalogProducts] = useState(CATALOG_PRODUCTS);
   const [items, setItems] = useState([
     {
       productId: 1,
@@ -88,6 +90,40 @@ export default function CreateQuotationModal({ isOpen, onClose, leads = [], onSu
       gstPercent: 18,
     },
   ]);
+
+  // Dynamically load active catalog products from Module 3 (Engineering Master)
+  useEffect(() => {
+    if (!isOpen) return;
+    let isMounted = true;
+    engineeringService
+      .getProducts()
+      .then((res) => {
+        const prods = res?.products || res?.data || (Array.isArray(res) ? res : []);
+        if (isMounted && prods.length > 0) {
+          const finished = prods.filter(
+            (p) => p.status !== "ARCHIVED" && p.itemType !== "RAW_MATERIAL"
+          );
+          if (finished.length > 0) {
+            setCatalogProducts(
+              finished.map((p) => ({
+                productId: p.id,
+                sku: p.sku,
+                name: p.name,
+                description: p.description || p.material || p.name,
+                rate: Number(p.rate) || 2000,
+                gstPercent: Number(p.gstPercent) || 18,
+              }))
+            );
+          }
+        }
+      })
+      .catch((err) => {
+        console.warn("Using fallback catalog products:", err);
+      });
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen]);
 
   // Discount configuration with presets
   const [discountType, setDiscountType] = useState("PERCENT_0"); // PERCENT_0, PERCENT_2, PERCENT_5, PERCENT_10, PERCENT_15, CUSTOM
@@ -138,7 +174,7 @@ export default function CreateQuotationModal({ isOpen, onClose, leads = [], onSu
   const grandTotal = taxable + cgst + sgst;
 
   const handleAddItem = () => {
-    const nextProd = CATALOG_PRODUCTS[1] || CATALOG_PRODUCTS[0];
+    const nextProd = catalogProducts[1] || catalogProducts[0];
     setItems((prev) => [
       ...prev,
       {
@@ -160,7 +196,7 @@ export default function CreateQuotationModal({ isOpen, onClose, leads = [], onSu
   };
 
   const handleProductSelect = (index, prodSku) => {
-    const selected = CATALOG_PRODUCTS.find((p) => p.sku === prodSku);
+    const selected = catalogProducts.find((p) => p.sku === prodSku);
     if (!selected) return;
     setItems((prev) =>
       prev.map((it, idx) =>
@@ -304,7 +340,7 @@ export default function CreateQuotationModal({ isOpen, onClose, leads = [], onSu
                       onChange={(e) => handleProductSelect(idx, e.target.value)}
                       className="w-full bg-[#10182f] text-cyan-300 font-bold text-xs px-2.5 py-1.5 rounded-lg border border-slate-700 focus:outline-none focus:border-cyan-400"
                     >
-                      {CATALOG_PRODUCTS.map((prod) => (
+                      {catalogProducts.map((prod) => (
                         <option key={prod.sku} value={prod.sku}>
                           {prod.name} (₹{prod.rate.toLocaleString("en-IN")})
                         </option>
