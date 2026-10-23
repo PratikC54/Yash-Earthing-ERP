@@ -22,16 +22,16 @@ export default function QuotationsPage({ onNavigateToOrders }) {
   const fetchQuotationsAndLeads = useCallback(async () => {
     setLoading(true);
     try {
-      const [quoteRes, leadsRes] = await Promise.all([
+      const [quoteRes, leadsRes] = await Promise.allSettled([
         module1Service.getQuotations({ search: searchQuery, status: statusFilter }),
         module1Service.getLeads({ limit: 100 }),
       ]);
 
-      if (quoteRes?.success && quoteRes?.data?.quotations) {
-        setQuotations(quoteRes.data.quotations);
+      if (quoteRes.status === "fulfilled" && quoteRes.value?.success && quoteRes.value?.data?.quotations) {
+        setQuotations(quoteRes.value.data.quotations);
       }
-      if (leadsRes?.success && leadsRes?.data?.leads) {
-        setLeads(leadsRes.data.leads);
+      if (leadsRes.status === "fulfilled" && leadsRes.value?.success && leadsRes.value?.data?.leads) {
+        setLeads(leadsRes.value.data.leads);
       }
     } catch (err) {
       console.error("Failed to fetch quotations:", err);
@@ -56,7 +56,10 @@ export default function QuotationsPage({ onNavigateToOrders }) {
       }
     } catch (err) {
       console.error("Create quotation failed:", err);
-      alert(err.response?.data?.message || "Failed to create quotation");
+      const friendlyMsg =
+        err.response?.data?.message ||
+        "Failed to prepare quotation. Please verify that this lead does not already have an active quotation.";
+      alert(friendlyMsg);
     }
   };
 
@@ -67,10 +70,11 @@ export default function QuotationsPage({ onNavigateToOrders }) {
       if (res?.success) {
         fetchQuotationsAndLeads();
         setSelectedQuotation(res.data);
-        alert(res.message);
+        alert(res.message || "Quotation revised successfully with negotiated terms.");
       }
     } catch (err) {
       console.error("Revise quotation failed:", err);
+      alert(err.response?.data?.message || "Failed to revise quotation. Please check the values entered.");
     }
   };
 
@@ -81,14 +85,15 @@ export default function QuotationsPage({ onNavigateToOrders }) {
       if (res?.success) {
         fetchQuotationsAndLeads();
         setSelectedQuotation(res.data);
-        alert(res.message);
+        alert(res.message || "Quotation confirmed and finalized as Proforma Invoice (PI).");
       }
     } catch (err) {
       console.error("Finalize PI failed:", err);
+      alert(err.response?.data?.message || "Failed to finalize Proforma Invoice.");
     }
   };
 
-  // Record Customer PO
+  // Issue Customer PO
   const handleIssueCustomerPOSubmit = async (quotationId, poData) => {
     try {
       const res = await module1Service.issueCustomerPO(quotationId, poData);
@@ -107,6 +112,7 @@ export default function QuotationsPage({ onNavigateToOrders }) {
       }
     } catch (err) {
       console.error("Issue Customer PO error:", err);
+      alert(err.response?.data?.message || "Failed to record Customer Purchase Order.");
     }
   };
 
@@ -302,8 +308,12 @@ export default function QuotationsPage({ onNavigateToOrders }) {
                     </td>
 
                     <td className="py-3 px-4 text-slate-300">
-                      <div>{q.preparedBy || "Back Officer"}</div>
-                      <div className="text-[10px] text-slate-500">BACK_OFFICER</div>
+                      <div className="font-semibold text-white">{q.preparedBy?.split("(")[0]?.trim() || "Back Officer"}</div>
+                      <div className="text-[10px] text-cyan-400 font-mono">
+                        {q.preparedBy?.includes("(")
+                          ? q.preparedBy.split("(")[1]?.replace(")", "")
+                          : "BACK_OFFICER"}
+                      </div>
                     </td>
 
                     <td className="py-3 px-4">
