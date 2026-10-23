@@ -313,7 +313,7 @@ export default function CreateQuotationModal({ isOpen, onClose, leads = [], onSu
                   </div>
 
                   {/* Description / Spec */}
-                  <div className="sm:col-span-4">
+                  <div className="sm:col-span-3">
                     <label className="block text-[10px] text-slate-400 mb-1">Description / Spec</label>
                     <input
                       type="text"
@@ -335,8 +335,8 @@ export default function CreateQuotationModal({ isOpen, onClose, leads = [], onSu
                     />
                   </div>
 
-                  {/* Rate (₹) (min 0, no negative) */}
-                  <div className="sm:col-span-1">
+                  {/* Rate (₹) (min 0, no negative, expanded width) */}
+                  <div className="sm:col-span-2">
                     <label className="block text-[10px] text-slate-400 mb-1">Rate (₹)</label>
                     <input
                       type="number"
