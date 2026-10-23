@@ -3,7 +3,6 @@ import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import { initialNavSections, currentUser as defaultUser } from '../../data/navigationModules'
 import { useAuth, AdminApprovalPanel } from '../../features/auth'
-
 // Module 3 & Module 6 pages
 import EngineeringDashboard from '../../features/engineering/EngineeringDashboard'
 import FinanceDashboard from '../../features/finance/FinanceDashboard'
@@ -17,6 +16,14 @@ import OrdersPage from '../../features/module1/pages/OrdersPage'
 import CreateLeadModal from '../../features/module1/components/CreateLeadModal'
 import TraceJobModal from '../../features/module1/components/TraceJobModal'
 import module1Service from '../../features/module1/services/module1Service'
+
+// Module 2 Pages
+import Module2Dashboard from '../../features/module2/pages/Module2Dashboard'
+import VendorMasterPage from '../../features/module2/pages/VendorMasterPage'
+import PurchaseRequestsAndRfqsPage from '../../features/module2/pages/PurchaseRequestsAndRfqsPage'
+import PurchaseOrdersPage from '../../features/module2/pages/PurchaseOrdersPage'
+import GoodsReceiptsPage from '../../features/module2/pages/GoodsReceiptsPage'
+import InventoryPage from '../../features/module2/pages/InventoryPage'
 
 export default function AppLayout() {
   const { user, logout } = useAuth()
@@ -151,6 +158,7 @@ export default function AppLayout() {
   // Render current active page
   const renderContent = () => {
     switch (activeModuleId) {
+      // Module 1 & Overview
       case 'overview':
         return isSuperUser ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />
@@ -165,6 +173,26 @@ export default function AppLayout() {
         return <QuotationsPage onNavigateToOrders={() => handleNavigate('orders')} />
       case 'orders':
         return <OrdersPage onNavigate={handleNavigate} />
+      // Module 2 Pages
+      case 'procurement-dashboard':
+        return (
+          <Module2Dashboard
+            onNavigate={(moduleId) => {
+              handleNavigate(moduleId)
+            }}
+          />
+        )
+      case 'vendors':
+        return <VendorMasterPage />
+      case 'purchase-requests':
+        return <PurchaseRequestsAndRfqsPage />
+      case 'purchase-orders':
+        return <PurchaseOrdersPage />
+      case 'goods-receipts':
+        return <GoodsReceiptsPage />
+      case 'inventory':
+        return <InventoryPage />
+
       // Module 3: Product & Engineering submodules
       case 'engineering':
       case 'm3-products':
@@ -173,6 +201,7 @@ export default function AppLayout() {
         return <EngineeringDashboard initialTab="boms" />
       case 'm3-drawings':
         return <EngineeringDashboard initialTab="drawings" />
+
       // Module 6: Finance & Commercial submodules
       case 'finance':
       case 'm6-invoices':
@@ -215,7 +244,7 @@ export default function AppLayout() {
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-[#070e1e] font-sans antialiased selection:bg-blue-500 selection:text-white">
-      {/* Left Sidebar */}
+      {/* Sidebar (Desktop Persistent + Mobile Slide-out Drawer) */}
       <Sidebar
         sections={visibleSections}
         activeModuleId={activeModuleId}

@@ -404,15 +404,86 @@ export async function getPendingUsers() {
 }
 
 export async function updateApprovalStatus(userId, status) {
+  const numericId = Number(userId);
+
   try {
-    const updatedUser = await prisma.user.update({
-      where: { id: Number(userId) },
-      data: {
-        approvalStatus: status,
-        isActive: status !== "REJECTED",
-      },
+    return await prisma.$transaction(async (tx) => {
+      const updatedUser = await tx.user.update({
+        where: { id: numericId },
+        data: {
+          approvalStatus: status,
+          isActive: status !== "REJECTED",
+        },
+        include: {
+          employee: true,
+        },
+      });
+
+      if (status === "APPROVED") {
+        let employee = updatedUser.employee;
+
+        if (!employee) {
+          if (updatedUser.employeeCode) {
+            employee = await tx.employee.findUnique({
+              where: { employeeCode: updatedUser.employeeCode },
+            });
+          }
+
+          if (employee) {
+            employee = await tx.employee.update({
+              where: { id: employee.id },
+              data: {
+                userId: updatedUser.id,
+                isActive: true,
+                fullName: employee.fullName || updatedUser.name,
+                department: employee.department || updatedUser.department,
+                designation: employee.designation || updatedUser.designation,
+              },
+            });
+          } else {
+            let empCode = updatedUser.employeeCode;
+            if (!empCode) {
+              const empCount = await tx.employee.count();
+              empCode = `EMP-${String(empCount + 1).padStart(3, "0")}`;
+              await tx.user.update({
+                where: { id: updatedUser.id },
+                data: { employeeCode: empCode },
+              });
+            }
+
+            employee = await tx.employee.create({
+              data: {
+                employeeCode: empCode,
+                userId: updatedUser.id,
+                fullName: updatedUser.name,
+                department: updatedUser.department,
+                designation: updatedUser.designation,
+                dateOfJoining: updatedUser.joiningDate || new Date(),
+                isActive: true,
+              },
+            });
+          }
+        } else {
+          if (!employee.isActive) {
+            employee = await tx.employee.update({
+              where: { id: employee.id },
+              data: { isActive: true },
+            });
+          }
+        }
+
+        updatedUser.employee = employee;
+      } else if (status === "REJECTED") {
+        if (updatedUser.employee) {
+          await tx.employee.update({
+            where: { id: updatedUser.employee.id },
+            data: { isActive: false },
+          });
+        }
+      }
+
+      return sanitizeUser(updatedUser);
     });
-    return sanitizeUser(updatedUser);
   } catch {
     const fallback = findFallbackUserById(userId);
     if (fallback) {

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, Sparkles, UserCheck, Plus, Menu, Building2, Filter } from 'lucide-react'
+import { Search, Sparkles, UserCheck, Plus, Menu, Building2 } from 'lucide-react'
 
 export default function Navbar({
   activeModule = 'Dashboard',
@@ -12,8 +12,10 @@ export default function Navbar({
   onOpenTrace,
   onQuickAdd,
   onToggleSidebar,
+  onToggleMobileSidebar,
 }) {
   const [searchScope, setSearchScope] = useState('ALL')
+  const handleToggle = onToggleSidebar || onToggleMobileSidebar
 
   const handleScopeChange = (e) => {
     const val = e.target.value
@@ -25,10 +27,10 @@ export default function Navbar({
     <header className="sticky top-0 z-30 bg-[#0b172d] border-b border-[#1b2f56] px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between transition-colors duration-200 shadow-xl shrink-0">
       {/* Mobile Menu Button + Breadcrumb Navigation */}
       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-        {onToggleSidebar && (
+        {handleToggle && (
           <button
             type="button"
-            onClick={onToggleSidebar}
+            onClick={handleToggle}
             className="lg:hidden p-1.5 rounded-lg bg-[#071325] hover:bg-slate-800 text-slate-300 hover:text-white border border-[#1b2f56] transition cursor-pointer shrink-0"
             aria-label="Toggle Navigation"
           >
@@ -93,7 +95,7 @@ export default function Navbar({
         )}
 
         {/* Admin Approvals Quick Access */}
-        {isAdmin && (
+        {isAdmin && onOpenAdminApprovals && (
           <button
             type="button"
             onClick={onOpenAdminApprovals}
@@ -114,6 +116,7 @@ export default function Navbar({
           >
             <option value="ALL">All Modules</option>
             <option value="M1">M1 · Sales</option>
+            <option value="M2">M2 · Procurement</option>
             <option value="M3">M3 · Product</option>
             <option value="M6">M6 · Finance</option>
           </select>
@@ -127,6 +130,12 @@ export default function Navbar({
               className="w-full bg-transparent text-slate-100 placeholder-slate-500 text-xs pl-8 pr-2.5 py-1.5 focus:outline-none transition"
             />
           </div>
+        </div>
+
+        {/* System Status Pill */}
+        <div className="hidden sm:flex items-center space-x-2 px-2.5 py-1.5 rounded-lg bg-[#071325] border border-[#1b2f56] text-xs text-slate-300">
+          <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="font-semibold text-slate-200">ERP Active</span>
         </div>
       </div>
     </header>

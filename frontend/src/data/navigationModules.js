@@ -1,6 +1,5 @@
-// Navigation modules configuration strictly for Module 1 (Sales, CRM & Order Management)
-// Navigation configuration with single dashboard module and Module 3
-// Easily extensible: additional modules can still be added dynamically via UI
+// Navigation modules configuration for Yash ERP
+// Supports Module 1 (Sales, CRM & Order), Module 2 (Procurement & Inventory), and Module 3 (Engineering)
 
 export const initialNavSections = [
   {
@@ -17,7 +16,7 @@ export const initialNavSections = [
   },
   {
     id: 'module-1',
-    title: 'Module 1 · Sales, CRM & Order',
+    title: 'Module 1 · Sales & CRM',
     items: [
       {
         id: 'leads',
@@ -43,6 +42,48 @@ export const initialNavSections = [
         name: 'Orders & Dispatch Ready',
         desc: 'Customer PO · Manager SO · Physical stock check',
         icon: 'ShoppingCart',
+      },
+    ],
+  },
+  {
+    id: 'procurement',
+    title: 'Module 2 · Procurement & Inventory',
+    items: [
+      {
+        id: 'procurement-dashboard',
+        name: 'Procurement Dashboard',
+        desc: 'Procurement metrics, requisitions & stock value',
+        icon: 'LayoutGrid',
+      },
+      {
+        id: 'vendors',
+        name: 'Vendor Directory',
+        desc: 'Vendor profiles, onboarding & performance',
+        icon: 'Users',
+      },
+      {
+        id: 'purchase-requests',
+        name: 'Requisitions & RFQs',
+        desc: 'Purchase requisitions and RFQ quotes',
+        icon: 'ShoppingCart',
+      },
+      {
+        id: 'purchase-orders',
+        name: 'Purchase Orders',
+        desc: 'PO tracking, approval & status updates',
+        icon: 'Layers',
+      },
+      {
+        id: 'goods-receipts',
+        name: 'Goods Receipts (GRN)',
+        desc: 'Material inward verification & gate pass',
+        icon: 'Truck',
+      },
+      {
+        id: 'inventory',
+        name: 'Inventory & Stock',
+        desc: 'Real-time stock ledger, batch tracking & adjustments',
+        icon: 'Box',
       },
     ],
   },

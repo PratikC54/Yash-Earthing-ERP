@@ -1,4 +1,4 @@
-import { useState } from 'react'
+﻿import { useState } from 'react'
 import {
   LayoutGrid,
   Search,
@@ -81,7 +81,7 @@ export default function Sidebar({
                 Yash Group ERP
               </div>
               <div className="text-[10px] font-semibold text-cyan-400/90 tracking-wider uppercase truncate">
-                V3 · Enterprise Control
+                V3 ┬╖ Enterprise Control
               </div>
             </div>
           </div>
@@ -105,7 +105,7 @@ export default function Sidebar({
             <span>Workflow Pipeline</span>
           </div>
           <span className="text-[9.5px] text-slate-400">
-            Lead → Quote → Revise → PI → PO → SO → Dispatch
+            Lead ΓåÆ Quote ΓåÆ Revise ΓåÆ PI ΓåÆ PO ΓåÆ SO ΓåÆ Dispatch
           </span>
         </div>
 
