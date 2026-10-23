@@ -21,16 +21,16 @@ export default function OrdersPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [orderRes, quoteRes] = await Promise.all([
+      const [orderRes, quoteRes] = await Promise.allSettled([
         module1Service.getOrders({ search: searchQuery, status: statusFilter }),
         module1Service.getQuotations({ limit: 50 }),
       ]);
 
-      if (orderRes?.success && orderRes?.data?.orders) {
-        setOrders(orderRes.data.orders);
+      if (orderRes.status === "fulfilled" && orderRes.value?.success && orderRes.value?.data?.orders) {
+        setOrders(orderRes.value.data.orders);
       }
-      if (quoteRes?.success && quoteRes?.data?.quotations) {
-        setQuotations(quoteRes.data.quotations);
+      if (quoteRes.status === "fulfilled" && quoteRes.value?.success && quoteRes.value?.data?.quotations) {
+        setQuotations(quoteRes.value.data.quotations);
       }
     } catch (err) {
       console.error("Failed to fetch orders:", err);
@@ -271,7 +271,7 @@ export default function OrdersPage() {
                     </td>
 
                     <td className="py-3 px-4 font-mono font-bold text-white">
-                      ₹ {Number(o.totalAmount || 0).toFixed(2)}
+                      ₹ {Number(o.grandTotal || o.totalAmount || 0).toFixed(2)}
                     </td>
 
                     <td className="py-3 px-4">
