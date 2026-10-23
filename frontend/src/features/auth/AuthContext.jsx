@@ -5,7 +5,7 @@ import { AuthContext } from './authContextDef'
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
     try {
-      const stored = localStorage.getItem('yash_auth_user')
+      const stored = localStorage.getItem('yash_auth_user') || sessionStorage.getItem('yash_auth_user')
       return stored ? JSON.parse(stored) : null
     } catch {
       return null
@@ -13,12 +13,12 @@ export function AuthProvider({ children }) {
   })
 
   const [token, setToken] = useState(() => {
-    return localStorage.getItem('yash_auth_token') || null
+    return localStorage.getItem('yash_auth_token') || sessionStorage.getItem('yash_auth_token') || null
   })
 
   const [pendingUser, setPendingUser] = useState(() => {
     try {
-      const stored = localStorage.getItem('yash_pending_registration')
+      const stored = localStorage.getItem('yash_pending_registration') || sessionStorage.getItem('yash_pending_registration')
       return stored ? JSON.parse(stored) : null
     } catch {
       return null
@@ -41,12 +41,18 @@ export function AuthProvider({ children }) {
         const res = await authService.getMe()
         if (isMounted && res.success && res.data?.user) {
           setUser(res.data.user)
-          localStorage.setItem('yash_auth_user', JSON.stringify(res.data.user))
+          if (localStorage.getItem('yash_auth_token')) {
+            localStorage.setItem('yash_auth_user', JSON.stringify(res.data.user))
+          } else {
+            sessionStorage.setItem('yash_auth_user', JSON.stringify(res.data.user))
+          }
         }
       } catch {
         if (isMounted) {
           localStorage.removeItem('yash_auth_token')
           localStorage.removeItem('yash_auth_user')
+          sessionStorage.removeItem('yash_auth_token')
+          sessionStorage.removeItem('yash_auth_user')
           setToken(null)
           setUser(null)
         }
@@ -64,7 +70,7 @@ export function AuthProvider({ children }) {
     }
   }, [token])
 
-  const login = async (email, password) => {
+  const login = async (email, password, remember = true) => {
     const res = await authService.login(email, password)
     if (res.data?.isPending) {
       const pendingData = {
@@ -75,15 +81,30 @@ export function AuthProvider({ children }) {
         requestedAt: new Date().toISOString(),
       }
       setPendingUser(pendingData)
-      localStorage.setItem('yash_pending_registration', JSON.stringify(pendingData))
+      if (remember) {
+        localStorage.setItem('yash_pending_registration', JSON.stringify(pendingData))
+        sessionStorage.removeItem('yash_pending_registration')
+      } else {
+        sessionStorage.setItem('yash_pending_registration', JSON.stringify(pendingData))
+        localStorage.removeItem('yash_pending_registration')
+      }
       return { isPending: true, data: pendingData }
     }
 
     if (res.data?.token) {
       setToken(res.data.token)
       setUser(res.data.user)
-      localStorage.setItem('yash_auth_token', res.data.token)
-      localStorage.setItem('yash_auth_user', JSON.stringify(res.data.user))
+      if (remember) {
+        localStorage.setItem('yash_auth_token', res.data.token)
+        localStorage.setItem('yash_auth_user', JSON.stringify(res.data.user))
+        sessionStorage.removeItem('yash_auth_token')
+        sessionStorage.removeItem('yash_auth_user')
+      } else {
+        sessionStorage.setItem('yash_auth_token', res.data.token)
+        sessionStorage.setItem('yash_auth_user', JSON.stringify(res.data.user))
+        localStorage.removeItem('yash_auth_token')
+        localStorage.removeItem('yash_auth_user')
+      }
       clearPendingUser()
       return { isPending: false, data: res.data.user }
     }
@@ -115,22 +136,33 @@ export function AuthProvider({ children }) {
       setToken(null)
       localStorage.removeItem('yash_auth_token')
       localStorage.removeItem('yash_auth_user')
+      sessionStorage.removeItem('yash_auth_token')
+      sessionStorage.removeItem('yash_auth_user')
     }
   }
 
   const clearPendingUser = () => {
     setPendingUser(null)
     localStorage.removeItem('yash_pending_registration')
+    sessionStorage.removeItem('yash_pending_registration')
   }
 
-  const markApprovedAndLogin = (approvedToken, approvedUserData) => {
+  const markApprovedAndLogin = (approvedToken, approvedUserData, remember = true) => {
     if (approvedToken) {
       setToken(approvedToken)
-      localStorage.setItem('yash_auth_token', approvedToken)
+      if (remember) {
+        localStorage.setItem('yash_auth_token', approvedToken)
+      } else {
+        sessionStorage.setItem('yash_auth_token', approvedToken)
+      }
     }
     if (approvedUserData) {
       setUser(approvedUserData)
-      localStorage.setItem('yash_auth_user', JSON.stringify(approvedUserData))
+      if (remember) {
+        localStorage.setItem('yash_auth_user', JSON.stringify(approvedUserData))
+      } else {
+        sessionStorage.setItem('yash_auth_user', JSON.stringify(approvedUserData))
+      }
     }
     clearPendingUser()
   }
@@ -138,18 +170,15 @@ export function AuthProvider({ children }) {
   const value = {
     user,
     token,
-    pendingUser,
     loading,
-    isAuthenticated: Boolean(token && user),
+    pendingUser,
     login,
     register,
     logout,
-    setPendingUser,
     clearPendingUser,
     markApprovedAndLogin,
+    isAuthenticated: Boolean(token && user),
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
-
-export default AuthProvider
