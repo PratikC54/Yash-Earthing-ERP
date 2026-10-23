@@ -245,15 +245,17 @@ export async function checkInventoryStockAndReserve(orderId) {
     const reqQty = Number(it.orderedQuantity || it.quantity || 1);
     totalOrderedQty += reqQty;
 
-    // Check Inventory record for this product
+    // Check real Inventory record from PostgreSQL for this product
     const inv = await prisma.inventory.findFirst({
       where: { productId: prodId },
     });
 
-    const currentQty = inv ? Number(inv.physicalQuantity) : 100; // Realistic inventory stock
-    totalAvailableStock += currentQty;
+    const onHand = inv ? Number(inv.physicalQuantity) : 0;
+    const reserved = inv ? Number(inv.reservedQuantity || 0) : 0;
+    const available = Math.max(0, onHand - reserved);
+    totalAvailableStock += available;
 
-    const isItemAvailable = currentQty >= reqQty;
+    const isItemAvailable = available >= reqQty;
     if (!isItemAvailable) {
       allAvailable = false;
     }
@@ -262,14 +264,27 @@ export async function checkInventoryStockAndReserve(orderId) {
       productId: prodId,
       productName: it.product?.name || "Standard Product",
       orderedQuantity: reqQty,
-      availableStock: currentQty,
+      onHand,
+      reserved,
+      availableStock: available,
       inStock: isItemAvailable,
-      shortage: Math.max(0, reqQty - currentQty),
+      shortage: Math.max(0, reqQty - available),
     });
   }
 
   if (allAvailable) {
-    // Reserve stock and transition dispatch status to READY_FOR_DISPATCH
+    // Reserve stock in PostgreSQL inventory and transition dispatch status to READY_FOR_DISPATCH
+    for (const it of items) {
+      const prodId = it.productId;
+      const reqQty = Number(it.orderedQuantity || it.quantity || 1);
+      await prisma.inventory.updateMany({
+        where: { productId: prodId },
+        data: {
+          reservedQuantity: { increment: reqQty },
+        },
+      });
+    }
+
     await prisma.salesOrder.update({
       where: { id: order.id },
       data: {

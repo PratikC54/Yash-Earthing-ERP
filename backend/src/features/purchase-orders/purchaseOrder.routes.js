@@ -38,6 +38,12 @@ export function createOrderRouter({ authenticate, authorizeRoles } = {}) {
     maybeRole(["ADMIN", "PROCUREMENT", "MANAGEMENT"]),
     orderController.updatePurchaseOrderStatus
   );
+  router.patch(
+    "/purchase-orders/:id",
+    maybeAuth,
+    maybeRole(["ADMIN", "PROCUREMENT", "MANAGEMENT"]),
+    orderController.updatePurchaseOrderStatus
+  );
 
   return router;
 }

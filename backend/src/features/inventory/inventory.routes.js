@@ -19,6 +19,7 @@ export function createInventoryRouter({ authenticate, authorizeRoles } = {}) {
   };
 
   router.get("/inventory", maybeAuth, inventoryController.listInventory);
+  router.get("/inventory/availability", maybeAuth, inventoryController.checkStockAvailability);
   router.get("/inventory/products/:productId", maybeAuth, inventoryController.getInventoryByProductId);
   router.get("/inventory/movements", maybeAuth, inventoryController.listMovements);
   router.post(

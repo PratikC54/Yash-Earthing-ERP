@@ -79,8 +79,42 @@ export async function getQuotationById(id) {
 }
 
 export async function createQuotation(data, user) {
-  const customerId = Number(data.customerId);
   const leadId = data.leadId ? Number(data.leadId) : null;
+  let customerId = data.customerId ? Number(data.customerId) : null;
+
+  if (!customerId && leadId) {
+    const leadRecord = await prisma.lead.findUnique({ where: { id: leadId } });
+    if (leadRecord?.customerId) {
+      customerId = leadRecord.customerId;
+    } else if (leadRecord?.customerName) {
+      const existingCust = await prisma.customer.findFirst({
+        where: { name: { equals: leadRecord.customerName, mode: "insensitive" } },
+      });
+      if (existingCust) {
+        customerId = existingCust.id;
+      } else {
+        const custCount = await prisma.customer.count();
+        const newCust = await prisma.customer.create({
+          data: {
+            code: `CUST-${String(custCount + 1001)}`,
+            name: leadRecord.customerName,
+            email: leadRecord.email || null,
+            phone: leadRecord.phone || null,
+            city: leadRecord.city || "Pune",
+            state: leadRecord.state || "Maharashtra",
+          },
+        });
+        customerId = newCust.id;
+        await prisma.lead.update({ where: { id: leadId }, data: { customerId } });
+      }
+    }
+  }
+
+  if (!customerId) {
+    const defaultCust = await prisma.customer.findFirst();
+    customerId = defaultCust ? defaultCust.id : 1;
+  }
+
   const salesRepId = data.salesRepresentativeId ? Number(data.salesRepresentativeId) : user?.id || 1;
 
   // Prevent duplicate quotations on the same lead if one already exists

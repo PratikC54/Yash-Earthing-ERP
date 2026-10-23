@@ -30,6 +30,7 @@ router.get('/products/:id/report', engineeringController.getProductRegistryRepor
 // BOM, Revisions & Costing
 router.get('/boms', engineeringController.getBoms);
 router.get('/products/:id/boms', engineeringController.getBomById);
+router.get('/products/:id/bom', engineeringController.getBomById);
 router.post('/products/:id/boms', engineeringController.createBom);
 router.put('/bom-revisions/:id/items', engineeringController.updateRevisionItems);
 router.post('/boms/:id/revisions', engineeringController.createNextRevision);
