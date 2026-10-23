@@ -1,0 +1,185 @@
+1. Final Frontend Folder Structure
+   text
+   frontend/
+   ├── public/
+   │ ├── favicon.svg
+   │ └── icons.svg
+   ├── src/
+   │ ├── app/
+   │ │ ├── App.jsx # Root App rendering RouterProvider
+   │ │ ├── router.jsx # Central createBrowserRouter with AppLayout
+   │ │ └── routeRegistry.js # Multi-developer route aggregator
+   │ │
+   │ ├── components/
+   │ │ ├── layout/
+   │ │ │ ├── Navbar.jsx # Fixed top bar (h-[68px], dark green #173b35)
+   │ │ │ ├── Sidebar.jsx # Fixed left nav (w-[250px], dark green #173b35)
+   │ │ │ ├── AppLayout.jsx # Shared layout shell with React Router <Outlet />
+   │ │ │ └── MainContent.jsx # Independently scrolling central workspace
+   │ │ │
+   │ │ └── common/
+   │ │ ├── Button.jsx # Reusable Tailwind button (variants, sizes, loading)
+   │ │ ├── Card.jsx # Professional ERP card with header, body, footer
+   │ │ ├── DataTable.jsx # Paginated, responsive table with empty & loading states
+   │ │ ├── SearchBar.jsx # Debounced search input with shortcut indicator
+   │ │ ├── StatusBadge.jsx # Color-coded badge for ERP statuses & priorities
+   │ │ ├── Modal.jsx # Accessible backdrop dialog with escape key & footer
+   │ │ └── Loader.jsx # Animated spinner for table & page loads
+   │ │
+   │ ├── features/
+   │ │ ├── dashboard/
+   │ │ │ ├── pages/
+   │ │ │ │ └── DashboardPage.jsx # Executive operations dashboard
+   │ │ │ ├── components/
+   │ │ │ │ ├── KpiCards.jsx
+   │ │ │ │ ├── OperationsOverview.jsx
+   │ │ │ │ ├── OrderModal.jsx
+   │ │ │ │ ├── ProductionChart.jsx
+   │ │ │ │ ├── RecentOrdersTable.jsx
+   │ │ │ │ └── WarehouseUtilization.jsx
+   │ │ │ └── index.js
+   │ │ │
+   │ │ └── production_quality/
+   │ │ ├── pages/
+   │ │ │ ├── ProductionDashboard.jsx # Shop floor overview & machine workloads
+   │ │ │ ├── WorkOrdersPage.jsx # Work order management & creation modal
+   │ │ │ ├── WorkOrderDetailsPage.jsx # Lifecycle transitions, BOM items & stock check
+   │ │ │ ├── ProductionPlanningPage.jsx # Production calendar & shift capacity
+   │ │ │ ├── QualityDashboard.jsx # QA metrics & ISO compliance checklist
+   │ │ │ ├── InspectionPage.jsx # Inspection audit dialog & FG release permit
+   │ │ │ └── NonConformancePage.jsx # NCR logging, CAPA & scrap write-offs
+   │ │ │
+   │ │ ├── components/
+   │ │ │ ├── production/
+   │ │ │ │ ├── ProductionStats.jsx # Production summary cards
+   │ │ │ │ ├── WorkOrderTable.jsx # Work order list with progress bars
+   │ │ │ │ ├── WorkOrderFilters.jsx # Quick status filter chips
+   │ │ │ │ └── ProductionProgress.jsx # Visual output vs planned progress bar
+   │ │ │ │
+   │ │ │ ├── quality/
+   │ │ │ │ ├── QualityStats.jsx # QA summary cards (Pass rate, NCRs)
+   │ │ │ │ ├── InspectionTable.jsx # Inspection queue with actions
+   │ │ │ │ ├── DefectSummary.jsx # Defect category clustering card
+   │ │ │ │ └── NonConformanceTable.jsx # NCR table with severity badges
+   │ │ │ │
+   │ │ │ └── shared/
+   │ │ │ ├── ModuleHeader.jsx # Breadcrumbs, title, actions
+   │ │ │ ├── ModuleTabs.jsx # Multi-submodule tab bar
+   │ │ │ └── FilterPanel.jsx # Search, status & priority dropdowns
+   │ │ │
+   │ │ ├── hooks/
+   │ │ │ ├── useWorkOrders.js # Work order data fetching & mutations
+   │ │ │ └── useInspections.js # Inspection queue & QA actions
+   │ │ │
+   │ │ ├── services/
+   │ │ │ ├── productionService.js # Planning (M4.1) & Manufacturing (M4.2) APIs
+   │ │ │ └── qualityService.js # Quality Control & Output (M4.3) APIs
+   │ │ │
+   │ │ ├── routes/
+   │ │ │ └── productionQualityRoutes.jsx # Route definitions for M4
+   │ │ │
+   │ │ ├── utils/
+   │ │ │ └── productionQualityHelpers.js # Date formatters, quantities, calculations
+   │ │ │
+   │ │ └── index.js # Clean feature exports
+   │ │
+   │ ├── services/
+   │ │ └── axiosInstance.js # Central axios instance with auth interceptor
+   │ │
+   │ ├── data/
+   │ │ ├── dashboardData.js
+   │ │ └── navigationModules.js
+   │ │
+   │ ├── index.css # Tailwind CSS v4 import + base resets
+   │ └── main.jsx # Application entry point
+   │
+   ├── .env # VITE_API_BASE_URL=http://localhost:5000
+   ├── package.json
+   └── vite.config.js
+2. Files Created, Modified, or Moved
+   Action Path Purpose
+   Created src/app/router.jsx Central createBrowserRouter linking AppLayout, /dashboard, and module routes
+   Created src/app/routeRegistry.js Central modular route registry for all 5 feature developers
+   Created src/app/App.jsx Application root rendering <RouterProvider />
+   Created src/services/axiosInstance.js Unified Axios client with Bearer auth token injection and ERP error handling
+   Created src/components/common/_ 7 reusable components (Button, Card, DataTable, SearchBar, StatusBadge, Modal, Loader)
+   Created src/components/layout/_ 4 layout components (Navbar, Sidebar, AppLayout, MainContent) styled with Tailwind CSS
+   Created src/features/production_quality/_ 7 Pages, 11 Feature Components, 2 Custom Hooks, 2 API Services, 1 Route file, and Helper utilities
+   Created src/features/dashboard/pages/DashboardPage.jsx Integrated executive overview page linking all plant operations
+   Moved src/features/dashboard/components/_ Preserved existing charts, KPI cards, and modals within the feature sub-directory
+   Modified src/main.jsx Updated entry point to import App from src/app/App.jsx
+   Modified src/index.css Configured Tailwind v4 with the light gray-green ERP background (#f3f5f4)
+3. Shared Layout & Theme Implementation
+   Theme Colors: Navbar and Sidebar use the dark green theme (#173b35, hover: #24564b), while the central workspace uses light gray-green (#f3f5f4) with white cards (#ffffff) and soft borders (#e1e7e4).
+   Fixed Layout Geometry:
+   Navbar: fixed top-0 left-0 lg:left-[250px] right-0 h-[68px] z-30
+   Sidebar: fixed top-0 bottom-0 left-0 w-[250px] z-50
+   MainContent: ml-0 lg:ml-[250px] mt-[68px] min-h-[calc(100vh-68px)] flex-1 overflow-y-auto
+   Navigation:
+   Supports active-route highlighting via NavLink.
+   Expandable nested accordion for Production & Quality.
+   Accommodates future modules (Sales, Engineering, Inventory, HRMS) with badge indicators.
+   Responsive mobile drawer with backdrop overlay.
+4. Production & Quality Pages & Features (Module M4)
+   Production Dashboard (/production-quality/production):
+   KPI metrics (Total Orders, In Progress, On Hold, Completed).
+   Work center workload capacity indicators (Line 1 Cutting, Precision Lathes, Galvanizing).
+   Active work orders table with progress bars.
+   Work Orders Page (/production-quality/work-orders):
+   Filter chips by lifecycle state (DRAFT, PLANNED, READY_FOR_PRODUCTION, IN_PROGRESS, ON_HOLD, COMPLETED, CANCELLED).
+   Search by WO#, product, or customer name.
+   Interactive + Create Work Order modal dialog.
+   Work Order Details Page (/production-quality/work-orders/:id):
+   Real-time stock check against inventory.
+   Lifecycle transition triggers (Submit, Approve, Release, Start, Hold, Resume, Cancel).
+   Log Production Output modal.
+   Transfer to Quality Inspection modal.
+   Bill of materials component tracking & audit history timeline.
+   Production Planning Page (/production-quality/planning):
+   Monthly production calendar with scheduled runs.
+   Shift capacity utilization (Shift A 92%, Shift B 74%, Shift C 30%).
+   Raw material staging checklist.
+   Quality Dashboard (/production-quality/quality):
+   Quality metrics (Inspections, Pass rate, On Hold, NCRs).
+   Pending inspection queue snapshot.
+   Defect category breakdown chart.
+   Standard compliance checklist (IS-3043 / IEC 62561).
+   Inspections Queue Page (/production-quality/inspections):
+   Live inspection queue with status badges.
+   Inspect modal with accepted/rejected quantity counters and tolerance notes.
+   Idempotent Release to Finished Goods dialog with warehouse location and batch assignment.
+   Non-Conformance Page (/production-quality/non-conformance):
+   Open Non-Conformance Reports (NCR) with severity badges (CRITICAL, MAJOR, MINOR).
+   Log New NCR modal with immediate containment action.
+   Authorize Scrap Write-Off modal with financial cost impact.
+5. Multi-Developer Collaboration Model
+
+The project is structured to prevent Git merge conflicts across 5 team members:
+
+Developer 1 (Integration / Layout): Controls src/app/router.jsx, src/app/routeRegistry.js, and src/components/layout/.
+Developer 2 (Production & Quality): Works exclusively in src/features/production_quality/ and exports routes in productionQualityRoutes.jsx.
+Developer 3 (Sales): Works in src/features/sales/ and registers routes into src/app/routeRegistry.js.
+Developer 4 (Engineering): Works in src/features/engineering/.
+Developer 5 (Inventory): Works in src/features/inventory/. 6. Verification Results
+Vite Production Build:
+bash
+npm --prefix frontend run build
+✓ 2040 modules transformed.
+dist/index.html 0.49 kB │ gzip: 0.32 kB
+dist/assets/index-nHf_W5kd.css 99.80 kB │ gzip: 16.07 kB
+dist/assets/index-DfxPg95R.js 482.56 kB │ gzip: 145.01 kB
+✓ built in 524ms
+ESLint Validation:
+bash
+npm --prefix frontend run lint
+Exit code: 0 (0 errors)
+Backend Test Suite:
+bash
+npm test --prefix backend
+1..65
+
+# tests 65
+
+# pass 65
+
+# fail 0

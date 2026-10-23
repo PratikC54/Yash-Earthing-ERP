@@ -1,0 +1,38 @@
+:root {
+  --color-primary: #3b82f6;
+  --color-primary-hover: #2563eb;
+
+  --color-navbar: #0b172d;
+  --color-sidebar: #07162c;
+
+  --color-background: #070e1e;
+  --color-surface: #10182f;
+  --color-border: #1e2a4a;
+
+  --color-text: #f1f5f9;
+  --color-text-muted: #94a3b8;
+
+  --navbar-height: 68px;
+  --sidebar-width: 268px;
+
+  /* Reference Color Tokens */
+  --app-bg: #070e1e;
+  --navbar-bg: #0b172d;
+  --navbar-border: #1b2f56;
+  --sidebar-start: #07162c;
+  --sidebar-end: #08172e;
+  --card-bg: #10182f;
+  --card-border: #1e2a4a;
+  --input-bg: #0a1020;
+  --table-header-bg: #0b1329;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  /* Status Tokens */
+  --color-accent: #3b82f6;
+  --color-success: #2dd4bf;
+  --color-warning: #facc15;
+  --color-danger: #f87171;
+  --color-info: #38bdf8;
+}

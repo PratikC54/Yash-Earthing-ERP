@@ -1,0 +1,470 @@
+{
+  "info": {
+    "name": "Yash Group ERP - Production & Quality Module (M4)",
+    "_postman_id": "89b7b250-93a1-432d-944a-e457f9c2d1b8",
+    "description": "Comprehensive Postman API Collection for Module M4: Planning & Work Orders (M4.1), Manufacturing Execution (M4.2), and Quality Control & Output (M4.3) with pre-configured JWT Bearer authentication.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{authToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api/production-quality",
+      "type": "string"
+    },
+    {
+      "key": "authToken",
+      "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6MSwiZW1haWwiOiJhZG1pbkB5YXNoZ3JvdXAuY29tIiwicm9sZSI6IkFETUlOIiwibmFtZSI6IlN5c3RlbSBBZG1pbmlzdHJhdG9yIiwiaWF0IjoxNzkyNjg2MDQzLCJleHAiOjE3OTMyOTA4NDN9.KDlekuYhinZzC8_fDFuKtafi5usb7RLE-zIrJMCAYx4",
+      "type": "string"
+    },
+    {
+      "key": "workOrderId",
+      "value": "1",
+      "type": "string"
+    },
+    {
+      "key": "inspectionId",
+      "value": "1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "0. System & Health",
+      "item": [
+        {
+          "name": "Root Landing (API Info)",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "http://localhost:5000/", "protocol": "http", "host": ["localhost"], "port": "5000", "path": [""] }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "http://localhost:5000/api/health", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "v1", "health"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "M4.1 - Planning & Work Orders",
+      "item": [
+        {
+          "name": "1. Production Dashboard",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/planning/dashboard", "host": ["{{baseUrl}}"], "path": ["planning", "dashboard"] }
+          }
+        },
+        {
+          "name": "2. Production Calendar",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/production-calendar", "host": ["{{baseUrl}}"], "path": ["production-calendar"] }
+          }
+        },
+        {
+          "name": "3. Create Work Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"salesOrderId\": 1,\n  \"productId\": 1,\n  \"plannedQuantity\": 100,\n  \"bomRevisionId\": 1,\n  \"priority\": \"HIGH\",\n  \"plannedStart\": \"2026-11-01T08:00:00Z\",\n  \"plannedEnd\": \"2026-11-05T18:00:00Z\",\n  \"notes\": \"Earthing electrode rush batch for substation project\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/work-orders", "host": ["{{baseUrl}}"], "path": ["work-orders"] }
+          }
+        },
+        {
+          "name": "4. List Work Orders",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/work-orders?page=1&limit=20", "host": ["{{baseUrl}}"], "path": ["work-orders"], "query": [{ "key": "page", "value": "1" }, { "key": "limit", "value": "20" }] }
+          }
+        },
+        {
+          "name": "5. Get Work Order by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/work-orders/{{workOrderId}}", "host": ["{{baseUrl}}"], "path": ["work-orders", "{{workOrderId}}"] }
+          }
+        },
+        {
+          "name": "6. Check Material Availability",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/material-availability/{{workOrderId}}", "host": ["{{baseUrl}}"], "path": ["material-availability", "{{workOrderId}}"] }
+          }
+        },
+        {
+          "name": "7. Update Work Order (Draft only)",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"priority\": \"URGENT\",\n  \"notes\": \"Updated deadline\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/work-orders/{{workOrderId}}", "host": ["{{baseUrl}}"], "path": ["work-orders", "{{workOrderId}}"] }
+          }
+        },
+        {
+          "name": "8. Submit Work Order",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/submit", "host": ["{{baseUrl}}"], "path": ["work-orders", "{{workOrderId}}", "submit"] }
+          }
+        },
+        {
+          "name": "9. Approve Work Order",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/approve", "host": ["{{baseUrl}}"], "path": ["work-orders", "{{workOrderId}}", "approve"] }
+          }
+        },
+        {
+          "name": "10. Release Work Order to Production",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/release", "host": ["{{baseUrl}}"], "path": ["work-orders", "{{workOrderId}}", "release"] }
+          }
+        },
+        {
+          "name": "11. Put Work Order On Hold",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Awaiting raw material staging\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/hold", "host": ["{{baseUrl}}"], "path": ["work-orders", "{{workOrderId}}", "hold"] }
+          }
+        },
+        {
+          "name": "12. Resume Work Order",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/resume", "host": ["{{baseUrl}}"], "path": ["work-orders", "{{workOrderId}}", "resume"] }
+          }
+        },
+        {
+          "name": "13. Work Order Audit History",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/work-orders/{{workOrderId}}/history", "host": ["{{baseUrl}}"], "path": ["work-orders", "{{workOrderId}}", "history"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "M4.2 - Manufacturing Execution",
+      "item": [
+        {
+          "name": "1. Manufacturing Dashboard",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/manufacturing/dashboard", "host": ["{{baseUrl}}"], "path": ["manufacturing", "dashboard"] }
+          }
+        },
+        {
+          "name": "2. Start Manufacturing Execution",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"shift\": \"SHIFT_A\",\n  \"workCenter\": \"WC-ELECTRODE-ASSEMBLY-01\",\n  \"notes\": \"Shift started on schedule\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/manufacturing/work-orders/{{workOrderId}}/start", "host": ["{{baseUrl}}"], "path": ["manufacturing", "work-orders", "{{workOrderId}}", "start"] }
+          }
+        },
+        {
+          "name": "3. Record Production Entry",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": 1,\n  \"quantityProduced\": 50,\n  \"shift\": \"SHIFT_A\",\n  \"workCenter\": \"WC-ELECTRODE-ASSEMBLY-01\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/manufacturing/production-entries", "host": ["{{baseUrl}}"], "path": ["manufacturing", "production-entries"] }
+          }
+        },
+        {
+          "name": "4. Issue Material to Work Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": 1,\n  \"productId\": 2,\n  \"quantity\": 50,\n  \"batchNumber\": \"RAW-COPPER-BATCH-89\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/manufacturing/material-issues", "host": ["{{baseUrl}}"], "path": ["manufacturing", "material-issues"] }
+          }
+        },
+        {
+          "name": "5. Record Material Consumption",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": 1,\n  \"productId\": 2,\n  \"quantity\": 50\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/manufacturing/material-consumption", "host": ["{{baseUrl}}"], "path": ["manufacturing", "material-consumption"] }
+          }
+        },
+        {
+          "name": "6. Return Material to Store",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": 1,\n  \"productId\": 2,\n  \"quantity\": 5,\n  \"reason\": \"Surplus uncut pipes\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/manufacturing/material-returns", "host": ["{{baseUrl}}"], "path": ["manufacturing", "material-returns"] }
+          }
+        },
+        {
+          "name": "7. Material Reconciliation Report",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/manufacturing/material-reconciliation/{{workOrderId}}", "host": ["{{baseUrl}}"], "path": ["manufacturing", "material-reconciliation", "{{workOrderId}}"] }
+          }
+        },
+        {
+          "name": "8. Record Scrap",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": 1,\n  \"quantity\": 2,\n  \"reason\": \"End trimming waste\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/manufacturing/scrap", "host": ["{{baseUrl}}"], "path": ["manufacturing", "scrap"] }
+          }
+        },
+        {
+          "name": "9. Record Machine Downtime",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": 1,\n  \"machineOrWorkCenter\": \"Copper Coating Tank #1\",\n  \"durationMinutes\": 30,\n  \"reason\": \"Chemical bath temperature recalibration\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/manufacturing/downtime", "host": ["{{baseUrl}}"], "path": ["manufacturing", "downtime"] }
+          }
+        },
+        {
+          "name": "10. Record Production Delay",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"workOrderId\": 1,\n  \"reason\": \"Gantry crane maintenance\",\n  \"impactMinutes\": 15\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/manufacturing/delays", "host": ["{{baseUrl}}"], "path": ["manufacturing", "delays"] }
+          }
+        },
+        {
+          "name": "11. Transfer Output to Quality Inspection",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 50,\n  \"batchNumber\": \"LOT-2026-NOV-01\",\n  \"notes\": \"Batch ready for dimensional and thickness tests\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/manufacturing/outputs/{{workOrderId}}/transfer-to-quality", "host": ["{{baseUrl}}"], "path": ["manufacturing", "outputs", "{{workOrderId}}", "transfer-to-quality"] }
+          }
+        },
+        {
+          "name": "12. Planned vs Actual Production Report",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/manufacturing/reports/production", "host": ["{{baseUrl}}"], "path": ["manufacturing", "reports", "production"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "M4.3 - Quality Control & Output",
+      "item": [
+        {
+          "name": "1. Quality Dashboard",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/quality/dashboard", "host": ["{{baseUrl}}"], "path": ["quality", "dashboard"] }
+          }
+        },
+        {
+          "name": "2. Inspection Queue",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/quality/inspection-queue", "host": ["{{baseUrl}}"], "path": ["quality", "inspection-queue"] }
+          }
+        },
+        {
+          "name": "3. Get Inspection by ID",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/quality/inspections/{{inspectionId}}", "host": ["{{baseUrl}}"], "path": ["quality", "inspections", "{{inspectionId}}"] }
+          }
+        },
+        {
+          "name": "4. Start Inspection",
+          "request": {
+            "method": "POST",
+            "url": { "raw": "{{baseUrl}}/quality/inspections/{{inspectionId}}/start", "host": ["{{baseUrl}}"], "path": ["quality", "inspections", "{{inspectionId}}", "start"] }
+          }
+        },
+        {
+          "name": "5. Record Inspection Measurements & Results",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"acceptedQuantity\": 50,\n  \"rejectedQuantity\": 0,\n  \"measurements\": {\n    \"dimensional\": [\n      { \"parameter\": \"Outer Diameter\", \"specified\": \"50mm\", \"measured\": \"50.08mm\", \"status\": \"PASS\" },\n      { \"parameter\": \"Copper Coating Thickness\", \"specified\": \"250 microns\", \"measured\": \"265 microns\", \"status\": \"PASS\" }\n    ],\n    \"visual\": [\n      { \"check\": \"Surface Finish\", \"result\": \"Smooth, defect-free\", \"status\": \"PASS\" }\n    ]\n  },\n  \"evidenceNotes\": \"Conforms strictly to IS 3043:2018 specifications.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/inspections/{{inspectionId}}/results", "host": ["{{baseUrl}}"], "path": ["quality", "inspections", "{{inspectionId}}", "results"] }
+          }
+        },
+        {
+          "name": "6. Approve Inspection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Approved by Head of Quality\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/inspections/{{inspectionId}}/approve", "host": ["{{baseUrl}}"], "path": ["quality", "inspections", "{{inspectionId}}", "approve"] }
+          }
+        },
+        {
+          "name": "7. Place Inspection on Quality Hold",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Sample sent to NABL lab for conductivity test\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/inspections/{{inspectionId}}/hold", "host": ["{{baseUrl}}"], "path": ["quality", "inspections", "{{inspectionId}}", "hold"] }
+          }
+        },
+        {
+          "name": "8. Reject Inspection",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"Coating thickness below 200 microns threshold\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/inspections/{{inspectionId}}/reject", "host": ["{{baseUrl}}"], "path": ["quality", "inspections", "{{inspectionId}}", "reject"] }
+          }
+        },
+        {
+          "name": "9. Request Rework",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"notes\": \"Re-dip in electroplating tank #2 for additional 50 microns\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/inspections/{{inspectionId}}/rework", "host": ["{{baseUrl}}"], "path": ["quality", "inspections", "{{inspectionId}}", "rework"] }
+          }
+        },
+        {
+          "name": "10. Log Non-Conformance Report (NCR)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inspectionId\": 1,\n  \"defectType\": \"Coating Thickness\",\n  \"severity\": \"MAJOR\",\n  \"description\": \"Average copper coating measured at 210 microns vs 250 microns required.\",\n  \"rootCause\": \"Current density dropped in plating bath\",\n  \"proposedAction\": \"REWORK\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/non-conformance", "host": ["{{baseUrl}}"], "path": ["quality", "non-conformance"] }
+          }
+        },
+        {
+          "name": "11. Log Corrective and Preventive Action (CAPA)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ncrId\": \"NCR-2026-001\",\n  \"actionDescription\": \"Installed automated voltage regulator on electroplating rectifier.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/corrective-actions", "host": ["{{baseUrl}}"], "path": ["quality", "corrective-actions"] }
+          }
+        },
+        {
+          "name": "12. Authorize Scrap",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inspectionId\": 1,\n  \"quantity\": 5,\n  \"reason\": \"Cracked outer sleeve during tensile test\",\n  \"scrapCost\": 2500\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/scrap-approvals", "host": ["{{baseUrl}}"], "path": ["quality", "scrap-approvals"] }
+          }
+        },
+        {
+          "name": "13. Release Finished Goods to Inventory",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"inspectionId\": 1,\n  \"warehouseLocation\": \"Finished Goods Central Depot\",\n  \"batchNumber\": \"LOT-2026-NOV-01\",\n  \"notes\": \"Passed all QC stages. Staged for customer dispatch.\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/quality/finished-goods-releases", "host": ["{{baseUrl}}"], "path": ["quality", "finished-goods-releases"] }
+          }
+        },
+        {
+          "name": "14. Inspection Compliance Report",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/quality/reports/inspection", "host": ["{{baseUrl}}"], "path": ["quality", "reports", "inspection"] }
+          }
+        }
+      ]
+    }
+  ]
+}
