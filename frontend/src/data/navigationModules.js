@@ -101,6 +101,54 @@ export const initialNavSections = [
       },
     ],
   },
+  {
+    id: 'hrms',
+    title: 'Module 7 · HRMS Workforce',
+    items: [
+      {
+        id: 'employees',
+        name: 'Employee Directory',
+        desc: 'Workforce records, onboarding & role profiles',
+        icon: 'Users',
+        badge: 'M7',
+      },
+      {
+        id: 'attendance',
+        name: 'Attendance & Time',
+        desc: 'Live punch tracking, status shifts & logs',
+        icon: 'Clock',
+        badge: 'M7',
+      },
+      {
+        id: 'task',
+        name: 'Task Allocation',
+        desc: 'Real-time task assignments & completions',
+        icon: 'CheckSquare',
+        badge: 'M7',
+      },
+      {
+        id: 'performance',
+        name: 'Performance & Scores',
+        desc: 'Productivity metrics & workforce leaderboard',
+        icon: 'Award',
+        badge: 'M7',
+      },
+      {
+        id: 'payroll',
+        name: 'Payroll & Fines',
+        desc: 'Salary slips, automated deductions & penalties',
+        icon: 'CreditCard',
+        badge: 'M7',
+      },
+      {
+        id: 'shifts',
+        name: 'Manufacturing Shifts',
+        desc: 'Shop floor shift scheduling & skill dispatch',
+        icon: 'Briefcase',
+        badge: 'M7',
+      },
+    ],
+  },
 ]
 
 export const currentUser = {

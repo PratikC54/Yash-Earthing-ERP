@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import {
   LayoutGrid,
   Search,
@@ -18,6 +18,11 @@ import {
   FileText,
   Sparkles,
   X,
+  Clock,
+  CheckSquare,
+  Award,
+  CreditCard,
+  Briefcase,
 } from 'lucide-react'
 
 // Icon mapping helper
@@ -36,6 +41,11 @@ const iconMap = {
   ShieldCheck,
   Truck,
   Globe,
+  Clock,
+  CheckSquare,
+  Award,
+  CreditCard,
+  Briefcase,
 }
 
 export default function Sidebar({

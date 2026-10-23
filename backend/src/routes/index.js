@@ -31,4 +31,9 @@ apiRouter.use("/", inwardsRouter);
 apiRouter.use("/", inventoryRouter);
 apiRouter.use("/", dashboardRouter);
 
+// Module 7: HRMS Workforce
+import hrmsRouter from "../features/hrms/hrms.routes.js";
+apiRouter.use("/hrms", hrmsRouter);
+
 export default apiRouter;
+

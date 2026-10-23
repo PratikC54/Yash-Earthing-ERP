@@ -23,6 +23,14 @@ import PurchaseOrdersPage from '../../features/module2/pages/PurchaseOrdersPage'
 import GoodsReceiptsPage from '../../features/module2/pages/GoodsReceiptsPage'
 import InventoryPage from '../../features/module2/pages/InventoryPage'
 
+// Module 7 Pages & Components
+import HRMSDashboard from '../../features/hrms/HRMSDashboard'
+import AttendanceManager from '../../features/hrms/attendance/AttendanceManager'
+import TaskManager from '../../features/hrms/tasks/TaskManager'
+import PerformanceManager from '../../features/hrms/performance/PerformanceManager'
+import PayrollManager from '../../features/hrms/payroll/PayrollManager'
+import ManufacturingIntegration from '../../features/hrms/manufacturing/ManufacturingIntegration'
+
 export default function AppLayout() {
   const { user, logout } = useAuth()
   const isAdmin = user?.role === 'ADMIN'
@@ -119,6 +127,36 @@ export default function AppLayout() {
     }
   }
 
+  // Initialize activeModuleId based on URL path if present
+  useEffect(() => {
+    const path = window.location.pathname.replace(/^\//, '').toLowerCase()
+    const pathMapping = {
+      '': defaultPageId,
+      'employees': 'employees',
+      'attendance': 'attendance',
+      'task': 'task',
+      'tasks': 'task',
+      'performance': 'performance',
+      'payroll': 'payroll',
+      'shifts': 'shifts',
+      'manufacturing': 'shifts',
+      'engineering': 'engineering',
+      'leads': 'leads',
+      'followups': 'followups',
+      'quotations': 'quotations',
+      'orders': 'orders',
+      'procurement-dashboard': 'procurement-dashboard',
+      'vendors': 'vendors',
+      'purchase-requests': 'purchase-requests',
+      'purchase-orders': 'purchase-orders',
+      'goods-receipts': 'goods-receipts',
+      'inventory': 'inventory'
+    }
+    if (path && pathMapping[path]) {
+      handleNavigate(pathMapping[path])
+    }
+  }, [])
+
   // Render current active page
   const renderContent = () => {
     switch (activeModuleId) {
@@ -161,6 +199,20 @@ export default function AppLayout() {
       // Module 3 Pages
       case 'engineering':
         return <EngineeringDashboard />
+
+      // Module 7: HRMS Workforce Pages
+      case 'employees':
+        return <HRMSDashboard initialTab="employees" />
+      case 'attendance':
+        return <AttendanceManager />
+      case 'task':
+        return <TaskManager />
+      case 'performance':
+        return <PerformanceManager />
+      case 'payroll':
+        return <PayrollManager />
+      case 'shifts':
+        return <ManufacturingIntegration />
 
       default:
         return isSuperUser ? (
