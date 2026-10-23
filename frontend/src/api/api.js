@@ -14,7 +14,9 @@ const api = axios.create({
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem("yash_auth_token");
+    const token =
+      localStorage.getItem("yash_auth_token") ||
+      sessionStorage.getItem("yash_auth_token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
