@@ -33,6 +33,12 @@ import PerformanceManager from '../../features/hrms/performance/PerformanceManag
 import PayrollManager from '../../features/hrms/payroll/PayrollManager'
 import ManufacturingIntegration from '../../features/hrms/manufacturing/ManufacturingIntegration'
 
+// Module 5 Pages
+import Module5Dashboard from '../../features/module5/pages/Module5Dashboard'
+import ProjectRegisterPage from '../../features/module5/pages/ProjectRegisterPage'
+import InstallationRegisterPage from '../../features/module5/pages/InstallationRegisterPage'
+import ServiceTicketRegisterPage from '../../features/module5/pages/ServiceTicketRegisterPage'
+
 export default function AppLayout() {
   const { user, logout } = useAuth()
   const isAdmin = user?.role === 'ADMIN'
@@ -265,6 +271,27 @@ export default function AppLayout() {
         return <PayrollManager />
       case 'shifts':
         return <ManufacturingIntegration />
+
+      // Module 6: Finance & Commercial submodules
+      case 'finance':
+      case 'm6-invoices':
+        return <FinanceDashboard initialTab="invoices" globalSearch={globalSearch} />
+      case 'm6-payables':
+        return <FinanceDashboard initialTab="payables" globalSearch={globalSearch} />
+      case 'm6-costing':
+        return <FinanceDashboard initialTab="costing" globalSearch={globalSearch} />
+      case 'm6-settings':
+        return <FinanceDashboard initialTab="settings" globalSearch={globalSearch} />
+
+      // Module 5: Project, Installation & Service
+      case 'm5-dashboard':
+        return <Module5Dashboard onNavigate={handleNavigate} />
+      case 'm5-projects':
+        return <ProjectRegisterPage />
+      case 'm5-installations':
+        return <InstallationRegisterPage />
+      case 'm5-service':
+        return <ServiceTicketRegisterPage />
       default:
         return isSuperUser ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />

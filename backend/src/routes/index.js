@@ -37,5 +37,14 @@ apiRouter.use("/", dashboardRouter);
 import hrmsRouter from "../features/hrms/hrms.routes.js";
 apiRouter.use("/hrms", hrmsRouter);
 
+// Module 5: Project, Installation & Service
+import projectRouter from "../features/projects/project.routes.js";
+import installationRouter from "../features/installations/installation.routes.js";
+import serviceTicketRouter from "../features/service-tickets/serviceTicket.routes.js";
+
+apiRouter.use("/projects", projectRouter);
+apiRouter.use("/installations", installationRouter);
+apiRouter.use("/service-tickets", serviceTicketRouter);
+
 export default apiRouter;
 
