@@ -275,3 +275,24 @@ export async function recordInventoryAdjustment({ productId, movementType, quant
     };
   });
 }
+
+export async function checkStockAvailability(productId) {
+  const pId = Number(productId);
+  const inv = await prisma.inventory.findFirst({
+    where: { productId: pId },
+    include: { product: true },
+  });
+
+  const onHand = inv ? Number(inv.physicalQuantity) : 0;
+  const reserved = inv ? Number(inv.reservedQuantity) : 0;
+  const available = Math.max(0, onHand - reserved);
+
+  return {
+    productId: pId,
+    productName: inv?.product?.name || null,
+    sku: inv?.product?.sku || null,
+    onHand,
+    reserved,
+    available,
+  };
+}

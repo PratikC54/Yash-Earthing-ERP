@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import { initialNavSections, currentUser as defaultUser } from '../../data/navigationModules'
@@ -240,13 +240,25 @@ export default function AppLayout() {
       // Module 3: Product & Engineering submodules
       case 'engineering':
       case 'm3-products':
-        return <EngineeringDashboard initialTab="products" />
+        return <EngineeringDashboard initialTab="products" onNavigate={handleNavigate} />
       case 'm3-boms':
-        return <EngineeringDashboard initialTab="boms" />
+        return <EngineeringDashboard initialTab="boms" onNavigate={handleNavigate} />
       case 'm3-drawings':
-        return <EngineeringDashboard initialTab="drawings" />
+        return <EngineeringDashboard initialTab="drawings" onNavigate={handleNavigate} />
+
+      // Module 6: Finance & Commercial submodules
+      case 'finance':
+      case 'm6-invoices':
+        return <FinanceDashboard initialTab="invoices" globalSearch={globalSearch} />
+      case 'm6-payables':
+        return <FinanceDashboard initialTab="payables" globalSearch={globalSearch} />
+      case 'm6-costing':
+        return <FinanceDashboard initialTab="costing" globalSearch={globalSearch} />
+      case 'm6-settings':
+        return <FinanceDashboard initialTab="settings" globalSearch={globalSearch} />
 
       // Module 7: HRMS Workforce Pages
+      case 'hrms':
       case 'employees':
         return <HRMSDashboard initialTab="employees" />
       case 'attendance':
@@ -298,6 +310,10 @@ export default function AppLayout() {
     if (scope === 'M1') {
       if (!['leads', 'followups', 'quotations', 'orders'].includes(activeModuleId)) {
         handleNavigate('leads')
+      }
+    } else if (scope === 'M2') {
+      if (!['procurement-dashboard', 'vendors', 'purchase-requests', 'purchase-orders', 'goods-receipts', 'inventory'].includes(activeModuleId)) {
+        handleNavigate('procurement-dashboard')
       }
     } else if (scope === 'M3') {
       if (!activeModuleId.startsWith('m3-')) {

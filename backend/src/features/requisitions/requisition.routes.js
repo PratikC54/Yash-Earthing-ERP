@@ -20,15 +20,29 @@ export function createRequisitionRouter({ authenticate, authorizeRoles } = {}) {
 
   // Purchase Requests
   router.get("/purchase-requests", maybeAuth, requisitionController.listPurchaseRequests);
+  router.get("/requisitions", maybeAuth, requisitionController.listPurchaseRequests);
   router.get("/purchase-requests/:id", maybeAuth, requisitionController.getPurchaseRequestById);
+  router.get("/requisitions/:id", maybeAuth, requisitionController.getPurchaseRequestById);
   router.post(
     "/purchase-requests",
     maybeAuth,
     maybeRole(["ADMIN", "PROCUREMENT", "ENGINEER", "STORE_MANAGER"]),
     requisitionController.createPurchaseRequest
   );
+  router.post(
+    "/requisitions",
+    maybeAuth,
+    maybeRole(["ADMIN", "PROCUREMENT", "ENGINEER", "STORE_MANAGER"]),
+    requisitionController.createPurchaseRequest
+  );
   router.patch(
     "/purchase-requests/:id",
+    maybeAuth,
+    maybeRole(["ADMIN", "PROCUREMENT", "STORE_MANAGER"]),
+    requisitionController.updatePurchaseRequest
+  );
+  router.patch(
+    "/requisitions/:id",
     maybeAuth,
     maybeRole(["ADMIN", "PROCUREMENT", "STORE_MANAGER"]),
     requisitionController.updatePurchaseRequest

@@ -24,11 +24,12 @@ import {
 import { engineeringService } from '../../services/engineeringService';
 import AddProductModal from './AddProductModal';
 import BOMEditorModal from './BOMEditorModal';
+import CreateBOMModal from './CreateBOMModal';
 import CostingPolicyModal from './CostingPolicyModal';
 import ShortageCalculatorModal from './ShortageCalculatorModal';
 import AddDrawingModal from './AddDrawingModal';
 
-export default function EngineeringDashboard({ initialTab = 'products' }) {
+export default function EngineeringDashboard({ initialTab = 'products', onNavigate }) {
   const [activeTab, setActiveTab] = useState(initialTab); // 'products', 'boms', 'drawings'
 
   useEffect(() => {
@@ -55,6 +56,7 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
 
   // Modals state
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
+  const [isCreateBomOpen, setIsCreateBomOpen] = useState(false);
   const [isBomEditorOpen, setIsBomEditorOpen] = useState(false);
   const [activeEditingBom, setActiveEditingBom] = useState(null);
   const [isCostingPolicyOpen, setIsCostingPolicyOpen] = useState(false);
@@ -108,6 +110,40 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
     if (!window.confirm('Are you sure you want to archive this product? It will be disabled for future BOMs and Quotations.')) return;
     await engineeringService.archiveProduct(id);
     await loadData();
+  };
+
+  const handleBomCreated = async (bomData) => {
+    try {
+      const res = await engineeringService.createBom(bomData);
+      await loadData();
+      if (res?.data) {
+        setActiveEditingBom(res.data);
+        setIsBomEditorOpen(true);
+      }
+    } catch (err) {
+      // If BOM already exists, open it directly!
+      if (err.response?.status === 409) {
+        const prodId = bomData.productId;
+        const existing = boms.find(b => String(b.productId) === String(prodId));
+        if (existing) {
+          setActiveEditingBom(existing);
+          setIsBomEditorOpen(true);
+          return;
+        }
+      }
+      throw err;
+    }
+  };
+
+  const handleOpenProductBom = (product) => {
+    if (!product) return;
+    const existing = boms.find(b => String(b.productId) === String(product.id));
+    if (existing) {
+      setActiveEditingBom(existing);
+      setIsBomEditorOpen(true);
+    } else {
+      setIsCreateBomOpen(true);
+    }
   };
 
   const handleSaveBomItems = async (revisionId, items) => {
@@ -181,6 +217,7 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
   });
 
   const rawMaterials = products.filter((p) => p.itemType === 'RAW_MATERIAL' || p.itemType === 'COMPONENT');
+  const availableComponents = rawMaterials.length > 0 ? rawMaterials : products;
 
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
@@ -481,18 +518,15 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
 
                 {/* Reference Image Panel */}
                 <div className="relative rounded-xl overflow-hidden border border-[#1e2a4a] bg-[#0a1020] aspect-video shadow-inner flex items-center justify-center">
-                  {selectedProduct.referenceImage ? (
-                    <img
-                      src={selectedProduct.referenceImage}
-                      alt={selectedProduct.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-slate-400 flex flex-col items-center">
-                      <ImageIcon className="w-8 h-8 text-slate-500" />
-                      <span className="text-xs mt-1 text-slate-400">No reference image</span>
-                    </div>
-                  )}
+                  <img
+                    src={selectedProduct.referenceImage || selectedProduct.imageUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80"}
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80";
+                    }}
+                  />
                   <span className="absolute bottom-2 left-2 text-[10px] bg-black/70 backdrop-blur-sm text-cyan-300 px-2 py-0.5 rounded font-mono border border-slate-700">
                     Standard Spec Sheet
                   </span>
@@ -542,7 +576,7 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
                 </div>
 
                 {/* Official Registry PDF Report Trigger */}
-                <div className="pt-1">
+                <div className="pt-1 space-y-2">
                   <button
                     onClick={() => handleExportProductReport(selectedProduct.id)}
                     className="w-full py-2.5 px-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-bold text-xs shadow-md shadow-blue-600/30 flex items-center justify-center space-x-2 transition"
@@ -550,7 +584,16 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
                     <Printer className="w-4 h-4" />
                     <span>Export Official Datasheet / Registry Report (PDF)</span>
                   </button>
-                  <p className="text-[10px] text-slate-400 text-center mt-1.5">
+
+                  <button
+                    onClick={() => handleOpenProductBom(selectedProduct)}
+                    className="w-full py-2 px-3 bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 rounded-xl font-bold text-xs flex items-center justify-center space-x-2 transition"
+                  >
+                    <Layers className="w-4 h-4" />
+                    <span>Configure / View BOM for this Product</span>
+                  </button>
+
+                  <p className="text-[10px] text-slate-400 text-center mt-1">
                     Includes company header, product photo, technical parameters, released BOM recipe & ISO compliance sign-offs.
                   </p>
                 </div>
@@ -567,13 +610,22 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
       {/* TAB 2: BOM & COSTING */}
       {activeTab === 'boms' && (
         <div className="space-y-4">
-          <div className="bg-[#10182f] p-4 rounded-2xl border border-[#1e2a4a] shadow-xl flex justify-between items-center text-white">
+          <div className="bg-[#10182f] p-4 rounded-2xl border border-[#1e2a4a] shadow-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-white">
             <div>
               <h2 className="text-sm font-bold text-white">Manufacturing Bills of Materials (BOM)</h2>
               <p className="text-xs text-slate-400">Multilevel raw materials, scrap allowances, and frozen cost snapshots</p>
             </div>
-            <div className="text-xs font-mono bg-[#0a1020] px-3 py-1.5 rounded-xl border border-slate-800 text-slate-300">
-              Active Costing Policy: <span className="font-bold text-cyan-300">{costingPolicy?.name}</span>
+            <div className="flex items-center space-x-3">
+              <div className="text-xs font-mono bg-[#0a1020] px-3 py-1.5 rounded-xl border border-slate-800 text-slate-300">
+                Active Costing Policy: <span className="font-bold text-cyan-300">{costingPolicy?.name}</span>
+              </div>
+              <button
+                onClick={() => setIsCreateBomOpen(true)}
+                className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-600/30 transition flex items-center space-x-1.5 cursor-pointer"
+              >
+                <Plus className="w-4 h-4" />
+                <span>+ Create BOM</span>
+              </button>
             </div>
           </div>
 
@@ -746,12 +798,20 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
         onProductCreated={handleProductCreated}
       />
 
+      <CreateBOMModal
+        isOpen={isCreateBomOpen}
+        onClose={() => setIsCreateBomOpen(false)}
+        products={products}
+        costingPolicy={costingPolicy}
+        onBomCreated={handleBomCreated}
+      />
+
       <BOMEditorModal
         isOpen={isBomEditorOpen}
         onClose={() => setIsBomEditorOpen(false)}
         bom={activeEditingBom}
         product={activeEditingBom?.product}
-        availableComponents={rawMaterials}
+        availableComponents={availableComponents}
         costingPolicy={costingPolicy}
         onSaveItems={handleSaveBomItems}
         onSubmitRevision={handleSubmitBomRev}
@@ -775,6 +835,7 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
         isOpen={isShortageCheckOpen}
         onClose={() => setIsShortageCheckOpen(false)}
         products={products}
+        onNavigate={onNavigate}
       />
 
       <AddDrawingModal

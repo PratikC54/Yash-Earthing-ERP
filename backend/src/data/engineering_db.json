@@ -189,6 +189,65 @@
   ],
   "products": [
     {
+      "id": 10,
+      "sku": "SKU-CBP-600-6M",
+      "name": "Yash Heavy-Duty Bonded Earthing wear with copper",
+      "categoryId": "2",
+      "categoryName": "Raw Metals",
+      "itemType": "RAW_MATERIAL",
+      "material": "99.99% copper",
+      "size": "60 mm",
+      "length": "6.5 meter",
+      "finish": "250 Microns Copper Coating",
+      "uom": "METER",
+      "rate": 3458,
+      "gstPercent": 28,
+      "status": "ACTIVE",
+      "description": "This is for wearing.",
+      "referenceImage": "https://www.gscearthing.com/assets/img/category/gsc-infra-solutions-why-copper-bonded-earthing-rods-are-essential-for-electrical-safety-00c.webp",
+      "stockQuantity": 0,
+      "specifications": [
+        {
+          "attribute": "Standard Compliance",
+          "value": "IS 3043 / IEEE 80 / UL 467",
+          "unit": "",
+          "standard": "CPRI Tested"
+        },
+        {
+          "attribute": "Conductor Material",
+          "value": "99.99% copper",
+          "unit": "",
+          "standard": "IEC 62561-2"
+        },
+        {
+          "attribute": "Dimensions",
+          "value": "60 mm x 6.5 meter",
+          "unit": "",
+          "standard": "Factory Standard"
+        }
+      ]
+    },
+    {
+      "id": "prod_1792744244672_qqfn",
+      "sku": "SKU-CBP-600-3M",
+      "name": "Yash Heavy-Duty Copper Bonded Earth Plate 600x600x3mm",
+      "categoryId": "1",
+      "itemType": "FINISHED",
+      "material": "99.99% copper",
+      "size": "60MM",
+      "length": "3.0 meter",
+      "finish": "250 Microns Copper Coating",
+      "uom": "METER",
+      "rate": 2150,
+      "gstPercent": 18,
+      "status": "ACTIVE",
+      "description": "High electrical conductivity copper bonded earth plate tested to IS 3043:2018 and UL 467 with heavy-duty dual connecting lugs.",
+      "referenceImage": "https://tse3.mm.bing.net/th/id/OIP.q4_mQtJ5NEDyP0lIVaWgNQHaHa?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+      "specifications": [],
+      "createdAt": "2026-10-23T08:30:44.672Z",
+      "updatedAt": "2026-10-23T08:30:44.672Z"
+    },
+    {
       "id": "prod_1792692358557_bi91",
       "sku": "SKU-YASH-ESE-108M",
       "name": "Yash Advanced ESE Lightning Terminal 108m",
@@ -564,6 +623,22 @@
       "description": "Top terminal assembly for strip/cable interconnection.",
       "createdAt": "2026-10-22T17:38:03.795Z",
       "updatedAt": "2026-10-22T17:38:03.795Z"
+    },
+    {
+      "id": 5,
+      "sku": "YEC-CP-001",
+      "name": "Copper Plate",
+      "categoryId": "1",
+      "itemType": "RAW_MATERIAL",
+      "material": "Standard Spec",
+      "size": "Standard",
+      "length": "3.0m",
+      "uom": "PCS",
+      "rate": 4200,
+      "gstPercent": 18,
+      "status": "ACTIVE",
+      "description": "Copper Plate",
+      "specifications": []
     }
   ],
   "costingPolicy": {
@@ -581,6 +656,189 @@
     "updatedAt": "2026-10-23T06:44:43.854Z"
   },
   "boms": [
+    {
+      "id": "bom_1792747711816",
+      "productId": "prod_1792744244672_qqfn",
+      "bomCode": "BOM-CBP-600-3M",
+      "title": "Bill of Materials for Yash Heavy-Duty Copper Bonded Earth Plate 600x600x3mm",
+      "createdAt": "2026-10-23T09:28:31.816Z",
+      "product": {
+        "id": "prod_1792744244672_qqfn",
+        "sku": "SKU-CBP-600-3M",
+        "name": "Yash Heavy-Duty Copper Bonded Earth Plate 600x600x3mm",
+        "uom": "METER"
+      },
+      "revisions": [
+        {
+          "id": "rev_1792747711816_a",
+          "revisionCode": "Rev A",
+          "status": "RELEASED",
+          "changeReason": "Initial production release for substation earthing projects.",
+          "createdBy": "Product Engineer",
+          "submittedBy": "Product Engineer",
+          "submittedAt": "2026-10-23T09:39:14.970Z",
+          "approvedBy": "Head of Engineering (Pratik Senapati)",
+          "approvedAt": "2026-10-23T09:39:25.162Z",
+          "releasedBy": "Head of Engineering (Pratik Senapati)",
+          "releasedAt": "2026-10-23T09:39:28.436Z",
+          "policyId": "policy_yash_std_2026",
+          "costSnapshot": {
+            "materialCost": 2703.7250000000004,
+            "labourCost": 108,
+            "overheadCost": 337.40700000000004,
+            "totalCost": 3149.1320000000005,
+            "suggestedPrice": 4030.8889600000007,
+            "targetMarginPercent": 28,
+            "computedAt": "2026-10-23T09:39:28.436Z"
+          },
+          "items": [
+            {
+              "id": "item_1",
+              "componentProductId": 8,
+              "componentSku": "RAW-MS-PIPE-50",
+              "componentName": "Mild Steel Base Plate",
+              "quantity": 8.5,
+              "uom": "KG",
+              "unitRate": 65,
+              "scrapPercent": 3,
+              "lineCost": 569.075,
+              "note": ""
+            },
+            {
+              "id": "item_2",
+              "componentProductId": 2,
+              "componentSku": "RM-COPPER-ROD-99",
+              "componentName": "Electrolytic Copper Rod 99.9%",
+              "quantity": 2.2,
+              "uom": "KG",
+              "unitRate": 850,
+              "scrapPercent": 2,
+              "lineCost": 1907.4,
+              "note": ""
+            },
+            {
+              "id": "item_3",
+              "componentProductId": 9,
+              "componentSku": "RAW-CRYST-FILL",
+              "componentName": "High Conductivity Crystalline Mineral Mix",
+              "quantity": 5,
+              "uom": "KG",
+              "unitRate": 45,
+              "scrapPercent": 1,
+              "lineCost": 227.25,
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "bom_1792747694148",
+      "productId": 5,
+      "bomCode": "BOM-YEC-CP-001",
+      "title": "Bill of Materials for Copper Plate",
+      "createdAt": "2026-10-23T09:28:14.148Z",
+      "product": {
+        "id": 5,
+        "sku": "YEC-CP-001",
+        "name": "Copper Plate",
+        "uom": "PCS"
+      },
+      "revisions": [
+        {
+          "id": "rev_1792747694148_a",
+          "revisionCode": "Rev A",
+          "status": "DRAFT",
+          "changeReason": "Initial release for copper plate",
+          "createdBy": "Product Engineer",
+          "submittedBy": null,
+          "submittedAt": null,
+          "approvedBy": null,
+          "approvedAt": null,
+          "releasedBy": null,
+          "releasedAt": null,
+          "policyId": "policy_yash_std_2026",
+          "costSnapshot": null,
+          "items": []
+        }
+      ]
+    },
+    {
+      "id": "bom_1792747543809",
+      "productId": "prod_ese_60m",
+      "bomCode": "BOM-SKU-ESE-60M",
+      "title": "Bill of Materials for Yash ESE Early Streamer Emission Lightning Arrester (Radius 60m)",
+      "createdAt": "2026-10-23T09:25:43.809Z",
+      "product": {
+        "id": "prod_ese_60m",
+        "sku": "SKU-ESE-60M",
+        "name": "Yash ESE Early Streamer Emission Lightning Arrester (Radius 60m)",
+        "uom": "NOS"
+      },
+      "revisions": [
+        {
+          "id": "rev_1792747543809_a",
+          "revisionCode": "Rev A",
+          "status": "RELEASED",
+          "changeReason": "Initial production release for substation earthing projects.",
+          "createdBy": "Product Engineer",
+          "submittedBy": "Product Engineer",
+          "submittedAt": "2026-10-23T09:36:23.961Z",
+          "approvedBy": "Head of Engineering (Pratik Senapati)",
+          "approvedAt": "2026-10-23T09:38:48.167Z",
+          "releasedBy": "Head of Engineering (Pratik Senapati)",
+          "releasedAt": "2026-10-23T09:38:52.572Z",
+          "policyId": "policy_yash_std_2026",
+          "costSnapshot": {
+            "materialCost": 2703.7250000000004,
+            "labourCost": 108,
+            "overheadCost": 337.40700000000004,
+            "totalCost": 3149.1320000000005,
+            "suggestedPrice": 4030.8889600000007,
+            "targetMarginPercent": 28,
+            "computedAt": "2026-10-23T09:38:52.572Z"
+          },
+          "items": [
+            {
+              "id": "new_1792748001011",
+              "componentProductId": "8",
+              "componentSku": "RAW-MS-PIPE-50",
+              "componentName": "Heavy Duty Mild Steel Outer Pipe 50mm NB Class B",
+              "quantity": 8.5,
+              "uom": "METER",
+              "unitRate": 65,
+              "scrapPercent": 3,
+              "lineCost": 569.075,
+              "note": ""
+            },
+            {
+              "id": "new_1792748056969",
+              "componentProductId": "2",
+              "componentSku": "RM-COPPER-ROD-99",
+              "componentName": "Electrolytic Copper Rod 99.9%",
+              "quantity": 2.2,
+              "uom": "KG",
+              "unitRate": 850,
+              "scrapPercent": 2,
+              "lineCost": 1907.4,
+              "note": ""
+            },
+            {
+              "id": "new_1792748102696",
+              "componentProductId": "9",
+              "componentSku": "RAW-CRYST-FILL",
+              "componentName": "High Conductivity Crystalline Earth Mineral Mix",
+              "quantity": 5,
+              "uom": "KG",
+              "unitRate": 45,
+              "scrapPercent": 1,
+              "lineCost": 227.25,
+              "note": ""
+            }
+          ]
+        }
+      ]
+    },
     {
       "id": "bom_cbe_50_3m",
       "productId": "prod_cbe_50_3m",
@@ -739,6 +997,31 @@
   ],
   "drawings": [
     {
+      "id": "drw_1792745758064",
+      "drawingNo": "SKU-CBP-600-6M",
+      "title": "60mm electrical copper bond wear.",
+      "type": "FABRICATION",
+      "productId": "10",
+      "status": "RELEASED",
+      "latestRevision": "Rev A",
+      "revisions": [
+        {
+          "id": "drw_rev_1792745758064_a",
+          "revisionCode": "Rev A",
+          "status": "RELEASED",
+          "fileName": "SKU-CBP-600-6M-RevA.pdf",
+          "fileSize": "1.4 MB",
+          "fileType": "application/pdf",
+          "checksum": "f4b3e2...auto",
+          "changeReason": "Initial production drawing release approved by engineering.",
+          "uploadedBy": "Design Engineer",
+          "uploadedAt": "2026-10-23T08:55:58.064Z",
+          "releasedBy": "Head of Engineering (Pratik Senapati)",
+          "releasedAt": "2026-10-23T08:55:58.064Z"
+        }
+      ]
+    },
+    {
       "id": "drw_1792692548026",
       "drawingNo": "YASH-ENG-DWG-902",
       "title": "108m ESE Terminal Stainless Steel Base Mount Section",
@@ -847,6 +1130,114 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "audit_1792748368441_iexz6",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792747711816_a",
+      "action": "RELEASE",
+      "actor": "Head of Engineering (Pratik Senapati)",
+      "details": "Released Rev A with frozen cost ₹3149.13",
+      "timestamp": "2026-10-23T09:39:28.441Z"
+    },
+    {
+      "id": "audit_1792748365167_9pnut",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792747711816_a",
+      "action": "APPROVE",
+      "actor": "Head of Engineering (Pratik Senapati)",
+      "details": "Approved Rev A",
+      "timestamp": "2026-10-23T09:39:25.167Z"
+    },
+    {
+      "id": "audit_1792748354975_iflqu",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792747711816_a",
+      "action": "SUBMIT",
+      "actor": "Product Engineer",
+      "details": "Submitted Rev A for engineering review.",
+      "timestamp": "2026-10-23T09:39:14.975Z"
+    },
+    {
+      "id": "audit_1792748332576_9atqt",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792747543809_a",
+      "action": "RELEASE",
+      "actor": "Head of Engineering (Pratik Senapati)",
+      "details": "Released Rev A with frozen cost ₹3149.13",
+      "timestamp": "2026-10-23T09:38:52.576Z"
+    },
+    {
+      "id": "audit_1792748328175_nqln1",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792747543809_a",
+      "action": "APPROVE",
+      "actor": "Head of Engineering (Pratik Senapati)",
+      "details": "Approved Rev A",
+      "timestamp": "2026-10-23T09:38:48.175Z"
+    },
+    {
+      "id": "audit_1792748183990_uv2pt",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792747543809_a",
+      "action": "SUBMIT",
+      "actor": "Product Engineer",
+      "details": "Submitted Rev A for engineering review.",
+      "timestamp": "2026-10-23T09:36:23.990Z"
+    },
+    {
+      "id": "audit_1792747711818_3z4ao",
+      "entity": "BOM",
+      "entityId": "bom_1792747711816",
+      "action": "CREATE",
+      "actor": "Product Engineer",
+      "details": "Created BOM BOM-CBP-600-3M",
+      "timestamp": "2026-10-23T09:28:31.818Z"
+    },
+    {
+      "id": "audit_1792747694150_j7dtl",
+      "entity": "BOM",
+      "entityId": "bom_1792747694148",
+      "action": "CREATE",
+      "actor": "Product Engineer",
+      "details": "Created BOM BOM-YEC-CP-001",
+      "timestamp": "2026-10-23T09:28:14.150Z"
+    },
+    {
+      "id": "audit_1792747543813_a4u3m",
+      "entity": "BOM",
+      "entityId": "bom_1792747543809",
+      "action": "CREATE",
+      "actor": "Product Engineer",
+      "details": "Created BOM BOM-SKU-ESE-60M",
+      "timestamp": "2026-10-23T09:25:43.813Z"
+    },
+    {
+      "id": "audit_1792745758067_2rbgd",
+      "entity": "Drawing",
+      "entityId": "drw_1792745758064",
+      "action": "CREATE_DRAWING",
+      "actor": "Design Engineer",
+      "details": "Uploaded & released drawing SKU-CBP-600-6M",
+      "timestamp": "2026-10-23T08:55:58.067Z"
+    },
+    {
+      "id": "audit_1792745383003_cezce",
+      "entity": "Product",
+      "entityId": "10",
+      "action": "CREATE",
+      "actor": "Product Engineer",
+      "details": "Created product SKU-CBP-600-6M in PostgreSQL",
+      "timestamp": "2026-10-23T08:49:43.003Z"
+    },
+    {
+      "id": "audit_1792744244676_q8an1",
+      "entity": "Product",
+      "entityId": "prod_1792744244672_qqfn",
+      "action": "CREATE",
+      "actor": "Product Engineer",
+      "details": "Created product SKU-CBP-600-3M - Yash Heavy-Duty Copper Bonded Earth Plate 600x600x3mm",
+      "timestamp": "2026-10-23T08:30:44.676Z"
+    },
     {
       "id": "audit_1792737883857_vrnr6",
       "entity": "CostingPolicy",

@@ -76,3 +76,16 @@ export async function recordInventoryAdjustment(req, res, next) {
     next(error);
   }
 }
+
+export async function checkStockAvailability(req, res, next) {
+  try {
+    const productId = req.query.productId || req.params.productId;
+    if (!productId) {
+      return res.status(400).json({ success: false, message: "productId query parameter is required" });
+    }
+    const result = await inventoryService.checkStockAvailability(productId);
+    res.status(200).json({ success: true, ...result });
+  } catch (error) {
+    next(error);
+  }
+}
