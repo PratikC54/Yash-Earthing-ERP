@@ -79,5 +79,42 @@ export const financeService = {
   updateCompanyProfile: async (profileData) => {
     const res = await api.put(`${BASE_URL}/settings/company`, profileData);
     return res.data;
+  },
+
+  // CRUD extensions
+  updateInvoice: async (id, updateData) => {
+    const res = await api.patch(`${BASE_URL}/invoices/${id}`, updateData);
+    return res.data;
+  },
+
+  cancelInvoice: async (id, reason) => {
+    const res = await api.delete(`${BASE_URL}/invoices/${id}`, { data: { reason } });
+    return res.data;
+  },
+
+  deleteReceipt: async (id) => {
+    const res = await api.delete(`${BASE_URL}/receipts/${id}`);
+    return res.data;
+  },
+
+  updateVendorBill: async (id, updateData) => {
+    const res = await api.patch(`${BASE_URL}/vendor-bills/${id}`, updateData);
+    return res.data;
+  },
+
+  deleteVendorBill: async (id) => {
+    const res = await api.delete(`${BASE_URL}/vendor-bills/${id}`);
+    return res.data;
+  },
+
+  // Smart Extraction & Ingestion
+  extractImportData: async (rawContent, importType) => {
+    const res = await api.post(`${BASE_URL}/import/extract`, { rawContent, importType });
+    return res.data;
+  },
+
+  ingestImportData: async (importType, rows) => {
+    const res = await api.post(`${BASE_URL}/import/ingest`, { importType, rows });
+    return res.data;
   }
 };

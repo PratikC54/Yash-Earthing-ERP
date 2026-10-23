@@ -22,12 +22,20 @@ import {
   Users,
   Search,
   Filter,
-  RefreshCw
+  RefreshCw,
+  Trash2,
+  Edit3,
+  Lock,
+  Unlock,
+  FileDown,
+  UploadCloud,
+  X
 } from 'lucide-react';
 import { financeService } from '../../services/financeService';
 import GenerateInvoiceModal from './GenerateInvoiceModal';
 import RecordReceiptModal from './RecordReceiptModal';
 import CreateVendorBillModal from './CreateVendorBillModal';
+import SmartDataExtractionModal from './SmartDataExtractionModal';
 
 export default function FinanceDashboard() {
   const [activeTab, setActiveTab] = useState('invoices'); // invoices, receipts, payables, costing, settings
@@ -42,11 +50,31 @@ export default function FinanceDashboard() {
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  // Role Simulation State (RBAC)
+  // Options: 'ADMIN' | 'FINANCE_MGR' | 'ACCOUNTS_EXEC' | 'SALES_OWNER' | 'AUDITOR'
+  const [currentRole, setCurrentRole] = useState('ADMIN');
 
   // Modals
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [isVendorBillModalOpen, setIsVendorBillModalOpen] = useState(false);
+  const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
+
+  // Settings Edit State
+  const [isEditingSettings, setIsEditingSettings] = useState(false);
+  const [companyForm, setCompanyForm] = useState({
+    legalName: '',
+    gstin: '',
+    pan: '',
+    stateCode: '27',
+    stateName: 'Maharashtra',
+    bankName: '',
+    accountNumber: '',
+    ifsc: '',
+    upiId: ''
+  });
 
   useEffect(() => {
     loadAllData();
@@ -73,6 +101,20 @@ export default function FinanceDashboard() {
       setVendorBills(vbRes.data || []);
       setJobCosting(costRes.data || []);
       setSettings(setRes.data || null);
+
+      if (setRes.data?.companyProfile) {
+        setCompanyForm({
+          legalName: setRes.data.companyProfile.legalName || '',
+          gstin: setRes.data.companyProfile.gstin || '',
+          pan: setRes.data.companyProfile.pan || '',
+          stateCode: setRes.data.companyProfile.stateCode || '27',
+          stateName: setRes.data.companyProfile.stateName || 'Maharashtra',
+          bankName: setRes.data.companyProfile.bankDetails?.bankName || '',
+          accountNumber: setRes.data.companyProfile.bankDetails?.accountNumber || '',
+          ifsc: setRes.data.companyProfile.bankDetails?.ifsc || '',
+          upiId: setRes.data.companyProfile.bankDetails?.upiId || ''
+        });
+      }
     } catch (err) {
       console.error('Failed to load finance records:', err);
       setError('Unable to load finance records from server.');
@@ -81,12 +123,106 @@ export default function FinanceDashboard() {
     }
   };
 
+  const showNotification = (msg) => {
+    setSuccessMsg(msg);
+    setTimeout(() => setSuccessMsg(''), 4000);
+  };
+
+  // PDF Download Trigger
   const handleDownloadInvoicePdf = (invId) => {
     const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000/api/v1';
     window.open(`${baseUrl}/finance/invoices/${invId}/pdf?download=true`, '_blank');
   };
 
+  // ===================== CRUD: INVOICES =====================
+  const handleToggleDispute = async (inv) => {
+    const isNowDisputed = !inv.isDisputed;
+    let reason = '';
+    if (isNowDisputed) {
+      reason = prompt('Enter reason for commercial or quality dispute:', inv.disputeReason || 'Rate or dispatch quantity variance under review');
+      if (reason === null) return;
+    }
+
+    try {
+      await financeService.updateInvoice(inv.id, {
+        isDisputed: isNowDisputed,
+        disputeReason: isNowDisputed ? reason : null
+      });
+      showNotification(`Invoice ${inv.invoiceNo} marked as ${isNowDisputed ? 'DISPUTED' : 'RESOLVED'}.`);
+      loadAllData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update invoice.');
+    }
+  };
+
+  const handleCancelInvoice = async (inv) => {
+    if (currentRole !== 'ADMIN') {
+      alert('Only Admin users are permitted to cancel or void statutory GST invoices.');
+      return;
+    }
+    const reason = prompt(`Enter cancellation reason for Invoice ${inv.invoiceNo}:`, 'Customer order cancelled / Revised invoice required');
+    if (!reason) return;
+
+    try {
+      await financeService.cancelInvoice(inv.id, reason);
+      showNotification(`Invoice ${inv.invoiceNo} cancelled. Order unbilled quantities restored.`);
+      loadAllData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to cancel invoice.');
+    }
+  };
+
+  // ===================== CRUD: RECEIPTS =====================
+  const handleDeleteReceipt = async (rec) => {
+    if (currentRole !== 'ADMIN') {
+      alert('Only Admin users are permitted to delete or reverse verified payment receipts.');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to delete receipt ${rec.receiptNo} of ₹${rec.amount.toLocaleString()}? All invoice balances will be restored.`)) {
+      return;
+    }
+
+    try {
+      await financeService.deleteReceipt(rec.id);
+      showNotification(`Receipt ${rec.receiptNo} deleted and invoice balances restored.`);
+      loadAllData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete receipt.');
+    }
+  };
+
+  // ===================== CRUD: VENDOR BILLS =====================
+  const handleUpdateVendorBillStatus = async (billId, status) => {
+    try {
+      await financeService.updateVendorBill(billId, { status });
+      showNotification(`Vendor bill status updated to ${status}.`);
+      loadAllData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to update vendor bill.');
+    }
+  };
+
+  const handleDeleteVendorBill = async (bill) => {
+    if (currentRole !== 'ADMIN') {
+      alert('Only Admin users are permitted to delete vendor bills.');
+      return;
+    }
+    if (!window.confirm(`Delete vendor bill ${bill.billNo}?`)) return;
+
+    try {
+      await financeService.deleteVendorBill(bill.id);
+      showNotification(`Vendor bill ${bill.billNo} removed.`);
+      loadAllData();
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete vendor bill.');
+    }
+  };
+
   const handlePayVendor = async (billId, amount) => {
+    if (currentRole === 'AUDITOR' || currentRole === 'SALES_OWNER') {
+      alert('Access Restricted: Only Finance Manager and Admin can release vendor disbursements.');
+      return;
+    }
     const ref = prompt('Enter Bank Payment UTR / Transaction Reference:');
     if (!ref) return;
     try {
@@ -96,14 +232,119 @@ export default function FinanceDashboard() {
         referenceNo: ref,
         tdsDeduction: Math.round(amount * 0.001) // Section 194Q TDS @ 0.1%
       });
+      showNotification(`Vendor payment recorded with reference ${ref}.`);
       loadAllData();
     } catch (err) {
-      alert('Failed to process vendor payment.');
+      alert(err.response?.data?.message || 'Failed to process vendor payment.');
     }
   };
 
-  // Filtered invoices
-  const filteredInvoices = invoices.filter(inv => {
+  // ===================== CRUD: COMPANY PROFILE SETTINGS =====================
+  const handleSaveCompanySettings = async (e) => {
+    e.preventDefault();
+    if (currentRole !== 'ADMIN') {
+      alert('Only Admin users can modify Statutory Company Profile.');
+      return;
+    }
+
+    try {
+      await financeService.updateCompanyProfile({
+        legalName: companyForm.legalName,
+        gstin: companyForm.gstin,
+        pan: companyForm.pan,
+        stateCode: companyForm.stateCode,
+        stateName: companyForm.stateName,
+        bankDetails: {
+          bankName: companyForm.bankName,
+          accountNumber: companyForm.accountNumber,
+          ifsc: companyForm.ifsc,
+          upiId: companyForm.upiId
+        }
+      });
+      setIsEditingSettings(false);
+      showNotification('Company Profile and Bank details updated successfully.');
+      loadAllData();
+    } catch (err) {
+      alert('Failed to update company settings.');
+    }
+  };
+
+  // ===================== CSV EXPORT ENGINE =====================
+  const exportToCsv = (filename, rows) => {
+    if (!rows || !rows.length) return;
+    const separator = ',';
+    const keys = Object.keys(rows[0]);
+    const csvContent =
+      keys.join(separator) +
+      '\n' +
+      rows
+        .map((row) => {
+          return keys
+            .map((k) => {
+              let cell = row[k] === null || row[k] === undefined ? '' : row[k];
+              cell = cell instanceof Date ? cell.toLocaleString() : cell.toString().replace(/"/g, '""');
+              if (cell.search(/("|,|\n)/g) >= 0) cell = `"${cell}"`;
+              return cell;
+            })
+            .join(separator);
+        })
+        .join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotification(`Exported ${rows.length} records to ${filename}`);
+  };
+
+  const handleExportInvoices = () => {
+    const rows = filteredInvoices.map((inv) => ({
+      Invoice_No: inv.invoiceNo,
+      Date: inv.invoiceDate,
+      Customer: inv.customerSnapshot?.name,
+      GSTIN: inv.customerSnapshot?.gstin,
+      Place_Of_Supply: inv.placeOfSupply,
+      Order_No: inv.orderNo,
+      PO_No: inv.poNumber,
+      Taxable_Total: inv.taxableTotal,
+      CGST: inv.cgstTotal,
+      SGST: inv.sgstTotal,
+      IGST: inv.igstTotal,
+      Grand_Total: inv.grandTotal,
+      Paid_Amount: inv.paidAmount,
+      Balance_Due: inv.balanceAmount,
+      Due_Date: inv.dueDate,
+      Status: inv.derivedStatus
+    }));
+    exportToCsv(`GST_Invoices_${new Date().toISOString().split('T')[0]}.csv`, rows);
+  };
+
+  const handleExportAgeing = () => {
+    const rows = ageingList.map((ag) => ({
+      Customer: ag.customerName,
+      Current_Not_Due: ag.current,
+      Days_1_30: ag.days1_30,
+      Days_31_60: ag.days31_60,
+      Days_61_90: ag.days61_90,
+      Days_90_Plus: ag.days90Plus,
+      Total_Outstanding: ag.totalOutstanding,
+      Credit_Limit: ag.creditLimit,
+      Headroom: ag.creditLimit - ag.totalOutstanding
+    }));
+    exportToCsv(`Receivables_Ageing_${new Date().toISOString().split('T')[0]}.csv`, rows);
+  };
+
+  // Filtered invoices by role & search
+  const filteredInvoices = invoices.filter((inv) => {
+    // If sales owner, only show their accounts (e.g., Tata Power, Adani)
+    if (currentRole === 'SALES_OWNER') {
+      const allowed = ['cust_tata_power', 'cust_adani_solar'];
+      if (!allowed.includes(inv.customerId)) return false;
+    }
+
     const matchesSearch =
       inv.invoiceNo.toLowerCase().includes(searchQuery.toLowerCase()) ||
       inv.customerSnapshot?.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -127,8 +368,55 @@ export default function FinanceDashboard() {
     dsoDays: 28
   };
 
+  // Role permissions helpers
+  const canCreate = currentRole === 'ADMIN' || currentRole === 'FINANCE_MGR' || currentRole === 'ACCOUNTS_EXEC';
+  const canDelete = currentRole === 'ADMIN';
+  const canViewMargins = currentRole === 'ADMIN' || currentRole === 'FINANCE_MGR';
+  const canViewPayables = currentRole !== 'SALES_OWNER';
+  const canViewSettings = currentRole === 'ADMIN' || currentRole === 'FINANCE_MGR';
+
   return (
     <div className="p-6 space-y-6 max-w-7xl mx-auto">
+      {/* Dynamic Role Simulation Header */}
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-lg text-white flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <div className="flex items-center space-x-3">
+          <div className="w-8 h-8 rounded-lg bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+            <Users className="w-4 h-4" />
+          </div>
+          <div>
+            <div className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+              Active User Role Simulation (RBAC Layer)
+            </div>
+            <div className="text-[11px] text-slate-400">
+              Switches permissions, action authorizations, and proprietary cost visibility in real time
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <label className="text-xs font-semibold text-slate-300">Viewing As:</label>
+          <select
+            value={currentRole}
+            onChange={(e) => setCurrentRole(e.target.value)}
+            className="bg-slate-800 border border-slate-700 text-xs text-white rounded-lg px-3 py-1.5 font-bold focus:ring-2 focus:ring-blue-500 focus:outline-none"
+          >
+            <option value="ADMIN">👑 Super Admin / HR (Full CRUD & Margins)</option>
+            <option value="FINANCE_MGR">💼 Finance Manager (Anita Deshmukh)</option>
+            <option value="ACCOUNTS_EXEC">📋 Accounts Executive (Pooja Rao)</option>
+            <option value="SALES_OWNER">🤝 Sales Commercial (Vikram Malhotra)</option>
+            <option value="AUDITOR">🔍 Auditor / Tax Inspector (Read-Only)</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Success Notification Banner */}
+      {successMsg && (
+        <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold rounded-xl flex items-center space-x-2 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>{successMsg}</span>
+        </div>
+      )}
+
       {/* Module Title Banner & Strategic Handshake Strip */}
       <div className="bg-[#141d30] border border-slate-800 rounded-2xl p-6 shadow-xl text-white">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -138,28 +426,40 @@ export default function FinanceDashboard() {
                 MODULE 6
               </span>
               <h1 className="text-xl font-extrabold tracking-tight">
-                Finance & Commercial — Accounts, Billing & Profitability
+                Finance & Commercial — Billing, Collections & Margins
               </h1>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              End-to-end commercial control layer: GST Invoicing from M1/M2 Dispatches, Receivables Ageing, 3-Way Payables Match & Job Margins.
+              Final operational link in 10-step ERP: GST Invoicing from M1/M2 Dispatches, Receivables Ageing, 3-Way Payables Match & Job Margins.
             </p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex flex-wrap items-center gap-2">
             <button
-              onClick={() => setIsInvoiceModalOpen(true)}
-              className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5"
+              onClick={() => setIsExtractModalOpen(true)}
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 font-bold rounded-xl text-xs shadow-sm transition flex items-center space-x-1.5"
             >
-              <Plus className="w-4 h-4" />
-              <span>+ Generate Invoice</span>
+              <UploadCloud className="w-4 h-4 text-cyan-400" />
+              <span>⚡ Smart Import (CSV/Excel)</span>
             </button>
-            <button
-              onClick={() => setIsReceiptModalOpen(true)}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center space-x-1.5"
-            >
-              <IndianRupee className="w-4 h-4" />
-              <span>+ Record Receipt</span>
-            </button>
+
+            {canCreate && (
+              <>
+                <button
+                  onClick={() => setIsInvoiceModalOpen(true)}
+                  className="px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>+ Generate Invoice</span>
+                </button>
+                <button
+                  onClick={() => setIsReceiptModalOpen(true)}
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center space-x-1.5"
+                >
+                  <IndianRupee className="w-4 h-4" />
+                  <span>+ Record Receipt</span>
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -193,7 +493,7 @@ export default function FinanceDashboard() {
       </div>
 
       {/* Critical Actions Feed Banner */}
-      {dashboardData?.criticalActions?.length > 0 && (
+      {dashboardData?.criticalActions?.length > 0 && currentRole !== 'SALES_OWNER' && (
         <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 shadow-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center space-x-2 text-amber-900 font-bold text-xs uppercase tracking-wider">
@@ -249,52 +549,52 @@ export default function FinanceDashboard() {
           </p>
         </div>
 
-        {/* KPI 3: Payables */}
+        {/* KPI 3: Vendor Payables */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
           <div className="flex justify-between items-center text-slate-500 text-xs font-semibold">
             <span>Vendor Payables (3-Way)</span>
             <Building2 className="w-4 h-4 text-purple-600" />
           </div>
           <div className="text-2xl font-extrabold text-purple-900 font-mono">
-            ₹{kpis.totalPayables.toLocaleString()}
+            {canViewPayables ? `₹${kpis.totalPayables.toLocaleString()}` : '🔒 RESTRICTED'}
           </div>
           <p className="text-[11px] text-slate-500">
-            Matched against M2 GRNs with tolerance
+            Unallocated Client Advance: <strong className="text-blue-600 font-mono">₹{kpis.unallocatedCredit.toLocaleString()}</strong>
           </p>
         </div>
 
-        {/* KPI 4: Gross Margin */}
+        {/* KPI 4: Job Costing / Margin */}
         <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-1">
           <div className="flex justify-between items-center text-slate-500 text-xs font-semibold">
-            <span>Average Gross Margin</span>
+            <span>Gross Profit Margin</span>
             <Percent className="w-4 h-4 text-emerald-600" />
           </div>
           <div className="text-2xl font-extrabold text-emerald-700 font-mono">
-            {kpis.avgMarginPercent}%
+            {canViewMargins ? `${kpis.avgMarginPercent}%` : '🔒 RESTRICTED'}
           </div>
           <p className="text-[11px] text-slate-500">
-            M3 BOM Cost Snapshot vs Actual Ledger
+            {canViewMargins ? 'M3 BOM Cost Snapshot vs Actual Ledger' : 'Proprietary Company Costing'}
           </p>
         </div>
       </div>
 
       {/* Main Tab Controls */}
-      <div className="flex border-b border-slate-200 space-x-1 text-xs font-bold">
+      <div className="flex border-b border-slate-200 space-x-1 text-xs font-bold overflow-x-auto">
         <button
           onClick={() => setActiveTab('invoices')}
-          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 ${
+          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 ${
             activeTab === 'invoices'
               ? 'border-blue-600 text-blue-700'
               : 'border-transparent text-slate-500 hover:text-slate-700'
           }`}
         >
           <FileText className="w-4 h-4" />
-          <span>M6.1 Invoices & Billing ({invoices.length})</span>
+          <span>M6.1 Invoices & Billing ({filteredInvoices.length})</span>
         </button>
 
         <button
           onClick={() => setActiveTab('receipts')}
-          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 ${
+          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 ${
             activeTab === 'receipts'
               ? 'border-blue-600 text-blue-700'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -304,21 +604,23 @@ export default function FinanceDashboard() {
           <span>M6.1 Collections & Ageing ({receipts.length})</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('payables')}
-          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 ${
-            activeTab === 'payables'
-              ? 'border-blue-600 text-blue-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Building2 className="w-4 h-4" />
-          <span>M6.2 Payables & 3-Way Match ({vendorBills.length})</span>
-        </button>
+        {canViewPayables && (
+          <button
+            onClick={() => setActiveTab('payables')}
+            className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 ${
+              activeTab === 'payables'
+                ? 'border-blue-600 text-blue-700'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            <span>M6.2 Payables & 3-Way Match ({vendorBills.length})</span>
+          </button>
+        )}
 
         <button
           onClick={() => setActiveTab('costing')}
-          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 ${
+          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 ${
             activeTab === 'costing'
               ? 'border-blue-600 text-blue-700'
               : 'border-transparent text-slate-500 hover:text-slate-700'
@@ -328,17 +630,19 @@ export default function FinanceDashboard() {
           <span>M6.3 Costing & Job Margins</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('settings')}
-          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 ${
-            activeTab === 'settings'
-              ? 'border-blue-600 text-blue-700'
-              : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <Landmark className="w-4 h-4" />
-          <span>Admin Settings</span>
-        </button>
+        {canViewSettings && (
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 ${
+              activeTab === 'settings'
+                ? 'border-blue-600 text-blue-700'
+                : 'border-transparent text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Landmark className="w-4 h-4" />
+            <span>Admin Settings</span>
+          </button>
+        )}
       </div>
 
       {/* ==================== TAB 1: INVOICES & RECEIVABLES ==================== */}
@@ -368,21 +672,33 @@ export default function FinanceDashboard() {
                 <option value="PART_PAID">Part Paid</option>
                 <option value="PAID">Paid in Full</option>
                 <option value="OVERDUE">Overdue Only</option>
+                <option value="CANCELLED">Cancelled</option>
               </select>
             </div>
 
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => setIsInvoiceModalOpen(true)}
-                className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
+                onClick={handleExportInvoices}
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition flex items-center space-x-1"
+                title="Export filtered invoices to CSV"
               >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Invoice from Dispatch</span>
+                <FileDown className="w-3.5 h-3.5" />
+                <span>Export CSV</span>
               </button>
+
+              {canCreate && (
+                <button
+                  onClick={() => setIsInvoiceModalOpen(true)}
+                  className="px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>+ Invoice from Dispatch</span>
+                </button>
+              )}
             </div>
           </div>
 
-          {/* Invoices Table */}
+          {/* Invoices Table with Full CRUD */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <table className="w-full text-left text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
@@ -392,10 +708,10 @@ export default function FinanceDashboard() {
                   <th className="py-3 px-3">Order / PO</th>
                   <th className="py-3 px-3">Due Date</th>
                   <th className="py-3 px-3 text-right">Taxable Total</th>
-                  <th className="py-3 px-3 text-right">Grand Total (inc GST)</th>
+                  <th className="py-3 px-3 text-right">Grand Total</th>
                   <th className="py-3 px-3 text-right">Balance Due</th>
                   <th className="py-3 px-3 text-center">Status</th>
-                  <th className="py-3 px-4 text-center">Actions</th>
+                  <th className="py-3 px-4 text-center">Actions & CRUD</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -404,11 +720,16 @@ export default function FinanceDashboard() {
                     <td className="py-3 px-4 font-mono font-bold text-blue-700">
                       {inv.invoiceNo}
                       <div className="text-[10px] text-slate-400 font-normal">{inv.invoiceDate}</div>
+                      {inv.isDisputed && (
+                        <span className="inline-block mt-0.5 px-1.5 py-0.2 bg-amber-100 text-amber-800 text-[9px] font-bold rounded">
+                          ⚠ Disputed
+                        </span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <div className="font-semibold text-slate-900">{inv.customerSnapshot?.name}</div>
                       <div className="text-[10px] text-slate-500 font-mono">
-                        GSTIN: {inv.customerSnapshot?.gstin} · {inv.taxType === 'INTER_STATE' ? 'IGST 18%' : 'CGST+SGST'}
+                        GSTIN: {inv.customerSnapshot?.gstin} · {inv.taxType === 'INTER_STATE' ? 'IGST 18%' : 'CGST+SGST 18%'}
                       </div>
                     </td>
                     <td className="py-3 px-3 font-mono text-slate-700">
@@ -438,26 +759,48 @@ export default function FinanceDashboard() {
                     </td>
                     <td className="py-3 px-3 text-center">
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        inv.derivedStatus === 'PAID'
+                        inv.status === 'CANCELLED'
+                          ? 'bg-slate-200 text-slate-600'
+                          : inv.derivedStatus === 'PAID'
                           ? 'bg-emerald-100 text-emerald-800'
-                          : inv.derivedStatus.includes('OVERDUE')
+                          : inv.derivedStatus?.includes('OVERDUE')
                           ? 'bg-red-100 text-red-800'
                           : inv.derivedStatus === 'PART_PAID'
                           ? 'bg-amber-100 text-amber-800'
                           : 'bg-blue-100 text-blue-800'
                       }`}>
-                        {inv.derivedStatus.replace(/_/g, ' ')}
+                        {inv.status === 'CANCELLED' ? 'CANCELLED' : inv.derivedStatus?.replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handleDownloadInvoicePdf(inv.id)}
-                        title="Download Statutory GST Tax Invoice (PDF)"
-                        className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-md font-bold text-[11px] transition inline-flex items-center space-x-1"
-                      >
-                        <Printer className="w-3 h-3" />
-                        <span>GST PDF</span>
-                      </button>
+                      <div className="flex items-center justify-center space-x-1">
+                        <button
+                          onClick={() => handleDownloadInvoicePdf(inv.id)}
+                          title="Download Statutory GST Tax Invoice (PDF)"
+                          className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded font-bold text-[10px] transition inline-flex items-center space-x-0.5"
+                        >
+                          <Printer className="w-3 h-3" />
+                          <span>PDF</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleToggleDispute(inv)}
+                          title="Toggle Commercial Dispute Status"
+                          className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded font-semibold text-[10px] transition"
+                        >
+                          {inv.isDisputed ? 'Resolved' : 'Dispute'}
+                        </button>
+
+                        {canDelete && inv.status !== 'CANCELLED' && inv.paidAmount === 0 && (
+                          <button
+                            onClick={() => handleCancelInvoice(inv)}
+                            title="Cancel / Void Invoice"
+                            className="p-1 hover:bg-red-50 text-red-600 rounded transition"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -477,13 +820,24 @@ export default function FinanceDashboard() {
                 <h3 className="text-sm font-bold text-slate-900">Customer Receivables Ageing Matrix</h3>
                 <p className="text-xs text-slate-500">Live breakdown of customer debt across statutory ageing periods</p>
               </div>
-              <button
-                onClick={() => setIsReceiptModalOpen(true)}
-                className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ Record Payment</span>
-              </button>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={handleExportAgeing}
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition flex items-center space-x-1"
+                >
+                  <FileDown className="w-3.5 h-3.5" />
+                  <span>Export Ageing</span>
+                </button>
+                {canCreate && (
+                  <button
+                    onClick={() => setIsReceiptModalOpen(true)}
+                    className="px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Record Payment</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="overflow-x-auto">
@@ -520,7 +874,7 @@ export default function FinanceDashboard() {
             </div>
           </div>
 
-          {/* Receipt Register Table */}
+          {/* Receipt Register Table with Delete CRUD */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
             <div className="p-4 border-b border-slate-200 font-bold text-sm text-slate-900">
               Verified Receipt Register (Collections & TDS Logs)
@@ -536,6 +890,7 @@ export default function FinanceDashboard() {
                   <th className="py-3 px-3 text-right">Amount Received</th>
                   <th className="py-3 px-3 text-right">Unallocated Advance</th>
                   <th className="py-3 px-3 text-center">Status</th>
+                  <th className="py-3 px-4 text-center">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 font-mono">
@@ -543,7 +898,7 @@ export default function FinanceDashboard() {
                   <tr key={rec.id} className="hover:bg-slate-50">
                     <td className="py-3 px-4 font-bold text-emerald-700">{rec.receiptNo}</td>
                     <td className="py-3 px-4 font-sans font-semibold text-slate-900">
-                      {rec.customerId.replace('cust_', '').toUpperCase()}
+                      {rec.customerId?.replace('cust_', '').toUpperCase()}
                     </td>
                     <td className="py-3 px-3 text-slate-600">{rec.receivedOn}</td>
                     <td className="py-3 px-3 font-sans text-slate-700">
@@ -559,6 +914,17 @@ export default function FinanceDashboard() {
                         {rec.status}
                       </span>
                     </td>
+                    <td className="py-3 px-4 text-center">
+                      {canDelete && (
+                        <button
+                          onClick={() => handleDeleteReceipt(rec)}
+                          title="Reverse & Delete Receipt"
+                          className="p-1 hover:bg-red-50 text-red-600 rounded transition"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -568,20 +934,22 @@ export default function FinanceDashboard() {
       )}
 
       {/* ==================== TAB 3: PAYABLES & VENDOR BILLS ==================== */}
-      {activeTab === 'payables' && (
+      {activeTab === 'payables' && canViewPayables && (
         <div className="space-y-4">
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
             <div>
               <h2 className="text-sm font-bold text-slate-900">Vendor Bills & 3-Way Match Registry</h2>
               <p className="text-xs text-slate-500">Cross-verified against M2 PO quantities and GRN inspection reports</p>
             </div>
-            <button
-              onClick={() => setIsVendorBillModalOpen(true)}
-              className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ Enter Vendor Bill</span>
-            </button>
+            {canCreate && (
+              <button
+                onClick={() => setIsVendorBillModalOpen(true)}
+                className="px-3.5 py-1.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg text-xs shadow-sm transition flex items-center space-x-1.5"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>+ Enter Vendor Bill</span>
+              </button>
+            )}
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -595,7 +963,7 @@ export default function FinanceDashboard() {
                   <th className="py-3 px-3 text-right">Balance Due</th>
                   <th className="py-3 px-3 text-center">3-Way Match</th>
                   <th className="py-3 px-3 text-center">Status</th>
-                  <th className="py-3 px-4 text-center">Action</th>
+                  <th className="py-3 px-4 text-center">Action & CRUD</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -629,14 +997,32 @@ export default function FinanceDashboard() {
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      {vb.balanceAmount > 0 && vb.matchResult === 'MATCHED' && (
-                        <button
-                          onClick={() => handlePayVendor(vb.id, vb.balanceAmount)}
-                          className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-md text-[11px] transition"
-                        >
-                          Release Payment
-                        </button>
-                      )}
+                      <div className="flex items-center justify-center space-x-1">
+                        {vb.balanceAmount > 0 && vb.matchResult === 'MATCHED' && (
+                          <button
+                            onClick={() => handlePayVendor(vb.id, vb.balanceAmount)}
+                            className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded text-[10px] transition"
+                          >
+                            Pay
+                          </button>
+                        )}
+                        {canCreate && vb.status !== 'APPROVED' && (
+                          <button
+                            onClick={() => handleUpdateVendorBillStatus(vb.id, 'APPROVED')}
+                            className="px-2 py-1 bg-blue-50 text-blue-700 hover:bg-blue-100 rounded text-[10px] font-bold"
+                          >
+                            Approve
+                          </button>
+                        )}
+                        {canDelete && vb.paidAmount === 0 && (
+                          <button
+                            onClick={() => handleDeleteVendorBill(vb)}
+                            className="p-1 text-red-600 hover:bg-red-50 rounded"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -654,6 +1040,12 @@ export default function FinanceDashboard() {
               <h2 className="text-sm font-bold text-slate-900">Job Costing & Gross Margin Analysis (M6.3 Handshake)</h2>
               <p className="text-xs text-slate-500">Cross-compares M3 released BOM frozen cost against live production issues and expenses</p>
             </div>
+            {!canViewMargins && (
+              <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg flex items-center space-x-1">
+                <Lock className="w-3.5 h-3.5" />
+                <span>Proprietary Costing Hidden</span>
+              </span>
+            )}
           </div>
 
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
@@ -676,20 +1068,30 @@ export default function FinanceDashboard() {
                     <td className="py-3.5 px-4 font-bold text-blue-700">{jc.jobRef}</td>
                     <td className="py-3.5 px-4 font-sans font-semibold text-slate-900">{jc.customerName}</td>
                     <td className="py-3.5 px-3 text-right font-bold text-slate-900">₹{jc.taxableRevenue.toLocaleString()}</td>
-                    <td className="py-3.5 px-3 text-right text-slate-700">₹{jc.materialCost.toLocaleString()}</td>
-                    <td className="py-3.5 px-3 text-right text-slate-700">₹{(jc.labourCost + jc.expenseCost).toLocaleString()}</td>
-                    <td className="py-3.5 px-3 text-right font-bold text-purple-900">₹{jc.totalActualCost.toLocaleString()}</td>
+                    <td className="py-3.5 px-3 text-right text-slate-700">
+                      {canViewMargins ? `₹${jc.materialCost.toLocaleString()}` : '***'}
+                    </td>
+                    <td className="py-3.5 px-3 text-right text-slate-700">
+                      {canViewMargins ? `₹${(jc.labourCost + jc.expenseCost).toLocaleString()}` : '***'}
+                    </td>
+                    <td className="py-3.5 px-3 text-right font-bold text-purple-900">
+                      {canViewMargins ? `₹${jc.totalActualCost.toLocaleString()}` : '***'}
+                    </td>
                     <td className="py-3.5 px-3 text-right font-bold text-emerald-700">
-                      ₹{jc.grossMargin.toLocaleString()}
+                      {canViewMargins ? `₹${jc.grossMargin.toLocaleString()}` : '🔒 RESTRICTED'}
                     </td>
                     <td className="py-3.5 px-3 text-center font-sans">
-                      <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${
-                        jc.isCostComplete
-                          ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
-                      }`}>
-                        {jc.statusText}
-                      </span>
+                      {canViewMargins ? (
+                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${
+                          jc.isCostComplete
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {jc.statusText}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 font-semibold text-[10px]">Restricted</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -699,40 +1101,128 @@ export default function FinanceDashboard() {
         </div>
       )}
 
-      {/* ==================== TAB 5: ADMIN CONFIGURATION ==================== */}
-      {activeTab === 'settings' && (
+      {/* ==================== TAB 5: ADMIN CONFIGURATION & LIVE PROFILE CRUD ==================== */}
+      {activeTab === 'settings' && canViewSettings && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Company Legal Profile */}
-          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-3">
-            <h3 className="text-sm font-bold text-slate-900 border-b border-slate-100 pb-2 flex items-center space-x-2">
-              <Building2 className="w-4 h-4 text-blue-600" />
-              <span>Company Legal & GST Profile</span>
-            </h3>
-            <div className="text-xs space-y-2 text-slate-700">
-              <div className="flex justify-between">
-                <span className="text-slate-500">Legal Registered Name:</span>
-                <span className="font-bold">{settings?.companyProfile?.legalName}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Statutory GSTIN:</span>
-                <span className="font-mono font-bold text-blue-700">{settings?.companyProfile?.gstin}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Permanent Account Number (PAN):</span>
-                <span className="font-mono font-bold">{settings?.companyProfile?.pan}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-500">Home State (Place of Supply Base):</span>
-                <span className="font-bold">{settings?.companyProfile?.stateName} (Code: {settings?.companyProfile?.stateCode})</span>
-              </div>
-              <div className="pt-2 border-t border-slate-100">
-                <div className="font-bold text-slate-900 mb-1">Bank Remittance Account:</div>
-                <div className="font-mono text-slate-600">
-                  {settings?.companyProfile?.bankDetails?.bankName} · A/C: {settings?.companyProfile?.bankDetails?.accountNumber}<br />
-                  IFSC: {settings?.companyProfile?.bankDetails?.ifsc} · UPI: {settings?.companyProfile?.bankDetails?.upiId}
+          {/* Company Legal Profile Form */}
+          <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm space-y-4">
+            <div className="flex justify-between items-center border-b border-slate-100 pb-2">
+              <h3 className="text-sm font-bold text-slate-900 flex items-center space-x-2">
+                <Building2 className="w-4 h-4 text-blue-600" />
+                <span>Statutory Company & Bank Profile</span>
+              </h3>
+              {currentRole === 'ADMIN' && (
+                <button
+                  type="button"
+                  onClick={() => setIsEditingSettings(!isEditingSettings)}
+                  className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-lg flex items-center space-x-1"
+                >
+                  <Edit3 className="w-3.5 h-3.5" />
+                  <span>{isEditingSettings ? 'Cancel' : 'Edit Profile'}</span>
+                </button>
+              )}
+            </div>
+
+            {isEditingSettings ? (
+              <form onSubmit={handleSaveCompanySettings} className="space-y-3 text-xs">
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Legal Company Name:</label>
+                  <input
+                    type="text"
+                    value={companyForm.legalName}
+                    onChange={(e) => setCompanyForm({ ...companyForm, legalName: e.target.value })}
+                    className="w-full p-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-blue-500 font-semibold"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">GSTIN:</label>
+                    <input
+                      type="text"
+                      value={companyForm.gstin}
+                      onChange={(e) => setCompanyForm({ ...companyForm, gstin: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg font-mono"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">PAN:</label>
+                    <input
+                      type="text"
+                      value={companyForm.pan}
+                      onChange={(e) => setCompanyForm({ ...companyForm, pan: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg font-mono"
+                      required
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-700 mb-1">Bank Name:</label>
+                  <input
+                    type="text"
+                    value={companyForm.bankName}
+                    onChange={(e) => setCompanyForm({ ...companyForm, bankName: e.target.value })}
+                    className="w-full p-2 border border-slate-300 rounded-lg"
+                    required
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">Account No:</label>
+                    <input
+                      type="text"
+                      value={companyForm.accountNumber}
+                      onChange={(e) => setCompanyForm({ ...companyForm, accountNumber: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg font-mono"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">IFSC Code:</label>
+                    <input
+                      type="text"
+                      value={companyForm.ifsc}
+                      onChange={(e) => setCompanyForm({ ...companyForm, ifsc: e.target.value })}
+                      className="w-full p-2 border border-slate-300 rounded-lg font-mono"
+                      required
+                    />
+                  </div>
+                </div>
+                <button
+                  type="submit"
+                  className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg transition"
+                >
+                  Save Statutory Profile
+                </button>
+              </form>
+            ) : (
+              <div className="text-xs space-y-2 text-slate-700">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Legal Registered Name:</span>
+                  <span className="font-bold">{settings?.companyProfile?.legalName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Statutory GSTIN:</span>
+                  <span className="font-mono font-bold text-blue-700">{settings?.companyProfile?.gstin}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Permanent Account Number (PAN):</span>
+                  <span className="font-mono font-bold">{settings?.companyProfile?.pan}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Home State (Place of Supply Base):</span>
+                  <span className="font-bold">{settings?.companyProfile?.stateName} (Code: {settings?.companyProfile?.stateCode})</span>
+                </div>
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="font-bold text-slate-900 mb-1">Bank Remittance Account:</div>
+                  <div className="font-mono text-slate-600">
+                    {settings?.companyProfile?.bankDetails?.bankName} · A/C: {settings?.companyProfile?.bankDetails?.accountNumber}<br />
+                    IFSC: {settings?.companyProfile?.bankDetails?.ifsc} · UPI: {settings?.companyProfile?.bankDetails?.upiId}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* Number Series Configuration */}
@@ -742,7 +1232,7 @@ export default function FinanceDashboard() {
               <span>Active Gapless Number Series</span>
             </h3>
             <div className="divide-y divide-slate-100 text-xs">
-              {settings?.numberSeries?.map(s => (
+              {settings?.numberSeries?.map((s) => (
                 <div key={s.id} className="py-2 flex justify-between items-center">
                   <div>
                     <div className="font-bold text-slate-800">{s.docType}</div>
@@ -774,6 +1264,12 @@ export default function FinanceDashboard() {
         isOpen={isVendorBillModalOpen}
         onClose={() => setIsVendorBillModalOpen(false)}
         onBillCreated={loadAllData}
+      />
+
+      <SmartDataExtractionModal
+        isOpen={isExtractModalOpen}
+        onClose={() => setIsExtractModalOpen(false)}
+        onImportSuccess={loadAllData}
       />
     </div>
   );

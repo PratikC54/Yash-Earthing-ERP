@@ -737,5 +737,378 @@ export const financeController = {
       data: db.companyProfile,
       message: 'Company profile updated successfully.'
     });
+  },
+
+  // ===================== 9. EXTENDED CRUD & AUDIT OPERATIONS =====================
+  updateInvoice: (req, res) => {
+    const db = financeDb.read();
+    const { id } = req.params;
+    const { notes, isDisputed, disputeReason } = req.body;
+
+    const invoice = db.invoices.find(i => i.id === id || i.invoiceNo === id);
+    if (!invoice) {
+      return res.status(404).json({ success: false, message: 'Invoice not found.' });
+    }
+
+    if (notes !== undefined) invoice.notes = notes;
+    if (isDisputed !== undefined) {
+      invoice.isDisputed = Boolean(isDisputed);
+      invoice.disputeReason = isDisputed ? (disputeReason || 'Commercial or delivery variance under review') : null;
+    }
+
+    financeDb.write(db);
+    financeDb.logAudit(req.user?.name || "Finance Manager", "UPDATE_INVOICE", "Invoice", invoice.id, `Updated invoice ${invoice.invoiceNo} dispute/notes`);
+
+    res.status(200).json({
+      success: true,
+      data: invoice,
+      message: `Invoice ${invoice.invoiceNo} updated successfully.`
+    });
+  },
+
+  cancelInvoice: (req, res) => {
+    const db = financeDb.read();
+    const { id } = req.params;
+    const { reason } = req.body;
+
+    const invoiceIdx = db.invoices.findIndex(i => i.id === id || i.invoiceNo === id);
+    if (invoiceIdx === -1) {
+      return res.status(404).json({ success: false, message: 'Invoice not found.' });
+    }
+
+    const invoice = db.invoices[invoiceIdx];
+    if (invoice.paidAmount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot cancel invoice ${invoice.invoiceNo}: A payment of ₹${invoice.paidAmount} has already been recorded against it. Reallocate or reverse receipts first.`
+      });
+    }
+
+    // Rollback invoiced quantities on upstream sales order
+    if (invoice.salesOrderId) {
+      const salesOrder = db.salesOrders?.find(so => so.id === invoice.salesOrderId);
+      if (salesOrder && salesOrder.items) {
+        invoice.items?.forEach(it => {
+          const soItem = salesOrder.items.find(i => i.productId === it.productId || i.sku === it.sku);
+          if (soItem) {
+            soItem.invoicedQty = Math.max(0, (soItem.invoicedQty || 0) - Number(it.qty));
+          }
+        });
+      }
+    }
+
+    invoice.status = 'CANCELLED';
+    invoice.balanceAmount = 0;
+    invoice.notes = `${invoice.notes || ''} [CANCELLED on ${new Date().toLocaleDateString('en-IN')}: ${reason || 'Cancelled by Admin'}]`.trim();
+
+    financeDb.write(db);
+    financeDb.logAudit(req.user?.name || "Admin", "CANCEL_INVOICE", "Invoice", invoice.id, `Cancelled invoice ${invoice.invoiceNo}: ${reason || 'Admin action'}`);
+
+    res.status(200).json({
+      success: true,
+      data: invoice,
+      message: `Invoice ${invoice.invoiceNo} has been cancelled successfully.`
+    });
+  },
+
+  deleteReceipt: (req, res) => {
+    const db = financeDb.read();
+    const { id } = req.params;
+    const receiptIdx = db.receipts.findIndex(r => r.id === id || r.receiptNo === id);
+    if (receiptIdx === -1) {
+      return res.status(404).json({ success: false, message: 'Receipt not found.' });
+    }
+
+    const receipt = db.receipts[receiptIdx];
+
+    // Rollback all allocations on affected invoices
+    receipt.allocations?.forEach(alloc => {
+      const inv = db.invoices.find(i => i.id === alloc.invoiceId);
+      if (inv) {
+        inv.paidAmount = Math.max(0, inv.paidAmount - alloc.amount);
+        inv.balanceAmount = inv.grandTotal - inv.paidAmount;
+        if (inv.balanceAmount > 0 && inv.status === 'PAID') {
+          inv.status = 'ISSUED';
+        }
+      }
+    });
+
+    db.receipts.splice(receiptIdx, 1);
+    financeDb.write(db);
+    financeDb.logAudit(req.user?.name || "Admin", "DELETE_RECEIPT", "Receipt", id, `Deleted receipt ${receipt.receiptNo} of ₹${receipt.amount} and restored invoice balances`);
+
+    res.status(200).json({
+      success: true,
+      message: `Receipt ${receipt.receiptNo} removed and invoice balances restored successfully.`
+    });
+  },
+
+  updateVendorBill: (req, res) => {
+    const db = financeDb.read();
+    const { id } = req.params;
+    const { status, matchDetails, notes } = req.body;
+
+    const bill = db.vendorBills.find(b => b.id === id || b.billNo === id);
+    if (!bill) {
+      return res.status(404).json({ success: false, message: 'Vendor bill not found.' });
+    }
+
+    if (status) bill.status = status;
+    if (matchDetails) bill.matchDetails = matchDetails;
+    if (notes !== undefined) bill.notes = notes;
+
+    financeDb.write(db);
+    financeDb.logAudit(req.user?.name || "Finance Manager", "UPDATE_VENDOR_BILL", "VendorBill", bill.id, `Updated vendor bill ${bill.billNo} to ${status}`);
+
+    res.status(200).json({
+      success: true,
+      data: bill,
+      message: `Vendor bill ${bill.billNo} updated successfully.`
+    });
+  },
+
+  deleteVendorBill: (req, res) => {
+    const db = financeDb.read();
+    const { id } = req.params;
+    const billIdx = db.vendorBills.findIndex(b => b.id === id || b.billNo === id);
+    if (billIdx === -1) {
+      return res.status(404).json({ success: false, message: 'Vendor bill not found.' });
+    }
+
+    const bill = db.vendorBills[billIdx];
+    if (bill.paidAmount > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot delete vendor bill ${bill.billNo}: Payments of ₹${bill.paidAmount} have been recorded against it.`
+      });
+    }
+
+    db.vendorBills.splice(billIdx, 1);
+    financeDb.write(db);
+    financeDb.logAudit(req.user?.name || "Admin", "DELETE_VENDOR_BILL", "VendorBill", id, `Deleted vendor bill ${bill.billNo}`);
+
+    res.status(200).json({
+      success: true,
+      message: `Vendor bill ${bill.billNo} deleted successfully.`
+    });
+  },
+
+  // ===================== 10. SMART FILE / CSV / EXCEL EXTRACTION & INGESTION =====================
+  extractImportData: (req, res) => {
+    try {
+      const { rawContent, importType } = req.body; // importType: 'BANK_STATEMENT' | 'VENDOR_BILLS' | 'CUSTOMER_INVOICES'
+      if (!rawContent || typeof rawContent !== 'string') {
+        return res.status(400).json({ success: false, message: 'Raw content (CSV, text, or tabular data) is required.' });
+      }
+
+      const db = financeDb.read();
+      const lines = rawContent.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+
+      if (lines.length < 2) {
+        return res.status(400).json({ success: false, message: 'At least 1 header line and 1 data line are required.' });
+      }
+
+      // Detect separator: comma, tab, or pipe
+      const headerLine = lines[0];
+      let sep = ',';
+      if (headerLine.includes('\t')) sep = '\t';
+      else if (headerLine.includes('|')) sep = '|';
+      else if (headerLine.includes(';') && !headerLine.includes(',')) sep = ';';
+
+      const headers = headerLine.split(sep).map(h => h.trim().replace(/^["']|["']$/g, '').toLowerCase());
+
+      const parsedRows = [];
+      for (let i = 1; i < lines.length; i++) {
+        const rawCols = lines[i].split(sep).map(c => c.trim().replace(/^["']|["']$/g, ''));
+        if (rawCols.length < 2 || rawCols.every(c => !c)) continue;
+
+        const rowObj = {};
+        headers.forEach((h, colIdx) => {
+          rowObj[h] = rawCols[colIdx] || '';
+        });
+
+        // Flexible fuzzy field resolution
+        const getVal = (aliases) => {
+          for (const a of aliases) {
+            for (const h of headers) {
+              if (h === a || h.includes(a)) {
+                if (rowObj[h] && rowObj[h].trim()) return rowObj[h].trim();
+              }
+            }
+          }
+          return '';
+        };
+
+        let dateVal = getVal(['date', 'txn']) || new Date().toISOString().split('T')[0];
+        let refVal = getVal(['ref', 'utr', 'cheque', 'bill_no', 'invoice', 'chq']) || `EXT-${Date.now().toString().slice(-6)}-${i}`;
+        let partyVal = getVal(['party', 'customer', 'vendor', 'client', 'narration', 'description', 'name']) || 'Unknown Party';
+        let rawAmt = getVal(['credit', 'amount', 'total', 'grand', 'value', 'net']) || '0';
+        let amountVal = Number(rawAmt.replace(/[^0-9.-]+/g, '')) || 0;
+        let rawTaxable = getVal(['taxable', 'basic']);
+        let taxableVal = rawTaxable ? Number(rawTaxable.replace(/[^0-9.-]+/g, '')) : (amountVal > 0 ? Math.round(amountVal / 1.18) : 0);
+        let rawGst = getVal(['gst', 'tax']);
+        let gstVal = rawGst ? Number(rawGst.replace(/[^0-9.-]+/g, '')) : (amountVal - taxableVal);
+        let notesVal = getVal(['remarks', 'note', 'memo', 'narration']);
+
+        // Smart Entity Matching
+        let matchedCustomer = null;
+        let matchedVendor = null;
+        let matchedInvoice = null;
+
+        if (importType === 'BANK_STATEMENT' || importType === 'CUSTOMER_INVOICES') {
+          matchedCustomer = db.customers.find(c =>
+            partyVal.toLowerCase().includes(c.name.toLowerCase()) ||
+            c.name.toLowerCase().includes(partyVal.toLowerCase()) ||
+            partyVal.toLowerCase().includes(c.shortCode.toLowerCase())
+          );
+
+          if (matchedCustomer) {
+            matchedInvoice = db.invoices.find(inv => inv.customerId === matchedCustomer.id && inv.balanceAmount > 0);
+          }
+        } else if (importType === 'VENDOR_BILLS') {
+          matchedVendor = db.vendors?.find(v =>
+            partyVal.toLowerCase().includes(v.name.toLowerCase()) ||
+            v.name.toLowerCase().includes(partyVal.toLowerCase())
+          );
+        }
+
+        parsedRows.push({
+          rowId: `row_${i}`,
+          date: dateVal,
+          reference: refVal,
+          partyRaw: partyVal,
+          matchedCustomer: matchedCustomer ? { id: matchedCustomer.id, name: matchedCustomer.name } : null,
+          matchedVendor: matchedVendor ? { id: matchedVendor.id, name: matchedVendor.name } : null,
+          matchedInvoice: matchedInvoice ? { id: matchedInvoice.id, invoiceNo: matchedInvoice.invoiceNo, balance: matchedInvoice.balanceAmount } : null,
+          taxable: taxableVal,
+          gst: gstVal,
+          amount: amountVal,
+          status: (matchedCustomer || matchedVendor) ? 'READY' : 'UNMATCHED',
+          notes: rowObj['notes'] || rowObj['narration'] || ''
+        });
+      }
+
+      res.status(200).json({
+        success: true,
+        data: {
+          detectedHeaders: headers,
+          totalRows: parsedRows.length,
+          readyRows: parsedRows.filter(r => r.status === 'READY').length,
+          rows: parsedRows
+        },
+        message: `Successfully extracted ${parsedRows.length} records.`
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: `Extraction failed: ${err.message}` });
+    }
+  },
+
+  ingestImportData: (req, res) => {
+    try {
+      const { importType, rows } = req.body;
+      if (!Array.isArray(rows) || rows.length === 0) {
+        return res.status(400).json({ success: false, message: 'No rows provided to ingest.' });
+      }
+
+      const db = financeDb.read();
+      let ingestedCount = 0;
+
+      if (importType === 'BANK_STATEMENT') {
+        rows.forEach(r => {
+          if (!r.amount || r.amount <= 0) return;
+          const customerId = r.matchedCustomer?.id || db.customers[0]?.id;
+          const newReceipt = {
+            id: `rec_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            receiptNo: financeDb.generateNextNumber(db, "ser_receipt", "REC"),
+            customerId,
+            receivedOn: r.date || new Date().toISOString().split('T')[0],
+            method: "NEFT",
+            referenceNo: r.reference || `REF-${Date.now()}`,
+            bank: "HDFC Bank (Cash Mgmt)",
+            amount: Number(r.amount),
+            status: "VERIFIED",
+            chequeStatus: null,
+            idempotencyKey: `idem_imp_${Date.now()}_${ingestedCount}`,
+            unallocatedAmount: 0,
+            notes: `Auto-imported: ${r.notes || r.partyRaw}`,
+            createdBy: req.user?.name || "Accounts Executive (Import)",
+            allocations: [],
+            deductions: []
+          };
+
+          // Auto-allocate against open invoice if available
+          let targetInvoice = r.matchedInvoice?.id ? db.invoices.find(i => i.id === r.matchedInvoice.id) : null;
+          if (!targetInvoice) {
+            targetInvoice = db.invoices.find(i => i.customerId === customerId && i.balanceAmount > 0);
+          }
+
+          if (targetInvoice) {
+            const alloc = Math.min(newReceipt.amount, targetInvoice.balanceAmount);
+            targetInvoice.paidAmount += alloc;
+            targetInvoice.balanceAmount = targetInvoice.grandTotal - targetInvoice.paidAmount;
+            if (targetInvoice.balanceAmount <= 0) targetInvoice.status = 'PAID';
+
+            newReceipt.allocations.push({
+              id: `alloc_${Date.now()}`,
+              invoiceId: targetInvoice.id,
+              invoiceNo: targetInvoice.invoiceNo,
+              amount: alloc,
+              allocatedBy: "Import Engine",
+              allocatedAt: new Date().toISOString()
+            });
+
+            newReceipt.unallocatedAmount = newReceipt.amount - alloc;
+          } else {
+            newReceipt.unallocatedAmount = newReceipt.amount;
+          }
+
+          db.receipts.unshift(newReceipt);
+          ingestedCount++;
+        });
+      } else if (importType === 'VENDOR_BILLS') {
+        rows.forEach(r => {
+          const vendorId = r.matchedVendor?.id || "ven_hindalco";
+          const vendorName = r.matchedVendor?.name || r.partyRaw || "Vendor";
+          const totalAmt = Number(r.amount) || 10000;
+          const taxableAmt = r.taxable || Math.round(totalAmt / 1.18);
+          const gstAmt = r.gst || (totalAmt - taxableAmt);
+
+          const newBill = {
+            id: `vb_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
+            billNo: r.reference || `BILL-${Date.now()}`,
+            vendorId,
+            vendorName,
+            poNumber: "PO-IMPORTED",
+            grnNumber: "GRN-IMPORTED",
+            billDate: r.date || new Date().toISOString().split('T')[0],
+            dueDate: new Date(Date.now() + 30 * 86400000).toISOString().split('T')[0],
+            taxableAmount: taxableAmt,
+            gstAmount: gstAmt,
+            totalAmount: totalAmt,
+            paidAmount: 0,
+            balanceAmount: totalAmt,
+            matchResult: "PENDING_VERIFICATION",
+            matchDetails: "Imported via CSV/Excel - Pending 3-Way Match Verification",
+            status: "DRAFT",
+            approvedBy: null,
+            notes: r.notes || `Imported entry`
+          };
+
+          db.vendorBills.unshift(newBill);
+          ingestedCount++;
+        });
+      }
+
+      financeDb.write(db);
+      financeDb.logAudit(req.user?.name || "Admin", "INGEST_IMPORT", "ImportEngine", "bulk", `Ingested ${ingestedCount} ${importType} records`);
+
+      res.status(200).json({
+        success: true,
+        ingestedCount,
+        message: `Successfully ingested ${ingestedCount} records into live finance registry.`
+      });
+    } catch (err) {
+      res.status(500).json({ success: false, message: `Ingestion failed: ${err.message}` });
+    }
   }
 };
