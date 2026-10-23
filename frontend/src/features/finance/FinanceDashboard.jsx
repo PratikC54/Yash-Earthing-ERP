@@ -31,10 +31,12 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { financeService } from '../../services/financeService';
+import { useAuth } from '../auth';
 import GenerateInvoiceModal from './GenerateInvoiceModal';
 import RecordReceiptModal from './RecordReceiptModal';
 import CreateVendorBillModal from './CreateVendorBillModal';
 import SmartDataExtractionModal from './SmartDataExtractionModal';
+import EditRegisterItemModal from './EditRegisterItemModal';
 
 export default function FinanceDashboard() {
   const [activeTab, setActiveTab] = useState('invoices'); // invoices, receipts, payables, costing, settings
@@ -59,14 +61,20 @@ export default function FinanceDashboard() {
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
 
-  // Role-Based Access Control (RBAC) - clean SVG icons, ZERO text emojis
-  const [currentRole, setCurrentRole] = useState('ADMIN');
+  // Role-Based Access Control from real authenticated session
+  const auth = useAuth?.() || {};
+  const currentRole = auth.user?.role || 'ADMIN';
 
   // Modals state
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
   const [isReceiptModalOpen, setIsReceiptModalOpen] = useState(false);
   const [isVendorBillModalOpen, setIsVendorBillModalOpen] = useState(false);
   const [isExtractModalOpen, setIsExtractModalOpen] = useState(false);
+
+  // Job Costing, Ledger & Profitability Register Modals
+  const [activeEditItem, setActiveEditItem] = useState(null);
+  const [activeLedgerItem, setActiveLedgerItem] = useState(null);
+  const [activePlItem, setActivePlItem] = useState(null);
 
   // Admin Settings live editing form
   const [isEditingSettings, setIsEditingSettings] = useState(false);
@@ -405,28 +413,32 @@ export default function FinanceDashboard() {
 
   const handleExportJobCostingCsv = () => {
     const headers = [
-      'Job_Ref',
+      'SO_Order_No',
       'Customer_Name',
-      'Taxable_Revenue_INR',
+      'Product',
+      'Revenue_INR',
       'Material_Cost_INR',
-      'Labour_Overheads_INR',
-      'Total_Actual_Cost_INR',
-      'Actual_Gross_Margin_INR',
-      'Gross_Margin_Percent'
+      'Production_Cost_INR',
+      'Logistics_Cost_INR',
+      'Installation_Cost_INR',
+      'Gross_Profit_INR',
+      'Margin_Percent'
     ];
 
     const rows = filteredJobCosting.map(jc => [
-      `"${jc.jobRef || ''}"`,
+      `"${jc.orderNo || jc.jobRef || ''}"`,
       `"${(jc.customerName || '').replace(/"/g, '""')}"`,
-      Number(jc.taxableRevenue || 0),
-      Number(jc.materialCost || 0),
-      Number(jc.labourCost || 0),
-      Number(jc.totalCost || 0),
-      Number(jc.grossMargin || 0),
-      canViewMargins ? `"${jc.grossMarginPercent || 0}%"` : '"RESTRICTED"'
+      `"${(jc.product || '').replace(/"/g, '""')}"`,
+      Number(jc.revenue ?? jc.taxableRevenue ?? 0),
+      Number(jc.material ?? jc.materialCost ?? 0),
+      Number(jc.production ?? jc.labourCost ?? 0),
+      Number(jc.logistics ?? 0),
+      Number(jc.installation ?? 0),
+      Number(jc.grossProfit ?? jc.grossMargin ?? 0),
+      `"${jc.marginPercent ?? jc.grossMarginPercent ?? 0}%"`
     ]);
 
-    exportToExcelSafeCsv(`Job_Costing_Margins_${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
+    exportToExcelSafeCsv(`Job_Costing_Profitability_${new Date().toISOString().split('T')[0]}.csv`, headers, rows);
   };
 
   // Filtered invoices by role & search
@@ -495,10 +507,12 @@ export default function FinanceDashboard() {
   const filteredJobCosting = jobCosting.filter(jc => {
     const q = searchQueryCosting.toLowerCase().trim();
     const matchesSearch = !q ||
-      jc.jobRef?.toLowerCase().includes(q) ||
-      jc.customerName?.toLowerCase().includes(q);
+      (jc.orderNo && jc.orderNo.toLowerCase().includes(q)) ||
+      (jc.jobRef && jc.jobRef.toLowerCase().includes(q)) ||
+      (jc.customerName && jc.customerName.toLowerCase().includes(q)) ||
+      (jc.product && jc.product.toLowerCase().includes(q));
 
-    const marginPct = Number(jc.grossMarginPercent) || 0;
+    const marginPct = Number(jc.marginPercent ?? jc.grossMarginPercent ?? 0);
     const matchesStatus =
       statusFilterCosting === 'ALL' ||
       (statusFilterCosting === 'HIGH' && marginPct >= 50) ||
@@ -611,6 +625,69 @@ export default function FinanceDashboard() {
             </span>
           </div>
         </div>
+      </div>
+
+      {/* Module 6 Overview Fast Navigation Strips (Billing, Payables, Costing & Margins) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <button
+          onClick={() => setActiveTab('invoices')}
+          className={`p-3.5 rounded-xl border text-left transition flex items-center justify-between shadow-sm ${
+            activeTab === 'invoices' || activeTab === 'receipts'
+              ? 'bg-blue-50/90 border-blue-400 ring-1 ring-blue-400'
+              : 'bg-white border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+              <IndianRupee className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">Billing & Receivables</div>
+              <div className="text-[11px] text-slate-500 font-medium">Invoice · collections</div>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={() => setActiveTab('payables')}
+          className={`p-3.5 rounded-xl border text-left transition flex items-center justify-between shadow-sm ${
+            activeTab === 'payables'
+              ? 'bg-purple-50/90 border-purple-400 ring-1 ring-purple-400'
+              : 'bg-white border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold">
+              <IndianRupee className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">Payables & Expenses</div>
+              <div className="text-[11px] text-slate-500 font-medium">Vendor bills · expense</div>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
+
+        <button
+          onClick={() => setActiveTab('costing')}
+          className={`p-3.5 rounded-xl border text-left transition flex items-center justify-between shadow-sm ${
+            activeTab === 'costing'
+              ? 'bg-emerald-50/90 border-emerald-400 ring-1 ring-emerald-400'
+              : 'bg-white border-slate-200 hover:bg-slate-50'
+          }`}
+        >
+          <div className="flex items-center space-x-3">
+            <div className="w-9 h-9 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold">
+              <IndianRupee className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-900">Costing, Margin & MIS</div>
+              <div className="text-[11px] text-slate-500 font-medium">Job margin · cash · trends</div>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-400" />
+        </button>
       </div>
 
       {/* Critical Actions Feed Banner */}
@@ -784,14 +861,14 @@ export default function FinanceDashboard() {
                   placeholder="Search invoice no, customer, order..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-white text-slate-900 border border-slate-300 rounded-lg placeholder:text-slate-500 font-medium focus:border-blue-600 focus:outline-none shadow-sm"
                 />
               </div>
 
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 focus:border-blue-500 focus:outline-none font-medium"
+                className="px-3 py-1.5 text-xs bg-white text-slate-900 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none font-medium shadow-sm"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="ISSUED">Issued (Unpaid)</option>
@@ -949,14 +1026,14 @@ export default function FinanceDashboard() {
                   placeholder="Search customer, receipt no, UTR, bank..."
                   value={searchQueryReceipts}
                   onChange={(e) => setSearchQueryReceipts(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-white text-slate-900 border border-slate-300 rounded-lg placeholder:text-slate-500 font-medium focus:border-blue-600 focus:outline-none shadow-sm"
                 />
               </div>
 
               <select
                 value={methodFilterReceipts}
                 onChange={(e) => setMethodFilterReceipts(e.target.value)}
-                className="px-3 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 focus:border-blue-500 focus:outline-none font-medium"
+                className="px-3 py-1.5 text-xs bg-white text-slate-900 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none font-medium shadow-sm"
               >
                 <option value="ALL">All Payment Methods</option>
                 <option value="NEFT">NEFT Transfer</option>
@@ -1104,14 +1181,14 @@ export default function FinanceDashboard() {
                   placeholder="Search vendor, bill no, PO, GRN..."
                   value={searchQueryPayables}
                   onChange={(e) => setSearchQueryPayables(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-white text-slate-900 border border-slate-300 rounded-lg placeholder:text-slate-500 font-medium focus:border-blue-600 focus:outline-none shadow-sm"
                 />
               </div>
 
               <select
                 value={statusFilterPayables}
                 onChange={(e) => setStatusFilterPayables(e.target.value)}
-                className="px-3 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 focus:border-blue-500 focus:outline-none font-medium"
+                className="px-3 py-1.5 text-xs bg-white text-slate-900 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none font-medium shadow-sm"
               >
                 <option value="ALL">All Match Statuses</option>
                 <option value="MATCHED">Matched (3-Way Verified)</option>
@@ -1226,100 +1303,157 @@ export default function FinanceDashboard() {
       {/* ==================== TAB 4: JOB COSTING & MARGINS ==================== */}
       {activeTab === 'costing' && (
         <div className="space-y-4">
-          {/* Action & Filter Toolbar for Tab 4 */}
+          {/* Header Title Banner matching user specification */}
           <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
-            <div className="flex items-center space-x-3 w-full md:w-auto">
-              <div className="relative flex-1 md:w-72">
+            <div>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-sm font-black text-slate-900 tracking-tight">
+                  Job Costing, Ledger & Profitability Register
+                </h2>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                  Controlled register
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Operational data is view-only until Edit is selected
+              </p>
+            </div>
+
+            <div className="flex items-center space-x-2 w-full md:w-auto">
+              <div className="relative flex-1 md:w-64">
                 <Search className="w-4 h-4 absolute left-3 top-2.5 text-slate-400" />
                 <input
                   type="text"
-                  placeholder="Search job ref, customer entity..."
+                  placeholder="Search record, customer, SO, owner..."
                   value={searchQueryCosting}
                   onChange={(e) => setSearchQueryCosting(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-white text-slate-900 border border-slate-300 rounded-lg placeholder:text-slate-500 font-medium focus:border-blue-600 focus:outline-none shadow-sm"
                 />
               </div>
 
               <select
                 value={statusFilterCosting}
                 onChange={(e) => setStatusFilterCosting(e.target.value)}
-                className="px-3 py-1.5 text-xs border border-slate-300 rounded-lg text-slate-700 focus:border-blue-500 focus:outline-none font-medium"
+                className="px-3 py-1.5 text-xs bg-white text-slate-900 border border-slate-300 rounded-lg focus:border-blue-600 focus:outline-none font-medium shadow-sm"
               >
-                <option value="ALL">All Profit Margins</option>
-                <option value="HIGH">High Margin (&ge; 50%)</option>
+                <option value="ALL">All Status / Priority</option>
+                <option value="HIGH">High Margin (≥ 50%)</option>
                 <option value="MEDIUM">Target Margin (30%–49%)</option>
                 <option value="LOW">Low Margin (&lt; 30%)</option>
               </select>
-            </div>
 
-            <div className="flex items-center space-x-2">
               <button
                 onClick={handleExportJobCostingCsv}
-                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 font-bold rounded-lg text-xs transition flex items-center space-x-1"
-                title="Export complete job costing and margins to Excel CSV"
+                className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-800 font-bold rounded-lg text-xs transition flex items-center space-x-1 shrink-0"
+                title="Export complete job costing and margins to CSV"
               >
                 <FileDown className="w-3.5 h-3.5" />
-                <span>Export Costing</span>
+                <span>⇩ Export</span>
               </button>
-
-              {!canViewMargins && (
-                <span className="px-2.5 py-1 bg-amber-100 text-amber-800 text-xs font-bold rounded-lg flex items-center space-x-1">
-                  <Lock className="w-3.5 h-3.5" />
-                  <span>Proprietary Costing Hidden</span>
-                </span>
-              )}
             </div>
           </div>
 
+          {/* Exact Register Table */}
           <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase">
-                <tr>
-                  <th className="py-3 px-4">Sales Order Job Ref</th>
-                  <th className="py-3 px-4">Customer Entity</th>
-                  <th className="py-3 px-3 text-right">Taxable Revenue</th>
-                  <th className="py-3 px-3 text-right">Material Cost</th>
-                  <th className="py-3 px-3 text-right">Labour & Overheads</th>
-                  <th className="py-3 px-3 text-right">Total Actual Cost</th>
-                  <th className="py-3 px-3 text-right">Actual Gross Margin</th>
-                  <th className="py-3 px-3 text-center">Margin % / Completeness</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 font-mono">
-                {filteredJobCosting.map((jc) => (
-                  <tr key={jc.jobRef} className="hover:bg-slate-50">
-                    <td className="py-3.5 px-4 font-bold text-blue-700">{jc.jobRef}</td>
-                    <td className="py-3.5 px-4 font-sans font-semibold text-slate-900">{jc.customerName}</td>
-                    <td className="py-3.5 px-3 text-right font-bold text-slate-900">₹{Number(jc.taxableRevenue).toLocaleString('en-IN')}</td>
-                    <td className="py-3.5 px-3 text-right text-slate-700">
-                      {canViewMargins ? `₹${Number(jc.materialCost).toLocaleString('en-IN')}` : '***'}
-                    </td>
-                    <td className="py-3.5 px-3 text-right text-slate-700">
-                      {canViewMargins ? `₹${Number(jc.labourCost + jc.expenseCost).toLocaleString('en-IN')}` : '***'}
-                    </td>
-                    <td className="py-3.5 px-3 text-right font-bold text-purple-900">
-                      {canViewMargins ? `₹${Number(jc.totalActualCost).toLocaleString('en-IN')}` : '***'}
-                    </td>
-                    <td className="py-3.5 px-3 text-right font-bold text-emerald-700">
-                      {canViewMargins ? `₹${Number(jc.grossMargin).toLocaleString('en-IN')}` : 'RESTRICTED'}
-                    </td>
-                    <td className="py-3.5 px-3 text-center font-sans">
-                      {canViewMargins ? (
-                        <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${
-                          jc.isCostComplete
-                            ? 'bg-emerald-100 text-emerald-800'
-                            : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {jc.statusText}
-                        </span>
-                      ) : (
-                        <span className="text-slate-400 font-semibold text-[10px]">Restricted</span>
-                      )}
-                    </td>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase tracking-wider">
+                  <tr>
+                    <th className="py-3 px-4">SO / Customer</th>
+                    <th className="py-3 px-3">Product</th>
+                    <th className="py-3 px-3 text-right">Revenue</th>
+                    <th className="py-3 px-3 text-right">Material</th>
+                    <th className="py-3 px-3 text-right">Production</th>
+                    <th className="py-3 px-3 text-right">Logistics</th>
+                    <th className="py-3 px-3 text-right">Installation</th>
+                    <th className="py-3 px-3 text-right">Gross Profit</th>
+                    <th className="py-3 px-3 text-center">Margin</th>
+                    <th className="py-3 px-3 text-center">Accounts View</th>
+                    <th className="py-3 px-4 text-center">Edit</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {filteredJobCosting.map((jc) => {
+                    const orderNo = jc.orderNo || jc.jobRef || 'SO-REF';
+                    const customerName = jc.customerName || 'Customer';
+                    const product = jc.product || 'Standard Earthing Assembly';
+                    const rev = Number(jc.revenue ?? jc.taxableRevenue ?? 0);
+                    const mat = Number(jc.material ?? jc.materialCost ?? 0);
+                    const prod = Number(jc.production ?? jc.labourCost ?? 0);
+                    const log = Number(jc.logistics ?? 0);
+                    const inst = Number(jc.installation ?? 0);
+                    const gp = Number(jc.grossProfit ?? jc.grossMargin ?? 0);
+                    const margin = Number(jc.marginPercent ?? jc.grossMarginPercent ?? 0);
+
+                    return (
+                      <tr key={jc.id || orderNo} className="hover:bg-slate-50/80 transition">
+                        <td className="py-3 px-4">
+                          <div className="font-bold text-slate-900 font-mono">{orderNo}</div>
+                          <div className="text-[11px] text-slate-500 font-medium">{customerName}</div>
+                        </td>
+                        <td className="py-3 px-3 font-medium text-slate-800">
+                          {product}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono font-bold text-slate-900">
+                          ₹{rev.toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono text-slate-700">
+                          ₹{mat.toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono text-slate-700">
+                          ₹{prod.toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono text-slate-700">
+                          ₹{log.toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono text-slate-700">
+                          ₹{inst.toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-3 px-3 text-right font-mono font-bold text-emerald-700">
+                          ₹{gp.toLocaleString('en-IN')}
+                        </td>
+                        <td className="py-3 px-3 text-center font-mono font-black text-slate-900">
+                          <span className={`px-2 py-0.5 rounded text-[11px] font-bold ${
+                            margin >= 30 ? 'bg-emerald-50 text-emerald-800' : 'bg-slate-100 text-slate-700'
+                          }`}>
+                            {margin}%
+                          </span>
+                        </td>
+                        <td className="py-3 px-3 text-center">
+                          <div className="inline-flex items-center space-x-1.5">
+                            <button
+                              onClick={() => setActiveLedgerItem(jc)}
+                              className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-semibold text-[11px] border border-slate-200 transition"
+                            >
+                              Ledger
+                            </button>
+                            <button
+                              onClick={() => setActivePlItem(jc)}
+                              className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded font-semibold text-[11px] border border-blue-200 transition"
+                            >
+                              P&L
+                            </button>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center">
+                          <button
+                            onClick={() => setActiveEditItem(jc)}
+                            className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 rounded font-semibold text-[11px] transition inline-flex items-center space-x-1"
+                          >
+                            <span>✎ Edit</span>
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            <div className="p-3 bg-slate-50 border-t border-slate-200 text-[11px] text-slate-500 flex flex-col md:flex-row md:items-center justify-between gap-1">
+              <span>Records are intentionally read-only in the table. Use ✎ Edit to open the complete typed form; phone, WhatsApp, email, website and document buttons remain direct actions.</span>
+              <span className="font-mono font-bold text-slate-600 shrink-0">{filteredJobCosting.length} Jobs Tracked</span>
+            </div>
           </div>
         </div>
       )}
@@ -1494,6 +1628,174 @@ export default function FinanceDashboard() {
         onClose={() => setIsExtractModalOpen(false)}
         onImportSuccess={loadAllData}
       />
+
+      {/* Dynamic Item Edit Modal for Both Billing & Profitability */}
+      <EditRegisterItemModal
+        isOpen={Boolean(activeEditItem)}
+        onClose={() => setActiveEditItem(null)}
+        item={activeEditItem}
+        onSaved={() => {
+          setActiveEditItem(null);
+          showNotification('Register updated successfully in local database.');
+          loadAllData();
+        }}
+      />
+
+      {/* Accounts View: General Ledger Popup Modal */}
+      {activeLedgerItem && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-2xl w-full border border-slate-200 shadow-2xl overflow-hidden text-xs">
+            <div className="bg-[#141d30] text-white p-4 flex justify-between items-center">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-blue-400">Accounts Double-Entry View</span>
+                <h3 className="text-base font-extrabold">{activeLedgerItem.orderNo || activeLedgerItem.jobRef} · General Ledger</h3>
+                <p className="text-[11px] text-slate-300 mt-0.5">{activeLedgerItem.customerName} · {activeLedgerItem.product}</p>
+              </div>
+              <button onClick={() => setActiveLedgerItem(null)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-4">
+              <table className="w-full text-left border border-slate-200 rounded-lg overflow-hidden">
+                <thead className="bg-slate-50 text-[10px] font-bold text-slate-600 uppercase border-b border-slate-200">
+                  <tr>
+                    <th className="py-2.5 px-3">Account Title & Classification</th>
+                    <th className="py-2.5 px-3">Type</th>
+                    <th className="py-2.5 px-3 text-right">Debit (₹)</th>
+                    <th className="py-2.5 px-3 text-right">Credit (₹)</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 font-mono text-[11px]">
+                  <tr>
+                    <td className="py-2.5 px-3 font-sans font-medium text-slate-800">Trade Receivables Control Account</td>
+                    <td className="py-2.5 px-3 font-sans text-blue-700 font-semibold">Asset</td>
+                    <td className="py-2.5 px-3 text-right font-bold text-slate-900">₹{(activeLedgerItem.revenue || 0).toLocaleString('en-IN')}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-400">—</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-3 font-sans font-medium text-slate-800">Sales & Operating Revenue</td>
+                    <td className="py-2.5 px-3 font-sans text-emerald-700 font-semibold">Income</td>
+                    <td className="py-2.5 px-3 text-right text-slate-400">—</td>
+                    <td className="py-2.5 px-3 text-right font-bold text-emerald-700">₹{(activeLedgerItem.revenue || 0).toLocaleString('en-IN')}</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-3 font-sans font-medium text-slate-800">Raw Material Consumption (BOM)</td>
+                    <td className="py-2.5 px-3 font-sans text-amber-700 font-semibold">Expense</td>
+                    <td className="py-2.5 px-3 text-right text-slate-800">₹{(activeLedgerItem.material || 0).toLocaleString('en-IN')}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-400">—</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-3 font-sans font-medium text-slate-800">Direct Labour & Production Overheads</td>
+                    <td className="py-2.5 px-3 font-sans text-amber-700 font-semibold">Expense</td>
+                    <td className="py-2.5 px-3 text-right text-slate-800">₹{(activeLedgerItem.production || 0).toLocaleString('en-IN')}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-400">—</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-3 font-sans font-medium text-slate-800">Logistics & Freight Outward</td>
+                    <td className="py-2.5 px-3 font-sans text-amber-700 font-semibold">Expense</td>
+                    <td className="py-2.5 px-3 text-right text-slate-800">₹{(activeLedgerItem.logistics || 0).toLocaleString('en-IN')}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-400">—</td>
+                  </tr>
+                  <tr>
+                    <td className="py-2.5 px-3 font-sans font-medium text-slate-800">Site Earthing Installation Expense</td>
+                    <td className="py-2.5 px-3 font-sans text-amber-700 font-semibold">Expense</td>
+                    <td className="py-2.5 px-3 text-right text-slate-800">₹{(activeLedgerItem.installation || 0).toLocaleString('en-IN')}</td>
+                    <td className="py-2.5 px-3 text-right text-slate-400">—</td>
+                  </tr>
+                  <tr className="bg-slate-50 font-bold font-sans">
+                    <td className="py-2.5 px-3">Direct Cost Control (Payables/WIP)</td>
+                    <td className="py-2.5 px-3 text-purple-700 font-semibold">Contra</td>
+                    <td className="py-2.5 px-3 text-right text-slate-400">—</td>
+                    <td className="py-2.5 px-3 text-right font-mono text-purple-900">
+                      ₹{((activeLedgerItem.material || 0) + (activeLedgerItem.production || 0) + (activeLedgerItem.logistics || 0) + (activeLedgerItem.installation || 0)).toLocaleString('en-IN')}
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-xl flex justify-between items-center font-mono">
+                <span className="font-sans font-bold text-blue-900">Net Job Profit Contribution:</span>
+                <span className="text-base font-black text-emerald-700">₹{(activeLedgerItem.grossProfit || 0).toLocaleString('en-IN')} ({activeLedgerItem.marginPercent || 0}%)</span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setActiveLedgerItem(null)} className="px-4 py-1.5 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-700 transition">
+                Close Ledger
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Accounts View: Job Profit & Loss (P&L) Popup Modal */}
+      {activePlItem && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white rounded-2xl max-w-lg w-full border border-slate-200 shadow-2xl overflow-hidden text-xs">
+            <div className="bg-[#141d30] text-white p-4 flex justify-between items-center">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">Statement of Profit & Loss</span>
+                <h3 className="text-base font-extrabold">{activePlItem.orderNo || activePlItem.jobRef} · Job Margin Analysis</h3>
+                <p className="text-[11px] text-slate-300 mt-0.5">{activePlItem.customerName}</p>
+              </div>
+              <button onClick={() => setActivePlItem(null)} className="p-1.5 rounded-lg hover:bg-slate-800 text-slate-400 hover:text-white transition">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3 font-mono">
+              <div className="flex justify-between items-center pb-2 border-b border-slate-200">
+                <span className="font-sans font-bold text-slate-900">Total Contract Revenue</span>
+                <span className="font-bold text-slate-900 text-sm">₹{(activePlItem.revenue || 0).toLocaleString('en-IN')}</span>
+              </div>
+
+              <div className="space-y-1.5 pt-1 text-slate-600 font-sans">
+                <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Cost of Goods Sold (COGS Breakdown):</div>
+                <div className="flex justify-between font-mono text-xs">
+                  <span>(-) Direct Material (Copper/Steel/Compound):</span>
+                  <span>₹{(activePlItem.material || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between font-mono text-xs">
+                  <span>(-) Factory Production & Labour:</span>
+                  <span>₹{(activePlItem.production || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between font-mono text-xs">
+                  <span>(-) Surface Logistics & Freight:</span>
+                  <span>₹{(activePlItem.logistics || 0).toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between font-mono text-xs">
+                  <span>(-) Testing & Site Installation:</span>
+                  <span>₹{(activePlItem.installation || 0).toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              <div className="pt-2 border-t border-slate-200 flex justify-between font-mono font-bold text-red-600">
+                <span className="font-sans">Total Direct Job Costs:</span>
+                <span>
+                  ₹{((activePlItem.material || 0) + (activePlItem.production || 0) + (activePlItem.logistics || 0) + (activePlItem.installation || 0)).toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex justify-between items-center pt-3 font-mono">
+                <div>
+                  <div className="font-sans font-bold text-emerald-950">Gross Job Profit:</div>
+                  <div className="font-sans text-[10px] text-emerald-700">Gross Margin %: {activePlItem.marginPercent || 0}%</div>
+                </div>
+                <div className="text-lg font-black text-emerald-700">
+                  ₹{(activePlItem.grossProfit || 0).toLocaleString('en-IN')}
+                </div>
+              </div>
+            </div>
+
+            <div className="p-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+              <button onClick={() => setActivePlItem(null)} className="px-4 py-1.5 bg-slate-800 text-white font-bold rounded-lg hover:bg-slate-700 transition">
+                Close P&L
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
