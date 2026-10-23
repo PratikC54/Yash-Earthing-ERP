@@ -191,6 +191,37 @@ export const initialNavSections = [
       },
     ],
   },
+  {
+    id: 'module-5',
+    title: 'Module 5 · Installation & Service',
+    items: [
+      {
+        id: 'm5-dashboard',
+        name: 'Installation & Service',
+        desc: 'Site execution, testing verification & support tickets',
+        icon: 'Layers',
+        badge: 'Live',
+      },
+      {
+        id: 'm5-projects',
+        name: 'Project Register',
+        desc: 'Project milestones, WBS tasks & stock check',
+        icon: 'Layers',
+      },
+      {
+        id: 'm5-installations',
+        name: 'Site Installations',
+        desc: 'Earth pit resistance QC & client handover signoff',
+        icon: 'ShieldCheck',
+      },
+      {
+        id: 'm5-service',
+        name: 'Service & Warranty',
+        desc: 'Maintenance tickets, parts log & SLA tracking',
+        icon: 'Box',
+      },
+    ],
+  },
 ]
 
 export const currentUser = {
