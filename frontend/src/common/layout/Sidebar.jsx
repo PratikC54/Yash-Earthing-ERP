@@ -1,4 +1,4 @@
-﻿import { useState } from 'react'
+import { useState } from 'react'
 import {
   LayoutGrid,
   Search,
@@ -21,6 +21,11 @@ import {
   TrendingUp,
   Settings,
   IndianRupee,
+  Clock,
+  CheckSquare,
+  Award,
+  CreditCard,
+  Briefcase,
 } from 'lucide-react'
 
 // Icon mapping helper
@@ -42,6 +47,11 @@ const iconMap = {
   TrendingUp,
   Settings,
   IndianRupee,
+  Clock,
+  CheckSquare,
+  Award,
+  CreditCard,
+  Briefcase,
 }
 
 export default function Sidebar({
