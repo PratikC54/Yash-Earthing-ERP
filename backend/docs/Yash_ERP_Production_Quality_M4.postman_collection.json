@@ -52,7 +52,7 @@
           "name": "Health Check",
           "request": {
             "method": "GET",
-            "url": { "raw": "http://localhost:5000/api/health", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "v1", "health"] }
+            "url": { "raw": "http://localhost:5000/api/health", "protocol": "http", "host": ["localhost"], "port": "5000", "path": ["api", "health"] }
           }
         }
       ]

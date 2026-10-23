@@ -617,12 +617,14 @@ test("28. POST /api/production-quality/manufacturing/delays", async () => {
 
 test("29. POST /api/production-quality/manufacturing/outputs/:id/transfer-to-quality", async () => {
   const originalFindUnique = prisma.workOrder.findUnique;
+  const originalQueryRaw = prisma.$queryRawUnsafe;
   prisma.workOrder.findUnique = async () => ({
     id: 1,
     status: "IN_PROGRESS",
-    goodQuantity: "50.000",
+    goodQuantity: "100.000",
     inspections: [],
   });
+  prisma.$queryRawUnsafe = async () => [{ id: 1, status: "IN_PROGRESS", goodQuantity: "100.000" }];
 
   const res = await fetch(`${baseUrl}/api/production-quality/manufacturing/outputs/1/transfer-to-quality`, {
     method: "POST",
@@ -637,6 +639,7 @@ test("29. POST /api/production-quality/manufacturing/outputs/:id/transfer-to-qua
   assert.equal(body.success, true);
 
   prisma.workOrder.findUnique = originalFindUnique;
+  prisma.$queryRawUnsafe = originalQueryRaw;
 });
 
 test("30. GET /api/production-quality/manufacturing/reports/production", async () => {

@@ -82,7 +82,7 @@ Or start the backend API:
 npm run dev
 ```
 
-With the example `PORT=5000`, check the health endpoint at `http://localhost:5000/api/v1/health`.
+With the example `PORT=5000`, check the health endpoint at `http://localhost:5000/api/health`.
 
 ## Troubleshooting
 
