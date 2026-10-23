@@ -1,9 +1,9 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { X, Layers, Plus } from 'lucide-react'
 
 export default function AddModuleModal({ isOpen, onClose, onAddModule, sections }) {
   const [moduleName, setModuleName] = useState('')
-  const [targetSectionId, setTargetSectionId] = useState(sections[0]?.id || 'overview')
+  const [targetSectionId, setTargetSectionId] = useState(sections[0]?.id || 'module-1')
   const [icon, setIcon] = useState('Box')
 
   if (!isOpen) return null
@@ -50,11 +50,28 @@ export default function AddModuleModal({ isOpen, onClose, onAddModule, sections 
             <input
               type="text"
               required
-              placeholder="e.g. Inventory, Quality Hub, Sales, Purchasing"
+              placeholder="e.g. Quality Hub, Purchasing"
               value={moduleName}
               onChange={(e) => setModuleName(e.target.value)}
               className="w-full bg-[#0d1424] border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
+          </div>
+
+          <div>
+            <label className="block text-slate-300 font-medium mb-1.5">
+              Section
+            </label>
+            <select
+              value={targetSectionId}
+              onChange={(e) => setTargetSectionId(e.target.value)}
+              className="w-full bg-[#0d1424] border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {sections.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.title}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div>
