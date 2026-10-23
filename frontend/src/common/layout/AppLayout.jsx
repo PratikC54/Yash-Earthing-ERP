@@ -15,6 +15,14 @@ import CreateLeadModal from '../../features/module1/components/CreateLeadModal'
 import TraceJobModal from '../../features/module1/components/TraceJobModal'
 import module1Service from '../../features/module1/services/module1Service'
 
+// Module 2 Pages
+import Module2Dashboard from '../../features/module2/pages/Module2Dashboard'
+import VendorMasterPage from '../../features/module2/pages/VendorMasterPage'
+import PurchaseRequestsAndRfqsPage from '../../features/module2/pages/PurchaseRequestsAndRfqsPage'
+import PurchaseOrdersPage from '../../features/module2/pages/PurchaseOrdersPage'
+import GoodsReceiptsPage from '../../features/module2/pages/GoodsReceiptsPage'
+import InventoryPage from '../../features/module2/pages/InventoryPage'
+
 export default function AppLayout() {
   const { user, logout } = useAuth()
   const isAdmin = user?.role === 'ADMIN'
@@ -114,6 +122,7 @@ export default function AppLayout() {
   // Render current active page
   const renderContent = () => {
     switch (activeModuleId) {
+      // Module 1 & Overview
       case 'overview':
         return isSuperUser ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />
@@ -128,8 +137,31 @@ export default function AppLayout() {
         return <QuotationsPage onNavigateToOrders={() => handleNavigate('orders')} />
       case 'orders':
         return <OrdersPage onNavigate={handleNavigate} />
+
+      // Module 2 Pages
+      case 'procurement-dashboard':
+        return (
+          <Module2Dashboard
+            onNavigate={(moduleId) => {
+              handleNavigate(moduleId)
+            }}
+          />
+        )
+      case 'vendors':
+        return <VendorMasterPage />
+      case 'purchase-requests':
+        return <PurchaseRequestsAndRfqsPage />
+      case 'purchase-orders':
+        return <PurchaseOrdersPage />
+      case 'goods-receipts':
+        return <GoodsReceiptsPage />
+      case 'inventory':
+        return <InventoryPage />
+
+      // Module 3 Pages
       case 'engineering':
         return <EngineeringDashboard />
+
       default:
         return isSuperUser ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />
@@ -141,7 +173,7 @@ export default function AppLayout() {
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-[#070e1e] font-sans antialiased selection:bg-blue-500 selection:text-white">
-      {/* Shared navigation for Module 1 and Module 3 */}
+      {/* Sidebar (Desktop Persistent + Mobile Slide-out Drawer) */}
       <Sidebar
         sections={visibleSections}
         activeModuleId={activeModuleId}
@@ -154,7 +186,7 @@ export default function AppLayout() {
 
       {/* Right Content Area: Navbar + Main Middle Content */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#070e1e]">
-        {/* Top Navbar matching the demo dashboard */}
+        {/* Top Navbar */}
         <Navbar
           activeModule={activeModule}
           isAdmin={isAdmin}

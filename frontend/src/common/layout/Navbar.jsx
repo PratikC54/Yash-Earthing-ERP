@@ -1,4 +1,5 @@
-import { Search, Sparkles, UserCheck, Plus, Menu } from 'lucide-react'
+import React from 'react'
+import { Search, Sparkles, UserCheck, Plus, Menu, Bell } from 'lucide-react'
 
 export default function Navbar({
   activeModule = 'Dashboard',
@@ -9,15 +10,18 @@ export default function Navbar({
   onOpenTrace,
   onQuickAdd,
   onToggleSidebar,
+  onToggleMobileSidebar,
 }) {
+  const handleToggle = onToggleSidebar || onToggleMobileSidebar
+
   return (
     <header className="bg-[#0b172d] border-b border-[#1b2f56] px-3 sm:px-6 py-2.5 sm:py-3.5 flex items-center justify-between transition-colors duration-200 shadow-md shrink-0">
       {/* Mobile Menu Button + Breadcrumb Navigation */}
       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-        {onToggleSidebar && (
+        {handleToggle && (
           <button
             type="button"
-            onClick={onToggleSidebar}
+            onClick={handleToggle}
             className="lg:hidden p-1.5 rounded-lg bg-[#071325] hover:bg-slate-800 text-slate-300 hover:text-white border border-[#1b2f56] transition cursor-pointer shrink-0"
             aria-label="Toggle Navigation"
           >
@@ -26,10 +30,10 @@ export default function Navbar({
         )}
 
         <div className="flex items-center space-x-1.5 sm:space-x-2 text-xs sm:text-sm truncate">
-          <span className="hidden md:inline text-slate-400 hover:text-slate-200 transition-colors cursor-pointer font-medium">
-            Yash Group ERP
+          <span className="text-cyan-400 font-bold hover:text-cyan-300 transition-colors cursor-pointer">
+            Yash ERP
           </span>
-          <span className="hidden md:inline text-slate-600">/</span>
+          <span className="text-slate-600">/</span>
           <span className="text-white font-semibold tracking-tight truncate">
             {activeModule}
           </span>
@@ -46,7 +50,7 @@ export default function Navbar({
 
       {/* Right Controls: Trace Job, Quick Add, Search bar, Admin Approvals */}
       <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
-        {/* Trace Job Action matching demo dashboard */}
+        {/* Trace Job Action */}
         {onOpenTrace && (
           <button
             type="button"
@@ -73,7 +77,7 @@ export default function Navbar({
         )}
 
         {/* Admin Approvals Quick Access */}
-        {isAdmin && (
+        {isAdmin && onOpenAdminApprovals && (
           <button
             type="button"
             onClick={onOpenAdminApprovals}
@@ -90,16 +94,16 @@ export default function Navbar({
           <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-400 absolute left-2.5 sm:left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
-            placeholder="Search..."
+            placeholder="Search Yash ERP..."
             onChange={(e) => onSearch && onSearch(e.target.value)}
             className="w-full bg-[#071325] text-slate-100 placeholder-slate-400 text-xs pl-8 sm:pl-9 pr-2.5 py-1.5 rounded-lg border border-[#1b2f56] focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 transition shadow-inner"
           />
         </div>
 
         {/* System Status Pill */}
-        <div className="hidden 2xl:flex items-center space-x-2 px-2.5 py-1.5 rounded-lg bg-[#071325] border border-[#1b2f56] text-xs text-slate-300">
+        <div className="hidden sm:flex items-center space-x-2 px-2.5 py-1.5 rounded-lg bg-[#071325] border border-[#1b2f56] text-xs text-slate-300">
           <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-          <span className="font-semibold text-slate-200">M1 Active</span>
+          <span className="font-semibold text-slate-200">ERP Active</span>
         </div>
       </div>
     </header>
