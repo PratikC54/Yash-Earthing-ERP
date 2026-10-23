@@ -9,8 +9,11 @@ import {
   Printer,
   Truck,
   UserCheck,
+  UserPlus,
+  ShieldAlert,
   Clock,
 } from "lucide-react";
+import AssignInspectorModal from "../components/quality/AssignInspectorModal";
 import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
 import StatusBadge from "../../../components/common/StatusBadge";
@@ -32,9 +35,10 @@ export default function InspectionDetailsPage() {
   const [isPassModalOpen, setIsPassModalOpen] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isReworkModalOpen, setIsReworkModalOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
 
   // Common Decision State
-  const [decisionOfficer, setDecisionOfficer] = useState("System Administrator");
+  const [decisionOfficer, setDecisionOfficer] = useState("");
   const [refData, setRefData] = useState({
     users: [
       { id: 1, name: "System Administrator", role: "ADMIN" },
@@ -131,6 +135,7 @@ export default function InspectionDetailsPage() {
   const isReleased = inspection?.status === "RELEASED";
   const isFullyDecided = pendingQty <= 0 && inspectedQty > 0;
   const isFinalized = isReleased || isFullyDecided;
+  const isUnassigned = !inspection?.assignedInspectorId || inspection?.status === "PENDING_ASSIGNMENT";
 
   const loadInspection = useCallback(async () => {
     setLoading(true);
@@ -139,6 +144,13 @@ export default function InspectionDetailsPage() {
       const res = await qualityService.getInspectionById(id);
       if (res?.data) {
         setInspection(res.data);
+        if (res.data.assignedInspector?.name) {
+          setDecisionOfficer(res.data.assignedInspector.name);
+        } else if (res.data.decisionOfficer) {
+          setDecisionOfficer(res.data.decisionOfficer);
+        } else {
+          setDecisionOfficer("");
+        }
         if (res.data.measurements?.parameters) {
           setParameters((prev) => ({ ...prev, ...res.data.measurements.parameters }));
         } else if (res.data.measurements && typeof res.data.measurements === "object") {
@@ -437,6 +449,30 @@ export default function InspectionDetailsPage() {
         </div>
       </div>
 
+      {/* Unassigned Inspection Alert Banner */}
+      {isUnassigned && (
+        <div className="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-amber-200">
+          <div className="flex items-start gap-2.5">
+            <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-bold text-amber-300">Pending Quality Inspector Assignment</p>
+              <p className="text-amber-200/80 text-[11px] mt-0.5">
+                This production output has been transferred to Quality Inspection, but has not yet been assigned to a certified Quality Inspector. An authorized user must manually assign an inspector before measurement logging or final decisions (Pass/Rework/Reject) can be executed.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="primary"
+            size="sm"
+            icon={UserPlus}
+            className="bg-amber-500 text-black hover:bg-amber-400 font-bold shrink-0 self-start sm:self-center"
+            onClick={() => setIsAssignModalOpen(true)}
+          >
+            Assign Inspector
+          </Button>
+        </div>
+      )}
+
       {/* Engineering Specs, Batch Traceability, and Decision Matrix */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         <Card title="Approved Product Baseline" subtitle="Inherited released drawings & standards">
@@ -494,6 +530,30 @@ export default function InspectionDetailsPage() {
                 {inspection?.station || "—"}
               </p>
             </div>
+            <div className="pt-2 border-t border-[#1e2a4a]">
+              <span className="text-[#94a3b8] block">Assigned Quality Inspector:</span>
+              <div className="flex items-center justify-between pt-1">
+                {!isUnassigned ? (
+                  <span className="font-semibold text-[#f1f5f9] flex items-center gap-1.5">
+                    <UserCheck className="w-3.5 h-3.5 text-blue-400" />
+                    <span>{inspection?.assignedInspector?.name || inspection?.decisionOfficer}</span>
+                  </span>
+                ) : (
+                  <span className="text-[10.5px] font-semibold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/30">
+                    Unassigned (Pending)
+                  </span>
+                )}
+                {!isFinalized && (
+                  <button
+                    type="button"
+                    onClick={() => setIsAssignModalOpen(true)}
+                    className="text-[11px] font-semibold text-[#3b82f6] hover:underline cursor-pointer"
+                  >
+                    {isUnassigned ? "Assign Now" : "Reassign"}
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
         </Card>
 
@@ -542,6 +602,28 @@ export default function InspectionDetailsPage() {
               </div>
             )}
 
+            {/* Unassigned Action Warning */}
+            {isUnassigned && (
+              <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-amber-300 text-xs space-y-2">
+                <div className="flex items-center gap-1.5 font-semibold">
+                  <ShieldAlert className="w-4 h-4 text-amber-400" />
+                  <span>Action Locked: Assign Inspector First</span>
+                </div>
+                <p className="text-[11px] text-[#94a3b8]">
+                  Quality decisions (Pass/Rework/Reject) cannot be submitted on an unassigned inspection lot.
+                </p>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  icon={UserPlus}
+                  className="w-full bg-amber-500 text-black hover:bg-amber-400 font-bold text-xs"
+                  onClick={() => setIsAssignModalOpen(true)}
+                >
+                  Assign Inspector Now
+                </Button>
+              </div>
+            )}
+
             {/* 3 Explicit Quality Decision Actions */}
             {isReleased && (
               <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-blue-400 text-xs space-y-1">
@@ -570,7 +652,7 @@ export default function InspectionDetailsPage() {
               <Button
                 variant="primary"
                 size="md"
-                disabled={actionLoading || isFinalized}
+                disabled={actionLoading || isFinalized || isUnassigned}
                 className="w-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center gap-2"
                 icon={CheckCircle2}
                 onClick={() => setIsPassModalOpen(true)}
@@ -580,7 +662,7 @@ export default function InspectionDetailsPage() {
               <Button
                 variant="secondary"
                 size="md"
-                disabled={actionLoading || isFinalized}
+                disabled={actionLoading || isFinalized || isUnassigned}
                 className="w-full text-amber-400 border-amber-500/30 hover:bg-amber-500/10 flex items-center justify-center gap-2"
                 icon={RotateCcw}
                 onClick={() => setIsReworkModalOpen(true)}
@@ -590,7 +672,7 @@ export default function InspectionDetailsPage() {
               <Button
                 variant="danger"
                 size="md"
-                disabled={actionLoading || isFinalized}
+                disabled={actionLoading || isFinalized || isUnassigned}
                 className="w-full bg-red-600 hover:bg-red-500 text-white flex items-center justify-center gap-2"
                 icon={XCircle}
                 onClick={() => setIsRejectModalOpen(true)}

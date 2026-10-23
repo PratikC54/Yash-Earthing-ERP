@@ -1,9 +1,12 @@
 export function errorHandler(err, _req, res, _next) {
-  let statusCode = err.statusCode ?? 500;
+  let statusCode =
+    err.message === "Origin not allowed by CORS" ? 403 : err.statusCode ?? 500;
   let userMessage = err.message || "An unexpected error occurred. Please try again.";
 
-  // Prisma Unique Constraint violation (P2002)
-  if (err.code === "P2002") {
+  if (err.message === "Origin not allowed by CORS") {
+    statusCode = 403;
+    userMessage = "Origin not allowed by CORS";
+  } else if (err.code === "P2002") {
     statusCode = 400;
     const target = Array.isArray(err.meta?.target) ? err.meta.target.join(", ") : (err.meta?.target || "record");
     userMessage = `A duplicate entry already exists for ${target}. Please use an existing record or a revised sequence.`;
@@ -18,17 +21,6 @@ export function errorHandler(err, _req, res, _next) {
     userMessage = err.message && !err.message.includes("\n")
       ? err.message
       : "The application encountered a processing issue. Please check the inputs and try again.";
-  }
-
-  const message = statusCode >= 500 ? "Internal server error" : err.message;
-  const response = {
-    success: false,
-    message,
-    error: { message },
-  };
-
-  if (err.errors) {
-    response.errors = err.errors;
   }
 
   res.status(statusCode).json({

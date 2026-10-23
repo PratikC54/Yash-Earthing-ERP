@@ -662,19 +662,32 @@ export class ManufacturingService {
         );
       }
 
-      // 3. Create QualityInspection lot in transaction
+      // 3. Create QualityInspection lot in transaction (status PENDING_ASSIGNMENT, inspector unassigned)
       const inspection = await tx.qualityInspection.create({
         data: {
           inspectionNo,
           workOrderId: Number(workOrderId),
-          status: QUALITY_STATUS.PENDING,
+          status: QUALITY_STATUS.PENDING_ASSIGNMENT,
           inspectedQuantity: transferQty,
           acceptedQuantity: 0,
           rejectedQuantity: 0,
+          assignedInspectorId: null,
+          decisionOfficer: null,
           evidenceNotes: [
             batchNumber && `Transfer Batch: ${batchNumber}`,
             notes,
           ].filter(Boolean).join(". ") || null,
+        },
+        include: {
+          assignedInspector: { select: { id: true, name: true, email: true, role: true } },
+          workOrder: {
+            select: {
+              id: true,
+              workOrderNo: true,
+              priority: true,
+              bomRevision: { select: { product: { select: { id: true, name: true, sku: true } } } },
+            },
+          },
         },
       });
 

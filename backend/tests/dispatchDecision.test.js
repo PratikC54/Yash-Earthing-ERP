@@ -52,7 +52,8 @@ describe("Quality Decision & Dispatch Integration Workflow", () => {
         rejectedQuantity: 0,
         reworkQuantity: 0,
         dispatchedQuantity: 0,
-        status: "PENDING",
+        status: "ASSIGNED",
+        assignedInspectorId: 1,
       },
     });
 
@@ -65,7 +66,8 @@ describe("Quality Decision & Dispatch Integration Workflow", () => {
         rejectedQuantity: 0,
         reworkQuantity: 0,
         dispatchedQuantity: 0,
-        status: "PENDING",
+        status: "ASSIGNED",
+        assignedInspectorId: 1,
       },
     });
 
@@ -78,7 +80,8 @@ describe("Quality Decision & Dispatch Integration Workflow", () => {
         rejectedQuantity: 0,
         reworkQuantity: 0,
         dispatchedQuantity: 0,
-        status: "PENDING",
+        status: "ASSIGNED",
+        assignedInspectorId: 1,
       },
     });
   });

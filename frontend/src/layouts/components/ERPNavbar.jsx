@@ -128,17 +128,6 @@ export default function ERPNavbar({
                 <div className="w-2 h-2 rounded-full bg-[#38BDF8]" />
                 <span>Log Quality Inspection</span>
               </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setIsQuickAddOpen(false);
-                  onOpenQuickAction("ncr");
-                }}
-                className="w-full px-3 py-2 text-left text-xs text-[#f1f5f9] hover:bg-slate-800/40 hover:text-[#F87171] transition-colors flex items-center gap-2.5 cursor-pointer"
-              >
-                <div className="w-2 h-2 rounded-full bg-[#F87171]" />
-                <span>Report Non-Conformance</span>
-              </button>
             </div>
           )}
         </div>

@@ -16,7 +16,7 @@ export async function authenticate(req, res, next) {
     if (!token) {
       return res.status(401).json({
         success: false,
-        message: "Please sign in to access this feature.",
+        message: "Authentication required. Please sign in to access this feature.",
       });
     }
 

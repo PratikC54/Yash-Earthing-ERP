@@ -415,7 +415,8 @@ test("POST /manufacturing/outputs/:id/transfer-to-quality transfers output to QC
   assert.equal(res.status, 201);
   assert.equal(body.success, true);
   assert.ok(body.data.inspectionNo.startsWith("QI-"));
-  assert.equal(body.data.status, "PENDING");
+  assert.equal(body.data.status, "PENDING_ASSIGNMENT");
+  assert.equal(body.data.assignedInspectorId, null);
   assert.equal(Number(body.data.inspectedQuantity), 20);
 
   testInspection = body.data;
@@ -423,7 +424,7 @@ test("POST /manufacturing/outputs/:id/transfer-to-quality transfers output to QC
 
 // ===================== 4. M4.3 QUALITY CONTROL & FG RELEASE =====================
 
-test("GET /quality/dashboard and /quality/inspection-queue return queue", async (t) => {
+test("GET /quality/dashboard and /quality/inspection-queue return queue with PENDING_ASSIGNMENT", async (t) => {
   if (!isDbAvailable) {
     t.skip("Live database not connected.");
     return;
@@ -438,9 +439,75 @@ test("GET /quality/dashboard and /quality/inspection-queue return queue", async 
   assert.equal(body.success, true);
   assert.ok(body.data.metrics);
   assert.ok(Array.isArray(body.data.queue));
+  assert.ok(body.data.metrics.pendingAssignment >= 1);
 });
 
-test("POST /quality/inspections/:id/results records inspection measurements", async (t) => {
+test("POST /quality/inspections/:id/results rejects unassigned inspection lot with 400", async (t) => {
+  if (!testInspection) {
+    t.skip("No test inspection created");
+    return;
+  }
+
+  const res = await fetch(`${baseUrl}/api/production-quality/quality/inspections/${testInspection.id}/results`, {
+    method: "POST",
+    headers: authHeaders("QUALITY_INSPECTOR", testUser.id),
+    body: JSON.stringify({
+      acceptedQuantity: 20,
+      rejectedQuantity: 0,
+    }),
+  });
+  const body = await res.json();
+
+  assert.equal(res.status, 400);
+  assert.equal(body.success, false);
+  assert.match(body.message, /unassigned inspection lot/i);
+});
+
+test("POST /quality/inspections/:id/assign rejects nonexistent or unauthorized inspector", async (t) => {
+  if (!testInspection) {
+    t.skip("No test inspection created");
+    return;
+  }
+
+  // Nonexistent user
+  const notFoundRes = await fetch(`${baseUrl}/api/production-quality/quality/inspections/${testInspection.id}/assign`, {
+    method: "POST",
+    headers: authHeaders("PRODUCTION_MANAGER", testUser.id),
+    body: JSON.stringify({
+      inspectorId: 999999,
+    }),
+  });
+  const notFoundBody = await notFoundRes.json();
+  assert.equal(notFoundRes.status, 404);
+  assert.equal(notFoundBody.success, false);
+});
+
+test("POST /quality/inspections/:id/assign assigns valid inspector and updates status to ASSIGNED", async (t) => {
+  if (!testInspection) {
+    t.skip("No test inspection created");
+    return;
+  }
+
+  const res = await fetch(`${baseUrl}/api/production-quality/quality/inspections/${testInspection.id}/assign`, {
+    method: "POST",
+    headers: authHeaders("PRODUCTION_MANAGER", testUser.id),
+    body: JSON.stringify({
+      inspectorId: testUser.id,
+      notes: "Assigned for ultrasonic and galvanizing test per IS 3043",
+    }),
+  });
+  const body = await res.json();
+
+  assert.equal(res.status, 200);
+  assert.equal(body.success, true);
+  assert.equal(body.data.status, "ASSIGNED");
+  assert.equal(body.data.assignedInspectorId, testUser.id);
+  assert.equal(body.data.assignedInspector.name, testUser.name);
+
+  testInspection = body.data;
+});
+
+test("POST /quality/inspections/:id/results records inspection measurements after assignment", async (t) => {
   if (!testInspection) {
     t.skip("No test inspection created");
     return;

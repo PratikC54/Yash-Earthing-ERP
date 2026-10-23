@@ -4,6 +4,11 @@ export const inspectionIdParamSchema = z.object({
   id: z.coerce.number().int().positive("Inspection ID must be a positive integer"),
 });
 
+export const assignInspectorSchema = z.object({
+  inspectorId: z.coerce.number().int().positive("Inspector ID must be a positive integer"),
+  notes: z.string().max(500).optional(),
+});
+
 export const recordInspectionResultsSchema = z.object({
   acceptedQuantity: z.coerce.number().min(0, "Accepted quantity cannot be negative"),
   rejectedQuantity: z.coerce.number().min(0, "Rejected quantity cannot be negative"),

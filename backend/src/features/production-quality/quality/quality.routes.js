@@ -4,6 +4,8 @@ import { authorizeRoles } from "../../../middleware/authorizeRoles.js";
 import { validateRequest } from "../../../middleware/validateRequest.js";
 import {
   approveInspection,
+  assignInspector,
+  getEligibleInspectors,
   approveScrap,
   getDashboard,
   getInspectionById,
@@ -23,6 +25,7 @@ import {
   submitDecision,
 } from "./quality.controller.js";
 import {
+  assignInspectorSchema,
   finishedGoodsReleaseSchema,
   inspectionDecisionSchema,
   inspectionIdParamSchema,
@@ -39,11 +42,22 @@ qualityRouter.use(authenticateUser);
 qualityRouter.get("/dashboard", getDashboard);
 qualityRouter.get("/inspection-queue", getInspectionQueue);
 
+// Eligible Inspectors for Manual Assignment
+qualityRouter.get("/eligible-inspectors", getEligibleInspectors);
+
 // Single Inspection
 qualityRouter.get(
   "/inspections/:id",
   validateRequest({ params: inspectionIdParamSchema }),
   getInspectionById
+);
+
+// Manual Inspector Assignment
+qualityRouter.post(
+  "/inspections/:id/assign",
+  authorizeRoles("ADMIN", "PRODUCTION_MANAGER", "QUALITY_INSPECTOR"),
+  validateRequest({ params: inspectionIdParamSchema, body: assignInspectorSchema }),
+  assignInspector
 );
 
 // Start Inspection

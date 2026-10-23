@@ -56,6 +56,7 @@ app.get("/", (_req, res) => {
 });
 
 app.use("/api/v1", apiRouter);
+app.use("/api", apiRouter);
 app.use(notFound);
 app.use(errorHandler);
 
