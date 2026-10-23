@@ -147,7 +147,7 @@ export default function RecordReceiptModal({ isOpen, onClose, onReceiptRecorded,
             <select
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg font-bold text-slate-800 focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-bold focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
             >
               {customerList.map(c => (
                 <option key={c.id} value={c.id}>{c.name}</option>
@@ -167,7 +167,7 @@ export default function RecordReceiptModal({ isOpen, onClose, onReceiptRecorded,
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="e.g. 150000"
                 required
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono font-bold text-emerald-800 text-sm focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-mono font-bold text-sm placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               />
             </div>
             <div>
@@ -175,7 +175,7 @@ export default function RecordReceiptModal({ isOpen, onClose, onReceiptRecorded,
               <select
                 value={method}
                 onChange={(e) => setMethod(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-medium text-slate-800 focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-medium focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               >
                 <option value="NEFT">NEFT (National Electronic Fund Transfer)</option>
                 <option value="RTGS">RTGS (Real Time Gross Settlement)</option>
@@ -195,7 +195,7 @@ export default function RecordReceiptModal({ isOpen, onClose, onReceiptRecorded,
                 onChange={(e) => setReferenceNo(e.target.value)}
                 placeholder="e.g. HDFCN2628591024"
                 required
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono text-slate-800 focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-mono placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               />
             </div>
             <div>
@@ -204,7 +204,7 @@ export default function RecordReceiptModal({ isOpen, onClose, onReceiptRecorded,
                 type="date"
                 value={receivedOn}
                 onChange={(e) => setReceivedOn(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-slate-800 focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               />
             </div>
           </div>
@@ -223,7 +223,7 @@ export default function RecordReceiptModal({ isOpen, onClose, onReceiptRecorded,
                 value={tdsDeduction}
                 onChange={(e) => setTdsDeduction(e.target.value)}
                 placeholder="TDS Amount (₹), e.g. 3000"
-                className="w-full px-3 py-1.5 border border-amber-300 rounded-lg bg-white font-mono focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-1.5 border border-amber-300 rounded-lg bg-white text-slate-900 font-mono placeholder:text-slate-500 focus:border-blue-600 focus:outline-none shadow-sm"
               />
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function RecordReceiptModal({ isOpen, onClose, onReceiptRecorded,
               </button>
             </div>
 
-            <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 max-h-48 overflow-y-auto">
+            <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 max-h-48 overflow-y-auto bg-white">
               {openInvoices.map(inv => (
                 <div key={inv.id} className="p-2.5 flex justify-between items-center bg-slate-50/50 hover:bg-slate-50">
                   <div>
@@ -261,7 +261,7 @@ export default function RecordReceiptModal({ isOpen, onClose, onReceiptRecorded,
                       value={selectedAllocations[inv.id] || ''}
                       onChange={(e) => handleManualAllocChange(inv.id, e.target.value)}
                       placeholder="₹0"
-                      className="w-24 px-2 py-1 text-right font-mono font-bold border border-slate-300 rounded-md focus:border-blue-500 focus:outline-none"
+                      className="w-24 px-2 py-1 text-right font-mono font-bold bg-white text-slate-900 border border-slate-300 rounded-md placeholder:text-slate-500 focus:border-blue-600 focus:outline-none shadow-sm"
                     />
                   </div>
                 </div>
