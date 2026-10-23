@@ -1,3 +1,14 @@
-import App from './app/App.jsx';
+import { AuthProvider, AuthGuard } from './features/auth'
+import AppLayout from './common/layout/AppLayout'
 
-export default App;
+function App() {
+  return (
+    <AuthProvider>
+      <AuthGuard>
+        <AppLayout />
+      </AuthGuard>
+    </AuthProvider>
+  )
+}
+
+export default App

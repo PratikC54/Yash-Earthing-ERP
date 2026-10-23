@@ -15,4 +15,4 @@ package-lock.json
 .vscode/
 README.md
 CONTRIBUTING.md
-backend/src/middleware/
+schema/

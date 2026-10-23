@@ -10,7 +10,18 @@ import apiRouter from "./routes/index.js";
 
 const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "script-src": ["'self'", "'unsafe-inline'", "https:"],
+        "script-src-attr": ["'unsafe-inline'"],
+        "img-src": ["'self'", "data:", "https:", "blob:"],
+      },
+    },
+  })
+);
 app.use(
   cors({
     origin: (origin, callback) => {
@@ -27,17 +38,24 @@ app.use(cookieParser());
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 100,
+    limit: 300,
     standardHeaders: "draft-7",
     legacyHeaders: false,
   }),
 );
 
-app.get("/", (req, res) => {
-  res.json({ status: "ok", version: "1.0.0", name: "Yash Earthing ERP API" });
+// Root landing route
+app.get("/", (_req, res) => {
+  res.status(200).json({
+    status: "ok",
+    message: "Yash Group ERP Backend API",
+    version: "1.0.0",
+    apiPrefix: "/api/v1",
+    healthCheck: "/api/v1/health",
+  });
 });
 
-app.use("/api", apiRouter);
+app.use("/api/v1", apiRouter);
 app.use(notFound);
 app.use(errorHandler);
 

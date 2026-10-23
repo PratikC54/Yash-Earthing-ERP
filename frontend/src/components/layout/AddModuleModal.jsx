@@ -64,6 +64,23 @@ export default function AddModuleModal({
 
           <div>
             <label className="block text-slate-300 font-medium mb-1.5">
+              Section
+            </label>
+            <select
+              value={targetSectionId}
+              onChange={(e) => setTargetSectionId(e.target.value)}
+              className="w-full bg-[#0d1424] border border-slate-700 rounded-lg px-3 py-2 text-slate-100 focus:outline-none focus:ring-1 focus:ring-blue-500"
+            >
+              {sections.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.title}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-slate-300 font-medium mb-1.5">
               Icon
             </label>
             <select
