@@ -93,7 +93,7 @@ export default function CreateVendorBillModal({ isOpen, onClose, onBillCreated }
             <select
               value={vendorId}
               onChange={(e) => setVendorId(e.target.value)}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg font-bold text-slate-800 focus:border-blue-500 focus:outline-none"
+              className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-bold focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
             >
               {vendors.map(v => (
                 <option key={v.id} value={v.id}>{v.name} ({v.terms})</option>
@@ -110,7 +110,7 @@ export default function CreateVendorBillModal({ isOpen, onClose, onBillCreated }
                 onChange={(e) => setBillNo(e.target.value)}
                 placeholder="e.g. HINDALCO/INV/8991"
                 required
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-mono placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               />
             </div>
             <div>
@@ -119,7 +119,7 @@ export default function CreateVendorBillModal({ isOpen, onClose, onBillCreated }
                 type="date"
                 value={billDate}
                 onChange={(e) => setBillDate(e.target.value)}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               />
             </div>
           </div>
@@ -132,7 +132,7 @@ export default function CreateVendorBillModal({ isOpen, onClose, onBillCreated }
                 value={poNumber}
                 onChange={(e) => setPoNumber(e.target.value)}
                 placeholder="e.g. PO-2026-031"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-mono placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               />
             </div>
             <div>
@@ -142,7 +142,7 @@ export default function CreateVendorBillModal({ isOpen, onClose, onBillCreated }
                 value={grnNumber}
                 onChange={(e) => setGrnNumber(e.target.value)}
                 placeholder="e.g. GRN-2026-089"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-mono placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               />
             </div>
           </div>
@@ -158,7 +158,7 @@ export default function CreateVendorBillModal({ isOpen, onClose, onBillCreated }
                 onChange={(e) => handleTaxableChange(e.target.value)}
                 placeholder="e.g. 125000"
                 required
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono font-bold text-slate-900 focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-mono font-bold placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               />
             </div>
             <div>
@@ -170,7 +170,7 @@ export default function CreateVendorBillModal({ isOpen, onClose, onBillCreated }
                 value={gstAmount}
                 onChange={(e) => setGstAmount(e.target.value)}
                 placeholder="e.g. 22500"
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg font-mono focus:border-blue-500 focus:outline-none"
+                className="w-full px-3 py-2 bg-white text-slate-900 border border-slate-300 rounded-lg font-mono placeholder:text-slate-500 focus:border-blue-600 focus:ring-1 focus:ring-blue-600 focus:outline-none shadow-sm"
               />
             </div>
           </div>
