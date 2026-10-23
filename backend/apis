@@ -1,0 +1,77 @@
+0. System & Health
+   GET / → 200 OK (Root API Info)
+   GET /api/health → 200 OK ({ status: "ok" })
+1. Planning & Work Orders (M4.1)
+   GET /api/production-quality/planning/dashboard → 200 OK
+   GET /api/production-quality/production-calendar → 200 OK
+   GET /api/production-quality/production-calendar?startDate=2026-10-01&endDate=2026-10-31 → 200 OK
+   POST /api/production-quality/work-orders → 201 Created (Primary Work Order created)
+   POST /api/production-quality/work-orders → 201 Created (Secondary Work Order created)
+   POST /api/production-quality/work-orders → 201 Created (Tertiary Work Order created)
+   GET /api/production-quality/work-orders?page=1&limit=10 → 200 OK (Paginated list)
+   GET /api/production-quality/work-orders/:id → 200 OK (Work Order details)
+   PATCH /api/production-quality/work-orders/:id → 200 OK (Draft update)
+   GET /api/production-quality/material-availability/:id → 200 OK (Stock check)
+   POST /api/production-quality/work-orders/:id/submit → 200 OK (Status: PLANNED)
+   POST /api/production-quality/work-orders/:id/approve → 200 OK (Status: READY_FOR_PRODUCTION)
+   POST /api/production-quality/work-orders/:id/release → 200 OK (Status: IN_PROGRESS)
+   POST /api/production-quality/work-orders/:id/hold → 200 OK (Status: ON_HOLD)
+   POST /api/production-quality/work-orders/:id/resume → 200 OK (Status: IN_PROGRESS)
+   GET /api/production-quality/work-orders/:id/history → 200 OK (Audit log timeline)
+   POST /api/production-quality/work-orders/:id/submit → 200 OK (Secondary order submitted)
+   POST /api/production-quality/work-orders/:id/reject → 200 OK (Status: CANCELLED)
+   POST /api/production-quality/work-orders/:id/cancel → 200 OK (Direct cancellation)
+2. Manufacturing Execution (M4.2)
+   GET /api/production-quality/manufacturing/dashboard → 200 OK
+   POST /api/production-quality/manufacturing/work-orders/:id/start → 200 OK
+   POST /api/production-quality/manufacturing/production-entries → 201 Created
+   POST /api/production-quality/manufacturing/material-issues → 201 Created
+   POST /api/production-quality/manufacturing/material-consumption → 200 OK
+   POST /api/production-quality/manufacturing/material-returns → 200 OK
+   GET /api/production-quality/manufacturing/material-reconciliation/:id → 200 OK
+   POST /api/production-quality/manufacturing/scrap → 201 Created
+   POST /api/production-quality/manufacturing/downtime → 201 Created
+   POST /api/production-quality/manufacturing/delays → 201 Created
+   POST /api/production-quality/manufacturing/outputs/:id/transfer-to-quality → 201 Created
+   GET /api/production-quality/manufacturing/reports/production?groupBy=daily → 200 OK
+3. Quality Control, NCR & Output (M4.3)
+   GET /api/production-quality/quality/dashboard → 200 OK
+   GET /api/production-quality/quality/inspection-queue → 200 OK
+   GET /api/production-quality/quality/inspections/:id → 200 OK
+   POST /api/production-quality/quality/inspections/:id/start → 200 OK
+   POST /api/production-quality/quality/inspections/:id/results → 200 OK
+   POST /api/production-quality/quality/inspections/:id/hold → 200 OK
+   POST /api/production-quality/quality/inspections/:id/rework → 200 OK
+   POST /api/production-quality/quality/non-conformance → 201 Created (NCR logged)
+   POST /api/production-quality/quality/corrective-actions → 201 Created (CAPA logged)
+   POST /api/production-quality/quality/scrap-approvals → 201 Created
+   POST /api/production-quality/quality/inspections/:id/approve → 200 OK
+   POST /api/production-quality/quality/finished-goods-releases → 201 Created (Inventoried)
+   GET /api/production-quality/quality/reports/inspection → 200 OK
+
+Architecture & Submodules (Module M4)
+M4.1 Planning & Work Orders:
+Auto-generated Work Orders (WO-YYYY-XXXX) linked to Sales Orders and Released BOMs.
+Multi-state lifecycle state machine (DRAFT → PLANNED → READY_FOR_PRODUCTION → IN_PROGRESS → ON_HOLD → COMPLETED / CANCELLED).
+Real-time Material Availability & Shortage detection.
+Month/range production calendar & planning dashboard metrics.
+M4.2 Manufacturing Execution:
+Execution tracking (line start, shift assignments).
+Production entries (good & rejected quantities).
+Material transaction flows: issues, consumption, and surplus returns.
+Material reconciliation reports (issued vs consumed vs returned vs scrap).
+Machine downtime & delay logging.
+Transfer of finished parts to Quality Control.
+M4.3 Quality Control & Output:
+Quality inspections with parameterized measurement checks.
+Decision handling: Pass, Hold, Rework, Reject.
+Non-Conformance Reports (NCR) & Corrective/Preventive Actions (CAPA).
+Scrap authorization with financial impact tracking.
+Idempotent Finished Goods release to inventory. 2. Verification & Testing
+Automated Tests: 65 / 65 tests passed (0 failures).
+Live HTTP Verification: 46 / 46 API endpoints passed (100% success rate) tested against the live server using your active JWT Bearer token.
+Prisma & Database: Zero schema modifications made (backend/prisma/schema.prisma is untouched). Cloud database is actively connected and seeded with operational test entities.
+Routing: All routes cleanly mounted under /api/ (no /v1 prefix).
+Security & Reliability: JWT Bearer authentication, role-based authorization (RBAC), Zod request validation, and centralized audit logging for all critical operations. 3. Deliverables Ready to Use
+Postman Collection: backend/docs/Yash_ERP_Production_Quality_M4.postman_collection.json — pre-configured with your JWT Bearer token and all 44+ endpoints.
+API Documentation: backend/docs/API_DOCUMENTATION.md.

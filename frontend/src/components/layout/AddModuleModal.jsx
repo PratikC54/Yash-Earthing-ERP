@@ -1,28 +1,33 @@
-import { useState } from 'react'
-import { X, Layers, Plus } from 'lucide-react'
+import React, { useState } from "react";
+import { X, Layers, Plus } from "lucide-react";
 
-export default function AddModuleModal({ isOpen, onClose, onAddModule, sections }) {
-  const [moduleName, setModuleName] = useState('')
-  const [targetSectionId, setTargetSectionId] = useState(sections[0]?.id || 'module-1')
-  const [icon, setIcon] = useState('Box')
+export default function AddModuleModal({
+  isOpen,
+  onClose,
+  onAddModule,
+  sections,
+}) {
+  const [moduleName, setModuleName] = useState("");
+  const targetSectionId = sections[0]?.id || "overview";
+  const [icon, setIcon] = useState("Box");
 
-  if (!isOpen) return null
+  if (!isOpen) return null;
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    if (!moduleName.trim()) return
+    e.preventDefault();
+    if (!moduleName.trim()) return;
 
     const newModule = {
-      id: moduleName.toLowerCase().replace(/\s+/g, '-'),
+      id: moduleName.toLowerCase().replace(/\s+/g, "-"),
       name: moduleName.trim(),
-      icon: icon || 'Box',
+      icon: icon || "Box",
       active: false,
-    }
+    };
 
-    onAddModule(targetSectionId, newModule)
-    setModuleName('')
-    onClose()
-  }
+    onAddModule(targetSectionId, newModule);
+    setModuleName("");
+    onClose();
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
@@ -50,7 +55,7 @@ export default function AddModuleModal({ isOpen, onClose, onAddModule, sections 
             <input
               type="text"
               required
-              placeholder="e.g. Quality Hub, Purchasing"
+              placeholder="e.g. Inventory, Quality Hub, Sales, Purchasing"
               value={moduleName}
               onChange={(e) => setModuleName(e.target.value)}
               className="w-full bg-[#0d1424] border border-slate-700 rounded-lg px-3 py-2 text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
@@ -114,5 +119,7 @@ export default function AddModuleModal({ isOpen, onClose, onAddModule, sections 
         </form>
       </div>
     </div>
-  )
+  );
 }
+
+

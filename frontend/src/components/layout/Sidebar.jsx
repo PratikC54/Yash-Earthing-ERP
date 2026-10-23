@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import React, { useState } from "react";
 import {
   LayoutGrid,
   Search,
   Globe,
+  ChevronRight,
+  FolderPlus,
   Box,
   Layers,
   ShieldCheck,

@@ -20,6 +20,17 @@ export function errorHandler(err, _req, res, _next) {
       : "The application encountered a processing issue. Please check the inputs and try again.";
   }
 
+  const message = statusCode >= 500 ? "Internal server error" : err.message;
+  const response = {
+    success: false,
+    message,
+    error: { message },
+  };
+
+  if (err.errors) {
+    response.errors = err.errors;
+  }
+
   res.status(statusCode).json({
     success: false,
     message: userMessage,
