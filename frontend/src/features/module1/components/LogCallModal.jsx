@@ -64,6 +64,38 @@ export default function LogCallModal({ isOpen, onClose, lead, onSubmit }) {
           </button>
         </div>
 
+        {/* Previous Call Logs Section */}
+        {lead.callLogs && lead.callLogs.length > 0 && (
+          <div className="px-6 py-3 bg-[#091124] border-b border-slate-800 max-h-40 overflow-y-auto">
+            <div className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Previous Call Logs ({lead.callLogs.length})</span>
+              <span className="text-[10px] text-slate-400 font-normal">History & Highlights</span>
+            </div>
+            <div className="space-y-2">
+              {lead.callLogs.map((log) => (
+                <div key={log.id} className="p-2.5 rounded-lg bg-[#0d162e] border border-slate-800/80 text-[11px] space-y-1">
+                  <div className="flex items-center justify-between">
+                    <span className="font-semibold text-white">
+                      Outcome: <span className={log.outcome === "ANSWERED" || log.quoteRequested ? "text-emerald-400" : "text-amber-400"}>{log.outcome}</span>
+                    </span>
+                    <span className="text-[10px] text-slate-400 font-mono">
+                      {new Date(log.loggedAt || log.createdAt).toLocaleDateString()} {new Date(log.loggedAt || log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                  {log.discussionHighlights && (
+                    <div className="text-slate-300 italic">"{log.discussionHighlights}"</div>
+                  )}
+                  {log.nextFollowUpAt && (
+                    <div className="text-amber-300 text-[10px]">
+                      Follow-up scheduled: {new Date(log.nextFollowUpAt).toLocaleDateString()}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Customer Quick Dial Banner */}
         <div className="p-4 mx-6 mt-4 bg-[#0a1020] border border-slate-800 rounded-xl flex items-center justify-between">
           <div>
