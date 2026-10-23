@@ -23,6 +23,9 @@ import {
   Award,
   CreditCard,
   Briefcase,
+  TrendingUp,
+  Settings,
+  IndianRupee,
 } from 'lucide-react'
 
 // Icon mapping helper
@@ -46,6 +49,9 @@ const iconMap = {
   Award,
   CreditCard,
   Briefcase,
+  TrendingUp,
+  Settings,
+  IndianRupee,
 }
 
 export default function Sidebar({

@@ -571,14 +571,14 @@
     "name": "Yash Group Standard Engineering Costing Policy (v1.0)",
     "includeScrap": true,
     "materialRateSource": "PRODUCT_MASTER_RATE",
-    "labourCostPerUnit": 140,
+    "labourCostPerUnit": 108,
     "overheadPercent": 12,
     "targetMarginPercent": 28,
     "defaultGstPercent": 18,
     "requireSeparateApprover": true,
     "requireReleasedDrawingForBom": false,
     "isActive": true,
-    "updatedAt": "2026-10-22T17:38:03.795Z"
+    "updatedAt": "2026-10-23T06:44:43.854Z"
   },
   "boms": [
     {
@@ -591,7 +591,7 @@
         {
           "id": "bom_rev_cbe_50_a",
           "revisionCode": "Rev A",
-          "status": "RELEASED",
+          "status": "SUPERSEDED",
           "changeReason": "Initial approved manufacturing formulation for ISO 9001 audit.",
           "createdBy": "Eng. Vikram Sharma",
           "submittedBy": "Eng. Vikram Sharma",
@@ -649,6 +649,79 @@
             },
             {
               "id": "item_4",
+              "componentProductId": "comp_brass_terminal",
+              "componentSku": "COMP-BRASS-CLAMP-50",
+              "componentName": "Cast Brass Terminal Clamp 50mm with SS M12 Hardware",
+              "quantity": 1,
+              "uom": "SET",
+              "unitRate": 195,
+              "scrapPercent": 0,
+              "lineCost": 195,
+              "note": "Includes double zinc plated spring washers and nylon lock nuts"
+            }
+          ]
+        },
+        {
+          "id": "rev_1792737704652_b",
+          "revisionCode": "Rev B",
+          "status": "RELEASED",
+          "changeReason": "This is current revise",
+          "createdBy": "Product Engineer",
+          "submittedBy": "Product Engineer",
+          "submittedAt": "2026-10-23T06:42:12.485Z",
+          "approvedBy": "Head of Engineering (Pratik Senapati)",
+          "approvedAt": "2026-10-23T06:42:16.641Z",
+          "releasedBy": "Head of Engineering (Pratik Senapati)",
+          "releasedAt": "2026-10-23T06:42:22.774Z",
+          "policyId": "policy_yash_std_2026",
+          "costSnapshot": {
+            "materialCost": 2457.7374999999997,
+            "labourCost": 140,
+            "overheadCost": 311.72849999999994,
+            "totalCost": 2909.4659999999994,
+            "suggestedPrice": 3724.1164799999992,
+            "targetMarginPercent": 28,
+            "computedAt": "2026-10-23T06:42:22.774Z"
+          },
+          "items": [
+            {
+              "id": "item_1792737704653_j1ao",
+              "componentProductId": "raw_ms_pipe_50",
+              "componentSku": "RAW-MS-PIPE-50",
+              "componentName": "Heavy Duty Mild Steel Outer Pipe 50mm NB Class B",
+              "quantity": 3,
+              "uom": "METER",
+              "unitRate": 320,
+              "scrapPercent": 2.5,
+              "lineCost": 983.9999999999999,
+              "note": "Cut to exactly 3.0m and pre-pierced with conductor diffusion holes"
+            },
+            {
+              "id": "item_1792737704653_2lye",
+              "componentProductId": "raw_cu_strip_core",
+              "componentSku": "RAW-CU-STRIP-25X3",
+              "componentName": "Electrolytic Grade Copper Strip 25x3mm (99.9% Pure)",
+              "quantity": 0.85,
+              "uom": "KG",
+              "unitRate": 850,
+              "scrapPercent": 1.5,
+              "lineCost": 733.3374999999999,
+              "note": "Internal conductor strip with dual welded terminal lug"
+            },
+            {
+              "id": "item_1792737704653_k97v",
+              "componentProductId": "raw_cryst_fill",
+              "componentSku": "RAW-CRYST-FILL",
+              "componentName": "High Conductivity Crystalline Earth Mineral Mix",
+              "quantity": 12,
+              "uom": "KG",
+              "unitRate": 45,
+              "scrapPercent": 1,
+              "lineCost": 545.4000000000001,
+              "note": "Vibrated pneumatic injection for zero air cavities"
+            },
+            {
+              "id": "item_1792737704653_vnii",
               "componentProductId": "comp_brass_terminal",
               "componentSku": "COMP-BRASS-CLAMP-50",
               "componentName": "Cast Brass Terminal Clamp 50mm with SS M12 Hardware",
@@ -774,6 +847,69 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "audit_1792737883857_vrnr6",
+      "entity": "CostingPolicy",
+      "entityId": "policy_yash_std_2026",
+      "action": "UPDATE_POLICY",
+      "actor": "Engineering Manager",
+      "details": "Updated engineering costing policy parameters",
+      "timestamp": "2026-10-23T06:44:43.857Z"
+    },
+    {
+      "id": "audit_1792737874028_kzwgx",
+      "entity": "CostingPolicy",
+      "entityId": "policy_yash_std_2026",
+      "action": "UPDATE_POLICY",
+      "actor": "Engineering Manager",
+      "details": "Updated engineering costing policy parameters",
+      "timestamp": "2026-10-23T06:44:34.028Z"
+    },
+    {
+      "id": "audit_1792737855287_08enl",
+      "entity": "CostingPolicy",
+      "entityId": "policy_yash_std_2026",
+      "action": "UPDATE_POLICY",
+      "actor": "Engineering Manager",
+      "details": "Updated engineering costing policy parameters",
+      "timestamp": "2026-10-23T06:44:15.287Z"
+    },
+    {
+      "id": "audit_1792737742777_pu23w",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792737704652_b",
+      "action": "RELEASE",
+      "actor": "Head of Engineering (Pratik Senapati)",
+      "details": "Released Rev B with frozen cost ₹2909.47",
+      "timestamp": "2026-10-23T06:42:22.777Z"
+    },
+    {
+      "id": "audit_1792737736644_l9lkq",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792737704652_b",
+      "action": "APPROVE",
+      "actor": "Head of Engineering (Pratik Senapati)",
+      "details": "Approved Rev B",
+      "timestamp": "2026-10-23T06:42:16.644Z"
+    },
+    {
+      "id": "audit_1792737732487_8gtia",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792737704652_b",
+      "action": "SUBMIT",
+      "actor": "Product Engineer",
+      "details": "Submitted Rev B for engineering review.",
+      "timestamp": "2026-10-23T06:42:12.487Z"
+    },
+    {
+      "id": "audit_1792737704656_c7ig2",
+      "entity": "BOMRevision",
+      "entityId": "rev_1792737704652_b",
+      "action": "CREATE_REVISION",
+      "actor": "Product Engineer",
+      "details": "Created new revision Rev B for BOM-CBE-50-3M",
+      "timestamp": "2026-10-23T06:41:44.656Z"
+    },
     {
       "id": "audit_1792693175441_3bg4x",
       "entity": "Product",

@@ -3,7 +3,9 @@ import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import { initialNavSections, currentUser as defaultUser } from '../../data/navigationModules'
 import { useAuth, AdminApprovalPanel } from '../../features/auth'
+// Module 3 & Module 6 pages
 import EngineeringDashboard from '../../features/engineering/EngineeringDashboard'
+import FinanceDashboard from '../../features/finance/FinanceDashboard'
 
 // Module 1 Pages & Modals
 import OverviewDashboard from '../../features/module1/pages/OverviewDashboard'
@@ -61,6 +63,7 @@ export default function AppLayout() {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [isTraceOpen, setIsTraceOpen] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [globalSearch, setGlobalSearch] = useState('')
 
   // Compute initials and profile info
   const effectiveUser = {
@@ -76,21 +79,54 @@ export default function AppLayout() {
       : defaultUser.initials,
   }
 
+  const userRole = user?.role || 'ADMIN'
+
+  // Map allowed sections per role according to ERP governance
+  const isSectionAllowed = (sectionId) => {
+    if (isAdmin || user?.hasFullAccess) return true
+    if (sectionId === 'control-tower') {
+      return ['ADMIN', 'SALES_MANAGER'].includes(userRole)
+    }
+    if (sectionId === 'module-1') {
+      return ['ADMIN', 'SALES_MANAGER', 'SALES_CONSULTANT', 'BACK_OFFICER', 'ACCOUNTS_MANAGER'].includes(userRole)
+    }
+    if (sectionId === 'manufacturing' || sectionId === 'module-3') {
+      return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
+    }
+    if (sectionId === 'commercial' || sectionId === 'module-6') {
+      return userRole === 'ADMIN'
+    }
+    return true
+  }
+
+  const isItemAllowed = (itemId) => {
+    if (isAdmin || user?.hasFullAccess) return true
+    if (itemId === 'overview') return ['ADMIN', 'SALES_MANAGER'].includes(userRole)
+    if (itemId === 'leads' || itemId === 'followups') return ['ADMIN', 'SALES_MANAGER', 'SALES_CONSULTANT', 'BACK_OFFICER'].includes(userRole)
+    if (itemId === 'quotations') return ['ADMIN', 'SALES_MANAGER', 'BACK_OFFICER'].includes(userRole)
+    if (itemId === 'orders') return ['ADMIN', 'SALES_MANAGER', 'BACK_OFFICER', 'PRODUCTION_MANAGER', 'ACCOUNTS_MANAGER'].includes(userRole)
+    if (itemId.startsWith('m3-') || itemId === 'engineering') {
+      return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
+    }
+    if (itemId.startsWith('m6-') || itemId === 'finance') {
+      return userRole === 'ADMIN'
+    }
+    return true
+  }
+
   // Filter navigation sections based on RBAC:
-  // Non-admins do NOT see 'Control Tower' (Master Dashboard)
   const visibleSections = sections
-    .map((sec) => {
-      if (sec.id === 'control-tower' && !isSuperUser) {
-        return null
-      }
-      return sec
-    })
-    .filter(Boolean)
+    .filter((sec) => isSectionAllowed(sec.id))
+    .map((sec) => ({
+      ...sec,
+      items: sec.items.filter((item) => isItemAllowed(item.id)),
+    }))
+    .filter((sec) => sec.items.length > 0)
 
   // Handle module selection from sidebar or internal link
   const handleSelectModule = (item) => {
-    if (item.id === 'overview' && !isSuperUser) {
-      alert('Access Denied: Master Dashboard is restricted to Administrators.')
+    if (!isItemAllowed(item.id)) {
+      alert(`Access Restricted: ${item.name} is not permitted for your current role (${effectiveUser.role}).`)
       return
     }
     setActiveModule(item.name)
@@ -98,8 +134,8 @@ export default function AppLayout() {
   }
 
   const handleNavigate = (targetId) => {
-    if (targetId === 'overview' && !isSuperUser) {
-      alert('Access Denied: Master Dashboard is restricted to Administrators.')
+    if (!isItemAllowed(targetId)) {
+      alert(`Access Restricted: This section is not permitted for your current role (${effectiveUser.role}).`)
       return
     }
     setActiveModuleId(targetId)
@@ -175,7 +211,6 @@ export default function AppLayout() {
         return <QuotationsPage onNavigateToOrders={() => handleNavigate('orders')} />
       case 'orders':
         return <OrdersPage onNavigate={handleNavigate} />
-
       // Module 2 Pages
       case 'procurement-dashboard':
         return (
@@ -196,9 +231,14 @@ export default function AppLayout() {
       case 'inventory':
         return <InventoryPage />
 
-      // Module 3 Pages
+      // Module 3: Product & Engineering submodules
       case 'engineering':
-        return <EngineeringDashboard />
+      case 'm3-products':
+        return <EngineeringDashboard initialTab="products" />
+      case 'm3-boms':
+        return <EngineeringDashboard initialTab="boms" />
+      case 'm3-drawings':
+        return <EngineeringDashboard initialTab="drawings" />
 
       // Module 7: HRMS Workforce Pages
       case 'employees':
@@ -214,12 +254,43 @@ export default function AppLayout() {
       case 'shifts':
         return <ManufacturingIntegration />
 
+      // Module 6: Finance & Commercial submodules
+      case 'finance':
+      case 'm6-invoices':
+        return <FinanceDashboard initialTab="invoices" globalSearch={globalSearch} />
+      case 'm6-payables':
+        return <FinanceDashboard initialTab="payables" globalSearch={globalSearch} />
+      case 'm6-costing':
+        return <FinanceDashboard initialTab="costing" globalSearch={globalSearch} />
+      case 'm6-settings':
+        return <FinanceDashboard initialTab="settings" globalSearch={globalSearch} />
       default:
         return isSuperUser ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />
         ) : (
           <LeadsPage onNavigateToQuotation={() => handleNavigate('quotations')} />
         )
+    }
+  }
+
+  const currentSection = sections.find((sec) => sec.items.some((it) => it.id === activeModuleId))
+  const currentItem = currentSection?.items.find((it) => it.id === activeModuleId)
+  const navSectionTitle = currentSection ? currentSection.title : 'Control Tower'
+  const navSubModuleTitle = currentItem ? currentItem.name : activeModule
+
+  const handleScopeChange = (scope) => {
+    if (scope === 'M1') {
+      if (!['leads', 'followups', 'quotations', 'orders'].includes(activeModuleId)) {
+        handleNavigate('leads')
+      }
+    } else if (scope === 'M3') {
+      if (!activeModuleId.startsWith('m3-')) {
+        handleNavigate('m3-products')
+      }
+    } else if (scope === 'M6') {
+      if (!activeModuleId.startsWith('m6-')) {
+        handleNavigate('m6-invoices')
+      }
     }
   }
 
@@ -236,12 +307,16 @@ export default function AppLayout() {
         onClose={() => setIsMobileSidebarOpen(false)}
       />
 
-      {/* Right Content Area: Navbar + Main Middle Content */}
+      {/* Right Content Area: Navbar + Main Workspace */}
       <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#070e1e]">
         {/* Top Navbar */}
         <Navbar
-          activeModule={activeModule}
+          activeModule={navSectionTitle}
+          activeSubModule={navSubModuleTitle}
           isAdmin={isAdmin}
+          user={effectiveUser}
+          onSearch={setGlobalSearch}
+          onScopeChange={handleScopeChange}
           onOpenAdminApprovals={() => setIsAdminApprovalsOpen(true)}
           onOpenTrace={() => setIsTraceOpen(true)}
           onQuickAdd={() => setIsQuickAddOpen(true)}
