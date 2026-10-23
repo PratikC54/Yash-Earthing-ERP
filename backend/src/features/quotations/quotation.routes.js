@@ -8,18 +8,19 @@ import {
   handleReviseQuotation,
   handleSendEmail,
 } from "./quotation.handler.js";
-import { authenticate } from "../auth/auth.middleware.js";
+import { authenticate, requireRoles } from "../auth/auth.middleware.js";
 
 const quotationRouter = Router();
 
-quotationRouter.get("/", handleGetQuotations);
-quotationRouter.get("/:id", handleGetQuotationById);
+quotationRouter.get("/", authenticate, handleGetQuotations);
+quotationRouter.get("/:id", authenticate, handleGetQuotationById);
 
-// Authenticated actions
-quotationRouter.post("/", authenticate, handleCreateQuotation);
-quotationRouter.post("/:id/revise", authenticate, handleReviseQuotation);
-quotationRouter.post("/:id/finalize-pi", authenticate, handleFinalizeProformaInvoice);
-quotationRouter.post("/:id/send-email", authenticate, handleSendEmail);
-quotationRouter.delete("/:id", authenticate, handleDeleteQuotation);
+// RBAC: BACK_OFFICER, SALES_MANAGER, and ADMIN can prepare/revise quotations
+quotationRouter.post("/", authenticate, requireRoles("BACK_OFFICER", "SALES_MANAGER"), handleCreateQuotation);
+quotationRouter.post("/:id/revise", authenticate, requireRoles("BACK_OFFICER", "SALES_MANAGER"), handleReviseQuotation);
+quotationRouter.post("/:id/finalize-pi", authenticate, requireRoles("BACK_OFFICER", "SALES_MANAGER"), handleFinalizeProformaInvoice);
+// Email quotation: SALES_CONSULTANT (can send quotation prepared by BACK_OFFICER), BACK_OFFICER, SALES_MANAGER, ADMIN
+quotationRouter.post("/:id/send-email", authenticate, requireRoles("SALES_CONSULTANT", "BACK_OFFICER", "SALES_MANAGER"), handleSendEmail);
+quotationRouter.delete("/:id", authenticate, requireRoles("BACK_OFFICER", "SALES_MANAGER"), handleDeleteQuotation);
 
 export default quotationRouter;
