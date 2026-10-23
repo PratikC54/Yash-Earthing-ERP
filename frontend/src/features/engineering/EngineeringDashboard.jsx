@@ -481,18 +481,15 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
 
                 {/* Reference Image Panel */}
                 <div className="relative rounded-xl overflow-hidden border border-[#1e2a4a] bg-[#0a1020] aspect-video shadow-inner flex items-center justify-center">
-                  {selectedProduct.referenceImage ? (
-                    <img
-                      src={selectedProduct.referenceImage}
-                      alt={selectedProduct.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="text-slate-400 flex flex-col items-center">
-                      <ImageIcon className="w-8 h-8 text-slate-500" />
-                      <span className="text-xs mt-1 text-slate-400">No reference image</span>
-                    </div>
-                  )}
+                  <img
+                    src={selectedProduct.referenceImage || selectedProduct.imageUrl || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80"}
+                    alt={selectedProduct.name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.target.onerror = null;
+                      e.target.src = "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80";
+                    }}
+                  />
                   <span className="absolute bottom-2 left-2 text-[10px] bg-black/70 backdrop-blur-sm text-cyan-300 px-2 py-0.5 rounded font-mono border border-slate-700">
                     Standard Spec Sheet
                   </span>

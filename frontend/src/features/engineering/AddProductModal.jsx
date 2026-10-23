@@ -30,8 +30,8 @@ export default function AddProductModal({ isOpen, onClose, onProductCreated, cat
     }
 
     const cleanSku = sku.trim().toUpperCase();
-    if (!/^[A-Z0-9-_]+$/.test(cleanSku)) {
-      setError('SKU can only contain uppercase letters, numbers, and hyphens (e.g. SKU-CBE-50-3M).');
+    if (!/^[A-Z0-9_-]+$/.test(cleanSku)) {
+      setError('SKU can only contain uppercase letters, numbers, hyphens, and underscores (e.g. SKU-CBE-50-3M).');
       return;
     }
 
@@ -101,7 +101,7 @@ export default function AddProductModal({ isOpen, onClose, onProductCreated, cat
                 value={sku}
                 onChange={(e) => setSku(e.target.value.toUpperCase())}
                 placeholder="e.g. SKU-CBE-50-3M"
-                pattern="[A-Z0-9-_]+"
+                pattern="[A-Z0-9_-]+"
                 className="w-full bg-[#101726] border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 uppercase font-mono"
                 required
               />

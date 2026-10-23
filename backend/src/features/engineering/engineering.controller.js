@@ -5,6 +5,41 @@ import { generateAutoCadDxf, generateBlueprintHtml, generateProductRegistryRepor
 // Standard Indian GST Tax Slabs for engineering and manufacturing goods
 const VALID_GST_SLABS = [0, 5, 12, 18, 28];
 
+export function resolveProductImage(p = {}) {
+  if (p.imageUrl && typeof p.imageUrl === 'string' && p.imageUrl.startsWith('http')) return p.imageUrl;
+  if (p.referenceImage && typeof p.referenceImage === 'string' && p.referenceImage.startsWith('http')) return p.referenceImage;
+
+  const sku = (p.sku || '').toUpperCase();
+  const name = (p.name || '').toLowerCase();
+
+  if (sku.includes('CBR') || name.includes('receptacle')) {
+    return 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80';
+  }
+  if (sku.includes('ROD') || name.includes('copper rod')) {
+    return 'https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=600&auto=format&fit=crop&q=80';
+  }
+  if (sku.includes('CBE') || sku.includes('YGI') || name.includes('electrode')) {
+    return 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80';
+  }
+  if (sku.includes('ESE') || name.includes('arrester') || name.includes('lightning')) {
+    return 'https://images.unsplash.com/photo-1541888946425-d0fbb186f5f7?w=600&auto=format&fit=crop&q=80';
+  }
+  if (sku.includes('PLATE') || sku.includes('CP') || name.includes('plate')) {
+    return 'https://images.unsplash.com/photo-1533090161767-e6ffed986b88?w=600&auto=format&fit=crop&q=80';
+  }
+  if (sku.includes('PIPE') || name.includes('pipe')) {
+    return 'https://images.unsplash.com/photo-1504307651254-35680f356dfd?w=600&auto=format&fit=crop&q=80';
+  }
+  if (sku.includes('FILL') || sku.includes('MIX') || sku.includes('BFC') || name.includes('compound') || name.includes('mineral')) {
+    return 'https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop&q=80';
+  }
+  if (sku.includes('PIT') || name.includes('cover')) {
+    return 'https://images.unsplash.com/photo-1590486803833-1c5dc8ddd4c8?w=600&auto=format&fit=crop&q=80';
+  }
+
+  return 'https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80';
+}
+
 export const engineeringController = {
   // ===================== DASHBOARD KPIS =====================
   getDashboardKpis: async (req, res, next) => {
@@ -132,7 +167,8 @@ export const engineeringController = {
           gstPercent: Number(p.gstPercent || 18),
           status: p.isActive ? 'ACTIVE' : 'INACTIVE',
           description: p.description || p.name,
-          stockQuantity: p.inventory ? Number(p.inventory.physicalQuantity) : 100,
+          referenceImage: resolveProductImage(p),
+          stockQuantity: p.inventory ? Number(p.inventory.physicalQuantity) : 0,
           specifications: [
             { attribute: 'Standard Compliance', value: 'IS 3043 / IEEE 80 / UL 467', unit: '', standard: 'CPRI Tested' },
             { attribute: 'Conductor Material', value: p.variant || 'Electrolytic Copper Bonded', unit: '', standard: 'IEC 62561-2' },
@@ -189,7 +225,8 @@ export const engineeringController = {
               gstPercent: Number(p.gstPercent || 18),
               status: p.isActive ? 'ACTIVE' : 'INACTIVE',
               description: p.description || p.name,
-              stockQuantity: p.inventory ? Number(p.inventory.physicalQuantity) : 100,
+              referenceImage: resolveProductImage(p),
+              stockQuantity: p.inventory ? Number(p.inventory.physicalQuantity) : 0,
               bom: p.bomRevisions?.[0] || null,
               drawings: p.productSpecifications || []
             }
@@ -208,69 +245,113 @@ export const engineeringController = {
     }
   },
 
-  createProduct: (req, res) => {
-    const db = localDb.read();
-    const { sku, name, categoryId, itemType, material, size, length, finish, uom, rate, gstPercent, description, referenceImage, specifications } = req.body;
+  createProduct: async (req, res, next) => {
+    try {
+      const { sku, name, categoryId, itemType, material, size, length, finish, uom, rate, gstPercent, description, referenceImage, specifications } = req.body;
 
-    // Strict Validation
-    if (!sku || !sku.trim() || !name || !name.trim() || !categoryId) {
-      return res.status(400).json({ success: false, message: 'Product SKU, Name, and Category are required.' });
-    }
+      // Strict Validation
+      if (!sku || !sku.trim() || !name || !name.trim()) {
+        return res.status(400).json({ success: false, message: 'Product SKU and Name are required.' });
+      }
 
-    const cleanSku = sku.trim().toUpperCase();
-    if (!/^[A-Z0-9-_]+$/.test(cleanSku)) {
-      return res.status(400).json({ success: false, message: 'SKU may only contain uppercase letters, numbers, hyphens, and underscores.' });
-    }
+      const cleanSku = sku.trim().toUpperCase();
+      if (!/^[A-Z0-9_-]+$/.test(cleanSku)) {
+        return res.status(400).json({ success: false, message: 'SKU may only contain uppercase letters, numbers, hyphens, and underscores.' });
+      }
 
-    const numRate = Number(rate);
-    if (isNaN(numRate) || numRate <= 0) {
-      return res.status(400).json({ success: false, message: 'Product List Rate must be a positive number greater than 0.' });
-    }
+      const numRate = Number(rate);
+      if (isNaN(numRate) || numRate <= 0) {
+        return res.status(400).json({ success: false, message: 'Product List Rate must be a positive number greater than 0.' });
+      }
 
-    const numGst = Number(gstPercent);
-    if (!VALID_GST_SLABS.includes(numGst)) {
-      return res.status(400).json({
-        success: false,
-        message: `Invalid GST rate (${gstPercent}%). Indian tax compliance requires standard slabs: 0%, 5%, 12%, 18%, or 28%.`
+      const numGst = Number(gstPercent || 18);
+      if (!VALID_GST_SLABS.includes(numGst)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid GST rate (${gstPercent}%). Indian tax compliance requires standard slabs: 0%, 5%, 12%, 18%, or 28%.`
+        });
+      }
+
+      const isManufactured = itemType === 'FINISHED' || itemType === 'FINISHED_GOOD';
+      const catId = !isNaN(Number(categoryId)) && Number(categoryId) > 0 ? Number(categoryId) : (isManufactured ? 1 : 2);
+      const finalImage = referenceImage?.trim() || resolveProductImage({ sku: cleanSku, name });
+
+      // Check duplicate SKU in PostgreSQL
+      const existingPrisma = await prisma.product.findUnique({ where: { sku: cleanSku } });
+      if (existingPrisma) {
+        return res.status(409).json({ success: false, message: `Product with SKU "${cleanSku}" already exists in PostgreSQL registry.` });
+      }
+
+      // Create in PostgreSQL
+      const createdPrismaProduct = await prisma.product.create({
+        data: {
+          sku: cleanSku,
+          name: name.trim(),
+          categoryId: catId,
+          isManufactured,
+          unitOfMeasure: uom || 'NOS',
+          listPrice: numRate,
+          gstPercent: numGst,
+          variant: material?.trim() || 'Standard Metallurgy',
+          diameter: size?.trim() || 'Standard',
+          length: length?.trim() || '3.0m',
+          description: description?.trim() || name.trim(),
+          imageUrl: finalImage,
+          isActive: true
+        }
       });
+
+      // Also create an initial inventory record in PostgreSQL
+      await prisma.inventory.create({
+        data: {
+          productId: createdPrismaProduct.id,
+          physicalQuantity: 0,
+          reservedQuantity: 0,
+          reorderLevel: 15,
+          warehouseLocation: isManufactured ? 'Finished Store - Pune' : 'RM Store - Bay 1',
+          unitCost: numRate * 0.7
+        }
+      }).catch(() => null);
+
+      const responseProduct = {
+        id: createdPrismaProduct.id,
+        sku: createdPrismaProduct.sku,
+        name: createdPrismaProduct.name,
+        categoryId: String(catId),
+        categoryName: isManufactured ? 'Earthing Accessories' : 'Raw Metals',
+        itemType: isManufactured ? 'FINISHED' : 'RAW_MATERIAL',
+        material: createdPrismaProduct.variant,
+        size: createdPrismaProduct.diameter,
+        length: createdPrismaProduct.length,
+        finish: finish?.trim() || '250 Microns Copper Coating',
+        uom: createdPrismaProduct.unitOfMeasure,
+        rate: Number(createdPrismaProduct.listPrice),
+        gstPercent: Number(createdPrismaProduct.gstPercent),
+        status: 'ACTIVE',
+        description: createdPrismaProduct.description,
+        referenceImage: finalImage,
+        stockQuantity: 0,
+        specifications: specifications || [
+          { attribute: 'Standard Compliance', value: 'IS 3043 / IEEE 80 / UL 467', unit: '', standard: 'CPRI Tested' },
+          { attribute: 'Conductor Material', value: createdPrismaProduct.variant, unit: '', standard: 'IEC 62561-2' },
+          { attribute: 'Dimensions', value: `${createdPrismaProduct.diameter} x ${createdPrismaProduct.length}`, unit: '', standard: 'Factory Standard' }
+        ]
+      };
+
+      // Also sync to localDb
+      const db = localDb.read();
+      db.products.unshift(responseProduct);
+      localDb.write(db);
+      localDb.logAudit('Product', String(createdPrismaProduct.id), 'CREATE', req.user?.name || 'Product Engineer', `Created product ${cleanSku} in PostgreSQL`);
+
+      res.status(201).json({
+        success: true,
+        data: responseProduct,
+        message: 'Product master created successfully in PostgreSQL.'
+      });
+    } catch (err) {
+      next(err);
     }
-
-    // Check duplicate SKU
-    const existing = db.products.find(p => p.sku.toLowerCase() === cleanSku.toLowerCase());
-    if (existing) {
-      return res.status(409).json({ success: false, message: `Product with SKU "${cleanSku}" already exists.` });
-    }
-
-    const newProduct = {
-      id: `prod_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-      sku: cleanSku,
-      name: name.trim(),
-      categoryId,
-      itemType: itemType || "FINISHED",
-      material: material?.trim() || "Standard Metallurgy",
-      size: size?.trim() || "",
-      length: length?.trim() || "",
-      finish: finish?.trim() || "Factory Standard",
-      uom: uom || "NOS",
-      rate: numRate,
-      gstPercent: numGst,
-      status: "ACTIVE",
-      description: description?.trim() || "",
-      referenceImage: referenceImage?.trim() || "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80",
-      specifications: specifications || [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    db.products.unshift(newProduct);
-    localDb.write(db);
-    localDb.logAudit('Product', newProduct.id, 'CREATE', req.user?.name || 'Product Engineer', `Created product ${newProduct.sku} - ${newProduct.name}`);
-
-    res.status(201).json({
-      success: true,
-      data: newProduct,
-      message: 'Product master created successfully.'
-    });
   },
 
   updateProduct: (req, res) => {
@@ -353,20 +434,95 @@ export const engineeringController = {
     });
   },
 
-  getProductRegistryReport: (req, res) => {
-    const db = localDb.read();
-    const product = db.products.find(p => p.id === req.params.id || p.sku === req.params.id);
-    if (!product) {
-      return res.status(404).send('Product not found in Engineering Registry');
+  getProductRegistryReport: async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const numId = Number(id);
+      let product = null;
+      let category = null;
+      let bom = null;
+
+      if (!isNaN(numId)) {
+        const p = await prisma.product.findUnique({
+          where: { id: numId },
+          include: {
+            category: true,
+            bomRevisions: {
+              include: {
+                items: {
+                  include: { component: true }
+                }
+              }
+            },
+            productSpecifications: true
+          }
+        });
+
+        if (p) {
+          product = {
+            id: p.id,
+            sku: p.sku,
+            name: p.name,
+            categoryId: String(p.categoryId),
+            itemType: p.isManufactured ? 'FINISHED' : 'RAW_MATERIAL',
+            material: p.variant || 'Electrolytic Copper',
+            size: p.diameter || 'Standard',
+            length: p.length || '3.0m',
+            finish: '250 Microns Copper Coating (UL 467)',
+            uom: p.unitOfMeasure || 'NOS',
+            rate: Number(p.listPrice || 0),
+            gstPercent: Number(p.gstPercent || 18),
+            status: p.isActive ? 'ACTIVE' : 'INACTIVE',
+            description: p.description || p.name,
+            referenceImage: resolveProductImage(p),
+            specifications: [
+              { attribute: 'Standard Compliance', value: 'IS 3043 / IEEE 80 / UL 467', unit: '', standard: 'CPRI Tested' },
+              { attribute: 'Conductor Material', value: p.variant || 'Electrolytic Copper Bonded', unit: '', standard: 'IEC 62561-2' },
+              { attribute: 'Dimensions', value: `${p.diameter || '172mm'} x ${p.length || '3.0m'}`, unit: '', standard: 'Factory Standard' }
+            ]
+          };
+          category = p.category ? { id: String(p.category.id), name: p.category.name } : { name: 'Earthing Accessories' };
+          if (p.bomRevisions && p.bomRevisions.length > 0) {
+            const r = p.bomRevisions.find(rev => rev.status === 'RELEASED') || p.bomRevisions[0];
+            bom = {
+              bomCode: `BOM-${p.sku}`,
+              revisions: [{
+                revisionCode: r.revision,
+                status: r.status,
+                items: r.items.map(it => ({
+                  componentSku: it.component?.sku,
+                  componentName: it.component?.name,
+                  quantity: Number(it.quantity),
+                  uom: it.component?.unitOfMeasure,
+                  unitRate: Number(it.component?.listPrice || 0),
+                  scrapPercent: Number(it.scrapPercent || 0),
+                  lineCost: Number(it.quantity) * Number(it.component?.listPrice || 0)
+                }))
+              }]
+            };
+          }
+        }
+      }
+
+      if (!product) {
+        const db = localDb.read();
+        product = db.products.find(p => p.id === id || p.sku.toLowerCase() === id.toLowerCase() || p.id === req.params.id);
+        if (product) {
+          category = db.categories.find(c => c.id === product.categoryId);
+          bom = db.boms.find(b => b.productId === product.id);
+        }
+      }
+
+      if (!product) {
+        return res.status(404).send('Product not found in Engineering Registry');
+      }
+
+      const htmlReport = generateProductRegistryReportHtml(product, category, bom);
+      res.setHeader('Content-Type', 'text/html');
+      res.send(htmlReport);
+    } catch (err) {
+      next(err);
     }
-
-    const category = db.categories.find(c => c.id === product.categoryId);
-    const bom = db.boms.find(b => b.productId === product.id);
-
-    const htmlReport = generateProductRegistryReportHtml(product, category, bom);
-
-    res.setHeader('Content-Type', 'text/html');
-    res.send(htmlReport);
   },
 
   // ===================== BOM & REVISIONS =====================
