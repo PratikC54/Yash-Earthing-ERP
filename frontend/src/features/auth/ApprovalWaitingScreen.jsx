@@ -82,10 +82,10 @@ export default function ApprovalWaitingScreen({ onApproved, onBackToLogin }) {
       performCheck()
     }, 100)
 
-    // Regular interval polling every 4 seconds
+    // Regular interval polling every 10 seconds
     pollTimerRef.current = setInterval(() => {
       performCheck()
-    }, 4000)
+    }, 10000)
 
     return () => {
       clearTimeout(initialTimer)
@@ -273,31 +273,7 @@ export default function ApprovalWaitingScreen({ onApproved, onBackToLogin }) {
                 </button>
               </div>
 
-              {/* Developer / Demo Quick Approval Helper */}
-              <div className="mt-6 pt-5 border-t border-slate-800/80 w-full">
-                <div className="flex items-center justify-between bg-blue-950/40 border border-blue-800/40 rounded-xl p-3">
-                  <div className="flex items-center space-x-2 text-left">
-                    <Sparkles className="w-4 h-4 text-cyan-400 shrink-0" />
-                    <div>
-                      <div className="text-[11px] font-semibold text-blue-200">
-                        Demo / Testing Helper
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        Simulate instant admin approval to test the transition
-                      </div>
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={handleQuickApproveDemo}
-                    disabled={isSimulating}
-                    className="ml-2 px-3 py-1.5 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-lg text-[11px] font-semibold shadow-sm transition shrink-0 cursor-pointer disabled:opacity-50"
-                  >
-                    {isSimulating ? 'Approving...' : 'Instant Approve'}
-                  </button>
-                </div>
               </div>
-            </div>
           )}
         </div>
 
