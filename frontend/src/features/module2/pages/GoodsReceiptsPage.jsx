@@ -61,9 +61,12 @@ export default function GoodsReceiptsPage() {
   // Open Create GRN Modal
   const openCreateModal = async () => {
     try {
-      const res = await api.getPurchaseOrders({ status: "SENT" });
+      const res = await api.getPurchaseOrders();
       if (res.success) {
-        setOpenPos(res.orders || []);
+        const eligible = (res.orders || []).filter(
+          (p) => p.status === "SENT" || p.status === "APPROVED" || p.status === "PARTIALLY_RECEIVED"
+        );
+        setOpenPos(eligible.length > 0 ? eligible : res.orders || []);
       }
       setIsCreateOpen(true);
     } catch (err) {

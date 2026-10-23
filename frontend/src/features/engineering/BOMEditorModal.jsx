@@ -15,23 +15,23 @@ export default function BOMEditorModal({
   onReleaseRevision,
   onCreateNextRev
 }) {
-  if (!isOpen || !bom) return null;
-
-  const [activeRevIndex, setActiveRevIndex] = useState(bom.revisions?.length ? bom.revisions.length - 1 : 0);
-  const currentRev = bom.revisions?.[activeRevIndex] || {};
-  const isDraft = currentRev.status === 'DRAFT';
-  const isReleased = currentRev.status === 'RELEASED';
-  const isSuperseded = currentRev.status === 'SUPERSEDED';
-  const isInReview = currentRev.status === 'IN_REVIEW';
-  const isApproved = currentRev.status === 'APPROVED';
-
-  const [items, setItems] = useState(currentRev.items || []);
+  const [activeRevIndex, setActiveRevIndex] = useState(bom?.revisions?.length ? bom.revisions.length - 1 : 0);
+  const [items, setItems] = useState(bom?.revisions?.[activeRevIndex]?.items || []);
   const [rejectComment, setRejectComment] = useState('');
   const [showRejectBox, setShowRejectBox] = useState(false);
   const [nextRevReason, setNextRevReason] = useState('');
   const [showNextRevBox, setShowNextRevBox] = useState(false);
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+
+  if (!isOpen || !bom) return null;
+
+  const currentRev = bom.revisions?.[activeRevIndex] || {};
+  const isDraft = currentRev.status === 'DRAFT';
+  const isReleased = currentRev.status === 'RELEASED';
+  const isSuperseded = currentRev.status === 'SUPERSEDED';
+  const isInReview = currentRev.status === 'IN_REVIEW';
+  const isApproved = currentRev.status === 'APPROVED';
 
   // Live material cost calculation
   const materialCost = items.reduce((sum, it) => sum + (Number(it.lineCost) || 0), 0);
@@ -62,7 +62,7 @@ export default function BOMEditorModal({
     const item = { ...updated[index] };
 
     if (field === 'componentProductId') {
-      const comp = availableComponents.find(c => c.id === value) || {};
+      const comp = availableComponents.find(c => String(c.id) === String(value)) || {};
       item.componentProductId = value;
       item.componentSku = comp.sku || '';
       item.componentName = comp.name || '';
@@ -406,7 +406,20 @@ export default function BOMEditorModal({
                         )}
                       </td>
                       <td className="py-2.5 px-2 text-slate-400 text-[11px] font-sans">{it.uom}</td>
-                      <td className="py-2.5 px-2 text-right text-slate-300">₹{Number(it.unitRate).toFixed(2)}</td>
+                      <td className="py-2.5 px-2 text-right text-slate-300">
+                        {isDraft ? (
+                          <input
+                            type="number"
+                            min="0"
+                            step="any"
+                            value={it.unitRate}
+                            onChange={(e) => handleItemChange(idx, 'unitRate', e.target.value)}
+                            className="w-20 bg-[#101726] border border-slate-700 rounded px-2 py-1 text-xs text-right text-cyan-300 focus:outline-none"
+                          />
+                        ) : (
+                          <span>₹{Number(it.unitRate).toFixed(2)}</span>
+                        )}
+                      </td>
                       <td className="py-2.5 px-2 text-right">
                         {isDraft ? (
                           <input

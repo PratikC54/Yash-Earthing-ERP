@@ -4,18 +4,18 @@ import { engineeringService } from '../../services/engineeringService';
 import { createPurchaseRequest } from '../module2/api/procurementApi';
 
 export default function ShortageCalculatorModal({ isOpen, onClose, products, onNavigate }) {
-  if (!isOpen) return null;
-
-  const finishedProducts = products.filter(p => p.itemType === 'FINISHED');
+  const finishedProducts = (products || []).filter(p => p.itemType === 'FINISHED');
   const [selectedProductId, setSelectedProductId] = useState(finishedProducts[0]?.id || '');
-  const [orderQuantity, setOrderQuantity] = useState('500');
+  const [orderQuantity, setOrderQuantity] = useState('50');
   const [shortageResult, setShortageResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [isPushingPr, setIsPushingPr] = useState(false);
   const [createdPrNo, setCreatedPrNo] = useState(null);
 
-  const selectedProductObj = products.find(p => p.id === selectedProductId);
+  if (!isOpen) return null;
+
+  const selectedProductObj = products.find(p => String(p.id) === String(selectedProductId));
 
   const handleCalculate = async () => {
     if (!selectedProductId) return;
@@ -43,7 +43,9 @@ export default function ShortageCalculatorModal({ isOpen, onClose, products, onN
       const items = shortageResult.shortages
         .filter(s => s.shortage > 0)
         .map(s => ({
-          productId: 2, // Electrolytic Copper Rod in inventory DB
+          productId: (!isNaN(Number(s.componentId)) && Number(s.componentId) > 0)
+            ? Number(s.componentId)
+            : (s.componentSku?.includes('PIPE') || s.componentSku?.includes('MS') ? 8 : s.componentSku?.includes('ROD') || s.componentSku?.includes('COPPER') ? 2 : s.componentSku?.includes('CRYST') ? 9 : 2),
           quantity: Math.max(1, Math.ceil(s.shortage)),
           notes: `Material shortage: ${s.componentName} (${s.shortage} ${s.uom}) for ${selectedProductObj?.name || 'Earthing Product'}`
         }));

@@ -150,44 +150,59 @@ export const engineeringController = {
         orderBy: { id: 'asc' }
       });
 
-      if (dbProducts.length > 0) {
-        const mapped = dbProducts.map(p => ({
-          id: p.id,
-          sku: p.sku,
-          name: p.name,
-          categoryId: String(p.categoryId),
-          categoryName: p.category?.name || 'Earthing & Lightning',
-          itemType: p.isManufactured ? 'FINISHED' : (p.category?.type === 'RAW_MATERIAL' || p.name.includes('Pipe') || p.name.includes('Rod 99') || p.name.includes('Mix') ? 'RAW_MATERIAL' : 'FINISHED'),
-          material: p.variant || p.standardMake || 'Electrolytic Copper',
-          size: p.diameter || 'Standard',
-          length: p.length || '3.0m',
-          finish: p.drawingId?.includes('250') ? '250 Microns Copper Coating' : 'UL Listed Hot Dip / Molecular Copper',
-          uom: p.unitOfMeasure || 'NOS',
-          rate: Number(p.listPrice || 0),
-          gstPercent: Number(p.gstPercent || 18),
-          status: p.isActive ? 'ACTIVE' : 'INACTIVE',
-          description: p.description || p.name,
-          referenceImage: resolveProductImage(p),
-          stockQuantity: p.inventory ? Number(p.inventory.physicalQuantity) : 0,
-          specifications: [
-            { attribute: 'Standard Compliance', value: 'IS 3043 / IEEE 80 / UL 467', unit: '', standard: 'CPRI Tested' },
-            { attribute: 'Conductor Material', value: p.variant || 'Electrolytic Copper Bonded', unit: '', standard: 'IEC 62561-2' },
-            { attribute: 'Dimensions', value: `${p.diameter || '17.2mm'} x ${p.length || '3.0m'}`, unit: '', standard: 'Factory Standard' }
-          ]
-        }));
+      const db = localDb.read();
+      const mapped = dbProducts.map(p => ({
+        id: p.id,
+        sku: p.sku,
+        name: p.name,
+        categoryId: String(p.categoryId),
+        categoryName: p.category?.name || 'Earthing & Lightning',
+        itemType: p.isManufactured ? 'FINISHED' : (p.category?.type === 'RAW_MATERIAL' || p.name.includes('Pipe') || p.name.includes('Rod 99') || p.name.includes('Mix') ? 'RAW_MATERIAL' : 'FINISHED'),
+        material: p.variant || p.standardMake || 'Electrolytic Copper',
+        size: p.diameter || 'Standard',
+        length: p.length || '3.0m',
+        finish: p.drawingId?.includes('250') ? '250 Microns Copper Coating' : 'UL Listed Hot Dip / Molecular Copper',
+        uom: p.unitOfMeasure || 'NOS',
+        rate: Number(p.listPrice || 0),
+        gstPercent: Number(p.gstPercent || 18),
+        status: p.isActive ? 'ACTIVE' : 'INACTIVE',
+        description: p.description || p.name,
+        referenceImage: resolveProductImage(p),
+        stockQuantity: p.inventory ? Number(p.inventory.physicalQuantity) : 0,
+        specifications: [
+          { attribute: 'Standard Compliance', value: 'IS 3043 / IEEE 80 / UL 467', unit: '', standard: 'CPRI Tested' },
+          { attribute: 'Conductor Material', value: p.variant || 'Electrolytic Copper Bonded', unit: '', standard: 'IEC 62561-2' },
+          { attribute: 'Dimensions', value: `${p.diameter || '17.2mm'} x ${p.length || '3.0m'}`, unit: '', standard: 'Factory Standard' }
+        ]
+      }));
 
-        return res.status(200).json({
-          success: true,
-          data: mapped,
-          meta: { total: mapped.length }
-        });
+      const existingSkus = new Set(mapped.map(p => p.sku?.toUpperCase()));
+      const existingIds = new Set(mapped.map(p => String(p.id)));
+
+      let extraLocal = (db.products || []).filter(
+        p => !existingSkus.has(p.sku?.toUpperCase()) && !existingIds.has(String(p.id))
+      );
+
+      if (status === 'ACTIVE') {
+        extraLocal = extraLocal.filter(p => p.status === 'ACTIVE');
+      }
+      if (search) {
+        const s = search.toLowerCase();
+        extraLocal = extraLocal.filter(p =>
+          p.sku?.toLowerCase().includes(s) ||
+          p.name?.toLowerCase().includes(s) ||
+          p.material?.toLowerCase().includes(s)
+        );
+      }
+      if (categoryId) {
+        extraLocal = extraLocal.filter(p => String(p.categoryId) === String(categoryId));
       }
 
-      const db = localDb.read();
+      const allProducts = [...mapped, ...extraLocal];
       return res.status(200).json({
         success: true,
-        data: db.products,
-        meta: { total: db.products.length }
+        data: allProducts,
+        meta: { total: allProducts.length }
       });
     } catch (err) {
       next(err);
@@ -538,62 +553,60 @@ export const engineeringController = {
         orderBy: { id: 'asc' }
       });
 
-      if (prismaBoms.length > 0) {
-        const formatted = prismaBoms.map(b => ({
-          id: String(b.id),
-          productId: b.productId,
-          bomCode: `BOM-${b.product.sku}`,
-          status: b.status,
-          product: {
-            id: b.product.id,
-            sku: b.product.sku,
-            name: b.product.name,
-            uom: b.product.unitOfMeasure
-          },
-          revisions: [
-            {
-              id: String(b.id),
-              revisionCode: b.revision,
-              status: b.status,
-              costSnapshot: {
-                materialCost: Number(b.materialCost),
-                labourCost: Number(b.laborCost),
-                overheadCost: Number(b.overheadCost),
-                totalCost: Number(b.materialCost) + Number(b.laborCost) + Number(b.overheadCost)
-              },
-              items: b.items.map(it => ({
-                id: String(it.id),
-                componentProductId: it.componentProductId,
-                componentSku: it.component.sku,
-                componentName: it.component.name,
-                uom: it.component.unitOfMeasure,
-                quantity: Number(it.quantity),
-                scrapPercent: Number(it.scrapPercent),
-                rate: Number(it.component.listPrice),
-                lineCost: Number(it.quantity) * Number(it.component.listPrice)
-              }))
-            }
-          ]
-        }));
-
-        return res.status(200).json({
-          success: true,
-          data: formatted
-        });
-      }
+      const formatted = prismaBoms.map(b => ({
+        id: String(b.id),
+        productId: b.productId,
+        bomCode: `BOM-${b.product.sku}`,
+        status: b.status,
+        product: {
+          id: b.product.id,
+          sku: b.product.sku,
+          name: b.product.name,
+          uom: b.product.unitOfMeasure
+        },
+        revisions: [
+          {
+            id: String(b.id),
+            revisionCode: b.revision,
+            status: b.status,
+            changeReason: b.notes || 'Engineering released standard specification.',
+            costSnapshot: {
+              materialCost: Number(b.materialCost),
+              labourCost: Number(b.laborCost),
+              overheadCost: Number(b.overheadCost),
+              totalCost: Number(b.materialCost) + Number(b.laborCost) + Number(b.overheadCost)
+            },
+            items: b.items.map(it => ({
+              id: String(it.id),
+              componentProductId: it.componentProductId,
+              componentSku: it.component.sku,
+              componentName: it.component.name,
+              uom: it.component.unitOfMeasure,
+              quantity: Number(it.quantity),
+              scrapPercent: Number(it.scrapPercent),
+              unitRate: Number(it.component.listPrice),
+              rate: Number(it.component.listPrice),
+              lineCost: Number(it.quantity) * (1 + Number(it.scrapPercent) / 100) * Number(it.component.listPrice)
+            }))
+          }
+        ]
+      }));
 
       const db = localDb.read();
-      const bomsWithProducts = db.boms.map(b => {
-        const product = db.products.find(p => p.id === b.productId);
-        return {
-          ...b,
-          product
-        };
-      });
+      const existingProductIds = new Set(formatted.map(f => String(f.productId)));
+      const extraLocalBoms = (db.boms || [])
+        .filter(b => !existingProductIds.has(String(b.productId)))
+        .map(b => {
+          const product = db.products.find(p => String(p.id) === String(b.productId));
+          return {
+            ...b,
+            product: product || b.product
+          };
+        });
 
       res.status(200).json({
         success: true,
-        data: bomsWithProducts
+        data: [...formatted, ...extraLocalBoms]
       });
     } catch (err) {
       next(err);
@@ -604,6 +617,43 @@ export const engineeringController = {
     try {
       const { id } = req.params;
       const numId = Number(id);
+
+      const db = localDb.read();
+
+      // Check localDb first
+      const localBom = db.boms.find(b =>
+        String(b.id) === String(id) ||
+        String(b.productId) === String(id) ||
+        (!isNaN(numId) && Number(b.productId) === numId)
+      );
+
+      if (localBom) {
+        let product = db.products.find(p => String(p.id) === String(localBom.productId) || p.sku === String(localBom.productId));
+        if (!product && !isNaN(Number(localBom.productId))) {
+          const prismaP = await prisma.product.findUnique({
+            where: { id: Number(localBom.productId) },
+            include: { category: true }
+          });
+          if (prismaP) {
+            product = {
+              id: prismaP.id,
+              sku: prismaP.sku,
+              name: prismaP.name,
+              categoryId: String(prismaP.categoryId),
+              categoryName: prismaP.category?.name || 'Earthing & Lightning',
+              uom: prismaP.unitOfMeasure || 'NOS',
+              rate: Number(prismaP.listPrice || 0)
+            };
+          }
+        }
+        return res.status(200).json({
+          success: true,
+          data: {
+            ...localBom,
+            product: product || localBom.product
+          }
+        });
+      }
 
       if (!isNaN(numId)) {
         // Check PostgreSQL for this product's BOM
@@ -668,85 +718,181 @@ export const engineeringController = {
         }
       }
 
-      const db = localDb.read();
-      const bom = db.boms.find(b => b.id === req.params.id || b.productId === req.params.id || b.productId === numId);
-      if (!bom) {
-        return res.status(404).json({ success: false, message: 'BOM not found' });
-      }
-      const product = db.products.find(p => p.id === bom.productId);
-      res.status(200).json({
-        success: true,
-        data: {
-          ...bom,
-          product
-        }
-      });
+      return res.status(404).json({ success: false, message: 'BOM not found' });
     } catch (err) {
       next(err);
     }
   },
 
-  createBom: (req, res) => {
-    const db = localDb.read();
-    const { productId, title, items } = req.body;
+  createBom: async (req, res, next) => {
+    try {
+      const db = localDb.read();
+      const { bomCode, revisionCode, changeReason, title, items } = req.body;
+      const productId = req.body.productId || req.params.id;
+      const numId = Number(productId);
 
-    const product = db.products.find(p => p.id === productId);
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Target finished product not found' });
-    }
+      // 1. Check localDb first
+      let product = db.products.find(p =>
+        String(p.id) === String(productId) ||
+        p.sku === String(productId) ||
+        (!isNaN(numId) && Number(p.id) === numId)
+      );
 
-    const existingBom = db.boms.find(b => b.productId === productId);
-    if (existingBom) {
-      return res.status(409).json({ success: false, message: `BOM already exists for this product (${existingBom.bomCode}). Please create a revision instead.` });
-    }
-
-    const bomId = `bom_${Date.now()}`;
-    const newBom = {
-      id: bomId,
-      productId,
-      bomCode: `BOM-${product.sku}`,
-      title: title || `Bill of Materials for ${product.name}`,
-      createdAt: new Date().toISOString(),
-      revisions: [
-        {
-          id: `rev_${Date.now()}_a`,
-          revisionCode: "Rev A",
-          status: "DRAFT",
-          changeReason: "Initial BOM draft creation.",
-          createdBy: req.user?.name || "Product Engineer",
-          submittedBy: null,
-          submittedAt: null,
-          approvedBy: null,
-          approvedAt: null,
-          releasedBy: null,
-          releasedAt: null,
-          policyId: db.costingPolicy.id,
-          costSnapshot: null,
-          items: (items || []).map((it, idx) => ({
-            id: `item_${idx + 1}`,
-            componentProductId: it.componentProductId,
-            componentSku: it.componentSku,
-            componentName: it.componentName,
-            quantity: Math.max(0.001, Number(it.quantity) || 1),
-            uom: it.uom || "NOS",
-            unitRate: Math.max(0, Number(it.unitRate) || 0),
-            scrapPercent: Math.min(100, Math.max(0, Number(it.scrapPercent) || 0)),
-            lineCost: Number(it.quantity) * (1 + (Number(it.scrapPercent) || 0) / 100) * Number(it.unitRate),
-            note: it.note || ""
-          }))
+      // 2. If not found in localDb, check PostgreSQL
+      if (!product && !isNaN(numId)) {
+        const prismaProduct = await prisma.product.findUnique({
+          where: { id: numId },
+          include: { category: true }
+        });
+        if (prismaProduct) {
+          product = {
+            id: prismaProduct.id,
+            sku: prismaProduct.sku,
+            name: prismaProduct.name,
+            categoryId: String(prismaProduct.categoryId),
+            categoryName: prismaProduct.category?.name || 'Earthing & Lightning',
+            itemType: prismaProduct.isManufactured ? 'FINISHED' : 'RAW_MATERIAL',
+            uom: prismaProduct.unitOfMeasure || 'NOS',
+            rate: Number(prismaProduct.listPrice || 0)
+          };
         }
-      ]
-    };
+      }
 
-    db.boms.unshift(newBom);
-    localDb.write(db);
-    localDb.logAudit('BOM', newBom.id, 'CREATE', req.user?.name || 'Product Engineer', `Created BOM ${newBom.bomCode}`);
+      // 3. If still not found, check PostgreSQL by SKU
+      if (!product && productId) {
+        const prismaProduct = await prisma.product.findFirst({
+          where: {
+            OR: [
+              { sku: String(productId) },
+              { name: String(productId) }
+            ]
+          },
+          include: { category: true }
+        });
+        if (prismaProduct) {
+          product = {
+            id: prismaProduct.id,
+            sku: prismaProduct.sku,
+            name: prismaProduct.name,
+            categoryId: String(prismaProduct.categoryId),
+            categoryName: prismaProduct.category?.name || 'Earthing & Lightning',
+            itemType: prismaProduct.isManufactured ? 'FINISHED' : 'RAW_MATERIAL',
+            uom: prismaProduct.unitOfMeasure || 'NOS',
+            rate: Number(prismaProduct.listPrice || 0)
+          };
+        }
+      }
 
-    res.status(201).json({
-      success: true,
-      data: newBom,
-      message: 'BOM created in DRAFT revision.'
-    });
+      if (!product) {
+        return res.status(404).json({ success: false, message: 'Target finished product not found' });
+      }
+
+      // Check if BOM already exists in localDb
+      const existingBom = db.boms.find(b =>
+        String(b.productId) === String(productId) ||
+        String(b.productId) === String(product.id) ||
+        (product.sku && b.bomCode === `BOM-${product.sku}`)
+      );
+      if (existingBom) {
+        return res.status(409).json({
+          success: false,
+          message: `BOM already exists for this product (${existingBom.bomCode}). Please create a revision instead.`
+        });
+      }
+
+      // Check if BOM already exists in PostgreSQL
+      if (!isNaN(numId)) {
+        const existingPrismaBom = await prisma.bOMRevision.findFirst({
+          where: { productId: numId }
+        });
+        if (existingPrismaBom) {
+          return res.status(409).json({
+            success: false,
+            message: `BOM already exists for this product (BOM-${product.sku}). Please create a revision instead.`
+          });
+        }
+      }
+
+      // Ensure product is in localDb products list so any component lookups or child lookups succeed
+      if (!db.products.some(p => String(p.id) === String(product.id) || p.sku === product.sku)) {
+        db.products.push({
+          id: product.id,
+          sku: product.sku,
+          name: product.name,
+          categoryId: product.categoryId || 'cat_electrode',
+          itemType: product.itemType || 'FINISHED',
+          material: product.material || 'Standard Spec',
+          size: product.size || 'Standard',
+          length: product.length || '3.0m',
+          uom: product.uom || 'NOS',
+          rate: product.rate || 0,
+          gstPercent: 18,
+          status: 'ACTIVE',
+          description: product.description || product.name,
+          specifications: []
+        });
+      }
+
+      const bomId = `bom_${Date.now()}`;
+      const code = bomCode?.trim() || `BOM-${product.sku}`;
+      const revCode = revisionCode?.trim() || 'Rev A';
+      const reason = changeReason?.trim() || 'Initial production release.';
+
+      const newBom = {
+        id: bomId,
+        productId: product.id,
+        bomCode: code,
+        title: title || `Bill of Materials for ${product.name}`,
+        createdAt: new Date().toISOString(),
+        product: {
+          id: product.id,
+          sku: product.sku,
+          name: product.name,
+          uom: product.uom
+        },
+        revisions: [
+          {
+            id: `rev_${Date.now()}_a`,
+            revisionCode: revCode,
+            status: "DRAFT",
+            changeReason: reason,
+            createdBy: req.user?.name || "Product Engineer",
+            submittedBy: null,
+            submittedAt: null,
+            approvedBy: null,
+            approvedAt: null,
+            releasedBy: null,
+            releasedAt: null,
+            policyId: db.costingPolicy.id,
+            costSnapshot: null,
+            items: (items || []).map((it, idx) => ({
+              id: `item_${idx + 1}`,
+              componentProductId: it.componentProductId,
+              componentSku: it.componentSku,
+              componentName: it.componentName,
+              quantity: Math.max(0.001, Number(it.quantity) || 1),
+              uom: it.uom || "NOS",
+              unitRate: Math.max(0, Number(it.unitRate) || 0),
+              scrapPercent: Math.min(100, Math.max(0, Number(it.scrapPercent) || 0)),
+              lineCost: Number(it.quantity) * (1 + (Number(it.scrapPercent) || 0) / 100) * Number(it.unitRate),
+              note: it.note || ""
+            }))
+          }
+        ]
+      };
+
+      db.boms.unshift(newBom);
+      localDb.write(db);
+      localDb.logAudit('BOM', newBom.id, 'CREATE', req.user?.name || 'Product Engineer', `Created BOM ${newBom.bomCode}`);
+
+      res.status(201).json({
+        success: true,
+        data: newBom,
+        message: 'BOM created in DRAFT revision.'
+      });
+    } catch (err) {
+      next(err);
+    }
   },
 
   updateRevisionItems: (req, res) => {
@@ -790,21 +936,24 @@ export const engineeringController = {
       if (isNaN(scrap) || scrap < 0 || scrap > 100) {
         return res.status(400).json({ success: false, message: 'Scrap % must be between 0% and 100%.' });
       }
-      if (it.componentProductId === targetBom.productId) {
+      if (String(it.componentProductId) === String(targetBom.productId)) {
         return res.status(400).json({ success: false, message: 'Circular BOM error: A product cannot contain itself as a component.' });
       }
     }
 
     targetRev.items = items.map((it, idx) => {
-      const comp = db.products.find(p => p.id === it.componentProductId) || {};
+      const comp = db.products.find(p =>
+        String(p.id) === String(it.componentProductId) ||
+        p.sku === String(it.componentSku)
+      ) || {};
       const rate = Math.max(0, Number(it.unitRate ?? comp.rate ?? 0));
       const scrap = Math.min(100, Math.max(0, Number(it.scrapPercent || 0)));
       const qty = Math.max(0.001, Number(it.quantity));
       return {
         id: it.id || `item_${idx + 1}`,
         componentProductId: it.componentProductId,
-        componentSku: comp.sku || it.componentSku || 'RAW-ITEM',
-        componentName: comp.name || it.componentName || 'Component',
+        componentSku: it.componentSku || comp.sku || 'RAW-ITEM',
+        componentName: it.componentName || comp.name || 'Component',
         quantity: qty,
         uom: it.uom || comp.uom || 'NOS',
         unitRate: rate,
@@ -1205,14 +1354,20 @@ export const engineeringController = {
 
       // Fallback to localDb
       const db = localDb.read();
-      const bom = db.boms.find(b => b.productId === productId || b.productId === prodId);
+      const bom = db.boms.find(b =>
+        String(b.productId) === String(productId) ||
+        (!isNaN(prodId) && Number(b.productId) === prodId)
+      );
       if (!bom) {
         return res.status(404).json({ success: false, message: 'No BOM found for this product.' });
       }
 
       const releasedRev = bom.revisions.find(r => r.status === 'RELEASED') || bom.revisions[0];
       const shortages = releasedRev.items.map(item => {
-        const comp = db.products.find(p => p.id === item.componentProductId);
+        const comp = db.products.find(p =>
+          String(p.id) === String(item.componentProductId) ||
+          p.sku === item.componentSku
+        );
         const availableStock = comp?.stockQuantity ?? 100;
         const requiredQty = (item.quantity * (1 + item.scrapPercent / 100)) * qty;
         const shortage = Math.max(0, requiredQty - availableStock);
