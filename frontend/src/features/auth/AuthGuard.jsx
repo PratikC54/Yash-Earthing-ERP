@@ -20,7 +20,7 @@ export default function AuthGuard({ children }) {
           <div className="absolute -inset-2 rounded-2xl border-2 border-cyan-400/40 border-t-cyan-400 animate-spin" />
         </div>
         <div className="text-sm font-semibold text-white tracking-wide">
-          Initializing Meridian ERP...
+          Initializing Yash Group ERP...
         </div>
         <div className="text-xs text-slate-500 mt-1">Checking secure session</div>
       </div>
@@ -39,7 +39,7 @@ export default function AuthGuard({ children }) {
     )
   }
 
-  // 2. If authenticated and active
+  // 2. If authenticated and active -> Render Master Dashboard (Landing page)
   if (isAuthenticated && user) {
     return children
   }
