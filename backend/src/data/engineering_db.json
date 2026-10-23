@@ -189,6 +189,45 @@
   ],
   "products": [
     {
+      "id": 11,
+      "sku": "SKU-TATA",
+      "name": "Test TATA",
+      "categoryId": "2",
+      "categoryName": "Raw Metals",
+      "itemType": "RAW_MATERIAL",
+      "material": "99.99 % steel",
+      "size": "20 mm / 12 mm",
+      "length": "5.5 meter",
+      "finish": "250 Microns Copper Coating",
+      "uom": "METER",
+      "rate": 1000,
+      "gstPercent": 18,
+      "status": "ACTIVE",
+      "description": "This is TATA steel",
+      "referenceImage": "https://th.bing.com/th?id=OIF.CvpJK0Jh1NLMbWun%2bv3OgA&r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+      "stockQuantity": 0,
+      "specifications": [
+        {
+          "attribute": "Standard Compliance",
+          "value": "IS 3043 / IEEE 80 / UL 467",
+          "unit": "",
+          "standard": "CPRI Tested"
+        },
+        {
+          "attribute": "Conductor Material",
+          "value": "99.99 % steel",
+          "unit": "",
+          "standard": "IEC 62561-2"
+        },
+        {
+          "attribute": "Dimensions",
+          "value": "20 mm / 12 mm x 5.5 meter",
+          "unit": "",
+          "standard": "Factory Standard"
+        }
+      ]
+    },
+    {
       "id": 10,
       "sku": "SKU-CBP-600-6M",
       "name": "Yash Heavy-Duty Bonded Earthing wear with copper",
@@ -1130,6 +1169,15 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "audit_1792750464287_vatum",
+      "entity": "Product",
+      "entityId": "11",
+      "action": "CREATE",
+      "actor": "Product Engineer",
+      "details": "Created product SKU-TATA in PostgreSQL",
+      "timestamp": "2026-10-23T10:14:24.287Z"
+    },
     {
       "id": "audit_1792748368441_iexz6",
       "entity": "BOMRevision",

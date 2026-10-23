@@ -107,3 +107,5 @@ export function requireRoles(...allowedRoles) {
 export function requireAdmin(req, res, next) {
   return requireRoles("ADMIN")(req, res, next);
 }
+
+export { authenticate as authenticateUser };

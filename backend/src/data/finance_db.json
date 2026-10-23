@@ -26,7 +26,7 @@
       "prefix": "INV",
       "format": "INV/2026-27/{SEQ:4}",
       "fyStart": "2026-04-01",
-      "nextNo": 105,
+      "nextNo": 106,
       "padding": 4,
       "isActive": true
     },
@@ -761,6 +761,25 @@
   ],
   "vendorBills": [
     {
+      "id": "vb_1792752246160",
+      "billNo": "VENDOR1",
+      "vendorId": "ven_jindal",
+      "vendorName": "Jindal Stainless Steel Hisar Ltd",
+      "poNumber": "PO-2026-031",
+      "grnNumber": "GRN-2026-089",
+      "billDate": "2026-10-23",
+      "dueDate": "2026-11-22",
+      "taxableAmount": 858,
+      "gstAmount": 154.44,
+      "totalAmount": 1012.44,
+      "paidAmount": 0,
+      "balanceAmount": 1012.44,
+      "matchResult": "MATCHED",
+      "matchDetails": "PO quantity, GRN inspection receipt, and billed rate match within 1% tolerance.",
+      "status": "APPROVED",
+      "approvedBy": "Finance Manager (Anita Deshmukh)"
+    },
+    {
       "id": "vb_1",
       "billNo": "HINDALCO/INV/8812",
       "vendorId": "ven_hindalco",
@@ -854,6 +873,60 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "aud_fin_1792752246163_o61s",
+      "actor": "Accounts Executive",
+      "action": "CREATE_VENDOR_BILL",
+      "entity": "VendorBill",
+      "entityId": "vb_1792752246160",
+      "details": "Entered vendor bill VENDOR1 from Jindal Stainless Steel Hisar Ltd (3-Way Match: MATCHED)",
+      "timestamp": "2026-10-23T10:44:06.163Z"
+    },
+    {
+      "id": "aud_fin_1792752153408_8ofk",
+      "actor": "Admin",
+      "action": "DELETE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_1792752121675",
+      "details": "Permanently deleted invoice INV/2026-27/0105",
+      "timestamp": "2026-10-23T10:42:33.408Z"
+    },
+    {
+      "id": "aud_fin_1792752149621_91dj",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_1792752121675",
+      "details": "Updated invoice INV/2026-27/0105 dispute/notes",
+      "timestamp": "2026-10-23T10:42:29.621Z"
+    },
+    {
+      "id": "aud_fin_1792752147329_0nfi",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_1792752121675",
+      "details": "Updated invoice INV/2026-27/0105 dispute/notes",
+      "timestamp": "2026-10-23T10:42:27.329Z"
+    },
+    {
+      "id": "aud_fin_1792752140186_q4uh",
+      "actor": "Admin",
+      "action": "CANCEL_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_1792752121675",
+      "details": "Cancelled invoice INV/2026-27/0105: Order revised by client / Re-invoicing required",
+      "timestamp": "2026-10-23T10:42:20.186Z"
+    },
+    {
+      "id": "aud_fin_1792752121682_ej2v",
+      "actor": "Accounts Executive",
+      "action": "CREATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_1792752121675",
+      "details": "Created & issued GST invoice INV/2026-27/0105 for ₹375240",
+      "timestamp": "2026-10-23T10:42:01.682Z"
+    },
     {
       "id": "aud_fin_1792734876631_8148",
       "actor": "Finance Manager",

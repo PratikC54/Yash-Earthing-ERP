@@ -4,7 +4,7 @@ import { createProjectSchema, updateProjectSchema, projectTaskSchema } from "./p
 export async function listProjects(req, res, next) {
   try {
     const result = await projectService.listProjects(req.query);
-    res.status(200).json({ success: true, ...result });
+    res.status(200).json({ success: true, data: result.projects, ...result });
   } catch (err) {
     next(err);
   }

@@ -9,7 +9,7 @@ import {
 export async function listServiceTickets(req, res, next) {
   try {
     const result = await serviceTicketService.listServiceTickets(req.query);
-    res.status(200).json({ success: true, ...result });
+    res.status(200).json({ success: true, data: result.tickets, ...result });
   } catch (err) {
     next(err);
   }
