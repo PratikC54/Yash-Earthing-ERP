@@ -11,7 +11,17 @@ import apiRouter from "./routes/index.js";
 const app = express();
 
 app.use(helmet());
-app.use(cors({ origin: env.CORS_ORIGIN, credentials: true }));
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      if (!origin || env.CORS_ORIGIN.includes(origin)) {
+        return callback(null, true);
+      }
+      return callback(new Error("Origin not allowed by CORS"));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "1mb" }));
 app.use(cookieParser());
 app.use(
@@ -23,7 +33,11 @@ app.use(
   }),
 );
 
-app.use("/api/v1", apiRouter);
+app.get("/", (req, res) => {
+  res.json({ status: "ok", version: "1.0.0", name: "Yash Earthing ERP API" });
+});
+
+app.use("/api", apiRouter);
 app.use(notFound);
 app.use(errorHandler);
 

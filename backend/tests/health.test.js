@@ -17,8 +17,8 @@ after(async () => {
   });
 });
 
-test("GET /api/v1/health returns an OK status", async () => {
-  const response = await fetch(`${baseUrl}/api/v1/health`);
+test("GET /api/health returns an OK status", async () => {
+  const response = await fetch(`${baseUrl}/api/health`);
   const body = await response.json();
 
   assert.equal(response.status, 200);
