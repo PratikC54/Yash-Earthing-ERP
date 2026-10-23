@@ -50,7 +50,15 @@ export async function getOrders({ search, status, page = 1, limit = 50 }) {
     }),
   ]);
 
-  return { total, page: Number(page), limit: Number(limit), orders };
+  return {
+    total,
+    page: Number(page),
+    limit: Number(limit),
+    orders: orders.map((o) => ({
+      ...o,
+      totalAmount: Number(o.grandTotal || o.totalAmount || 0),
+    })),
+  };
 }
 
 export async function getOrderById(id) {
@@ -139,11 +147,18 @@ export async function createSalesOrder(data, user) {
   const customerId = Number(data.customerId);
 
   let quotation = null;
+  let grandTotal = Number(data.totalAmount || 0);
+  let subtotal = 0;
+
   if (quotationId) {
     quotation = await prisma.quotation.findUnique({
       where: { id: quotationId },
       include: { items: true },
     });
+    if (quotation) {
+      grandTotal = Number(data.totalAmount || quotation.total || 0);
+      subtotal = Number(quotation.subtotal || 0);
+    }
   }
 
   const salesOrder = await prisma.salesOrder.create({
@@ -154,15 +169,15 @@ export async function createSalesOrder(data, user) {
       createdById: user?.id || 1,
       customerPONumber: data.customerPONumber || quotation?.customerPONumber || null,
       proformaInvoiceNumber: data.proformaInvoiceNumber || quotation?.proformaInvoiceNumber || null,
-      productSummary: data.productSummary || "GI Earthing Electrode",
-      quantitySummary: data.quantitySummary ? String(data.quantitySummary) : "1",
+      productSummary: data.productSummary || quotation?.items?.[0]?.product?.name || "GI Earthing Electrode",
+      quantitySummary: data.quantitySummary ? String(data.quantitySummary) : String(quotation?.items?.[0]?.quantity || "1"),
       approvalStatus: "Approved by Sales Manager",
       approvedById: user?.id || 1,
       status: "CONFIRMED",
-      subtotal: quotation?.subtotal || 0,
+      subtotal: quotation?.subtotal || subtotal,
       discountAmount: quotation?.discountAmount || 0,
       gstAmount: quotation?.gstAmount || 0,
-      grandTotal: data.totalAmount ? Number(data.totalAmount) : (quotation?.total || 2537),
+      grandTotal: grandTotal,
       dispatchStatus: "WAITING_APPROVAL",
       stockReserved: false,
       deliveryLocation: data.deliveryLocation || "Site Destination",
