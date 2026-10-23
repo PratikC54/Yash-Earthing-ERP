@@ -3,13 +3,7 @@ import Navbar from './Navbar'
 import Sidebar from './Sidebar'
 import { initialNavSections, currentUser as defaultUser } from '../../data/navigationModules'
 import { useAuth, AdminApprovalPanel } from '../../features/auth'
-
-//Module 3 pages and modals
-import AddModuleModal from './AddModuleModal'
-import OperationsOverview from '../../features/dashboard/OperationsOverview'
 import EngineeringDashboard from '../../features/engineering/EngineeringDashboard'
-import { initialNavSections, currentUser } from '../../data/navigationModules'
-
 
 // Module 1 Pages & Modals
 import OverviewDashboard from '../../features/module1/pages/OverviewDashboard'
@@ -85,16 +79,6 @@ export default function AppLayout() {
     }
     setActiveModule(item.name)
     setActiveModuleId(item.id)
-
-  const [sections, setSections] = useState(initialNavSections)
-  const [activeModule, setActiveModule] = useState('Dashboard')
-  const [activeModuleId, setActiveModuleId] = useState('dashboard')
-  const [isAddModuleModalOpen, setIsAddModuleModalOpen] = useState(false)
-
-  // Handle module selection from sidebar
-  const handleSelectModule = (module) => {
-    setActiveModule(module.name)
-    setActiveModuleId(module.id)
   }
 
   const handleNavigate = (targetId) => {
@@ -144,6 +128,8 @@ export default function AppLayout() {
         return <QuotationsPage onNavigateToOrders={() => handleNavigate('orders')} />
       case 'orders':
         return <OrdersPage onNavigate={handleNavigate} />
+      case 'engineering':
+        return <EngineeringDashboard />
       default:
         return isSuperUser ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />
@@ -155,7 +141,7 @@ export default function AppLayout() {
 
   return (
     <div className="w-screen h-screen flex overflow-hidden bg-[#070e1e] font-sans antialiased selection:bg-blue-500 selection:text-white">
-      {/* Left Sidebar strictly for Module 1 */}
+      {/* Shared navigation for Module 1 and Module 3 */}
       <Sidebar
         sections={visibleSections}
         activeModuleId={activeModuleId}
@@ -181,22 +167,6 @@ export default function AppLayout() {
         {/* Main Workspace (Scrollable) */}
         <main className="flex-1 overflow-y-auto">
           {renderContent()}
-        onOpenAddModuleModal={() => setIsAddModuleModalOpen(false)}
-        user={currentUser}
-      />
-
-      {/* Right Content Area: Navbar + Main Middle Box */}
-      <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden bg-[#edf1f7]">
-        {/* Top Navbar matching the sidebar deep navy color */}
-        <Navbar activeModule={activeModule} />
-
-        {/* Main Middle Content */}
-        <main className="flex-1 overflow-y-auto">
-          {activeModuleId === 'engineering' ? (
-            <EngineeringDashboard />
-          ) : (
-            <OperationsOverview subModuleTitle={`${activeModule} Overview`} />
-          )}
         </main>
       </div>
 
