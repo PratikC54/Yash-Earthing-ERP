@@ -5,6 +5,7 @@ import leadRouter from "../features/leads/lead.routes.js";
 import quotationRouter from "../features/quotations/quotation.routes.js";
 import orderRouter from "../features/orders/order.routes.js";
 import engineeringRouter from "../features/engineering/engineering.routes.js";
+import financeRouter from "../features/finance/finance.routes.js";
 
 // Module 2 Routers
 import vendorRouter from "../features/vendors/vendor.routes.js";
@@ -22,6 +23,7 @@ apiRouter.use("/leads", leadRouter);
 apiRouter.use("/quotations", quotationRouter);
 apiRouter.use("/orders", orderRouter);
 apiRouter.use("/engineering", engineeringRouter);
+apiRouter.use("/finance", financeRouter);
 
 // Mount Module 2 features under /api/v1
 apiRouter.use("/vendors", vendorRouter);

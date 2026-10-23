@@ -18,6 +18,9 @@ import {
   FileText,
   Sparkles,
   X,
+  TrendingUp,
+  Settings,
+  IndianRupee,
 } from 'lucide-react'
 
 // Icon mapping helper
@@ -36,6 +39,9 @@ const iconMap = {
   ShieldCheck,
   Truck,
   Globe,
+  TrendingUp,
+  Settings,
+  IndianRupee,
 }
 
 export default function Sidebar({

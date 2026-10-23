@@ -1,0 +1,1366 @@
+{
+  "companyProfile": {
+    "legalName": "Yash Earthing & Lightning Protection Pvt. Ltd.",
+    "tradeName": "Yash Group — Earthing & Lightning Protection",
+    "gstin": "27AABCY1234F1Z5",
+    "pan": "AABCY1234F",
+    "cin": "U29299MH2018PTC304891",
+    "stateCode": "27",
+    "stateName": "Maharashtra",
+    "address": "Plot No. 42, MIDC Industrial Area, Chakan Phase II, Pune, Maharashtra - 410501",
+    "contactEmail": "accounts@yashearthing.com",
+    "contactPhone": "+91 20 6792 1100",
+    "bankDetails": {
+      "bankName": "HDFC Bank Ltd",
+      "accountNumber": "50200084920194",
+      "ifsc": "HDFC0001234",
+      "branch": "Chakan Industrial Branch, Pune",
+      "upiId": "yashearthing@hdfcbank"
+    },
+    "footerTerms": "1. All payments strictly per invoice terms. Interest @ 18% p.a. charged after due date.\n2. In case of cheque bounce, ₹1,000 handling charges plus bank penalty will apply.\n3. Goods once sold cannot be taken back without QC authorization.\n4. Disputes subject to Pune jurisdiction only."
+  },
+  "numberSeries": [
+    {
+      "id": "ser_tax_inv",
+      "docType": "TAX_INVOICE",
+      "prefix": "INV",
+      "format": "INV/2026-27/{SEQ:4}",
+      "fyStart": "2026-04-01",
+      "nextNo": 105,
+      "padding": 4,
+      "isActive": true
+    },
+    {
+      "id": "ser_proforma",
+      "docType": "PROFORMA",
+      "prefix": "PI",
+      "format": "PI/2026-27/{SEQ:4}",
+      "fyStart": "2026-04-01",
+      "nextNo": 51,
+      "padding": 4,
+      "isActive": true
+    },
+    {
+      "id": "ser_receipt",
+      "docType": "RECEIPT",
+      "prefix": "REC",
+      "format": "REC/2026-27/{SEQ:4}",
+      "fyStart": "2026-04-01",
+      "nextNo": 206,
+      "padding": 4,
+      "isActive": true
+    },
+    {
+      "id": "ser_credit_note",
+      "docType": "CREDIT_NOTE",
+      "prefix": "CN",
+      "format": "CN/2026-27/{SEQ:4}",
+      "fyStart": "2026-04-01",
+      "nextNo": 14,
+      "padding": 4,
+      "isActive": true
+    },
+    {
+      "id": "ser_vendor_pay",
+      "docType": "VENDOR_PAYMENT",
+      "prefix": "VPAY",
+      "format": "VPAY/2026-27/{SEQ:4}",
+      "fyStart": "2026-04-01",
+      "nextNo": 301,
+      "padding": 4,
+      "isActive": true
+    }
+  ],
+  "taxCodes": [
+    {
+      "id": "tax_18",
+      "code": "GST-18",
+      "name": "Standard 18% (Electrodes, Rods, Arresters)",
+      "cgst": 9,
+      "sgst": 9,
+      "igst": 18,
+      "isDefault": true
+    },
+    {
+      "id": "tax_12",
+      "code": "GST-12",
+      "name": "Concessional 12% (Agricultural Earthing)",
+      "cgst": 6,
+      "sgst": 6,
+      "igst": 12,
+      "isDefault": false
+    },
+    {
+      "id": "tax_28",
+      "code": "GST-28",
+      "name": "Special 28% (Surge Suppressor Assemblies)",
+      "cgst": 14,
+      "sgst": 14,
+      "igst": 28,
+      "isDefault": false
+    },
+    {
+      "id": "tax_5",
+      "code": "GST-5",
+      "name": "Basic 5% (Natural Bentonite Clay)",
+      "cgst": 2.5,
+      "sgst": 2.5,
+      "igst": 5,
+      "isDefault": false
+    },
+    {
+      "id": "tax_0",
+      "code": "GST-0",
+      "name": "Exempted / Zero Rated Export",
+      "cgst": 0,
+      "sgst": 0,
+      "igst": 0,
+      "isDefault": false
+    }
+  ],
+  "paymentTerms": [
+    {
+      "id": "term_net30",
+      "name": "Net 30 Days",
+      "days": 30,
+      "type": "NET_DAYS",
+      "isDefault": true
+    },
+    {
+      "id": "term_net15",
+      "name": "Net 15 Days",
+      "days": 15,
+      "type": "NET_DAYS",
+      "isDefault": false
+    },
+    {
+      "id": "term_advance",
+      "name": "100% Advance Payment",
+      "days": 0,
+      "type": "ADVANCE",
+      "isDefault": false
+    },
+    {
+      "id": "term_milestone",
+      "name": "Milestone: 40% Adv / 50% Dispatch / 10% Testing",
+      "days": 45,
+      "type": "MILESTONE",
+      "isDefault": false
+    }
+  ],
+  "approvalPolicies": [
+    {
+      "id": "pol_inv_high",
+      "docType": "TAX_INVOICE",
+      "minAmount": 150000,
+      "approverRole": "Finance Manager",
+      "requireSeparateApprover": true
+    },
+    {
+      "id": "pol_credit_note",
+      "docType": "CREDIT_NOTE",
+      "minAmount": 0,
+      "approverRole": "Finance Manager",
+      "requireSeparateApprover": true
+    },
+    {
+      "id": "pol_vendor_bill",
+      "docType": "VENDOR_BILL",
+      "minAmount": 100000,
+      "approverRole": "Finance Manager",
+      "requireSeparateApprover": false
+    },
+    {
+      "id": "pol_vpay_high",
+      "docType": "VENDOR_PAYMENT",
+      "minAmount": 50000,
+      "approverRole": "Finance Manager",
+      "requireSeparateApprover": true
+    }
+  ],
+  "ageingBuckets": [
+    {
+      "id": "b1",
+      "label": "Current (Not Due)",
+      "minDays": -999,
+      "maxDays": 0,
+      "order": 1,
+      "color": "emerald"
+    },
+    {
+      "id": "b2",
+      "label": "1–30 Days Overdue",
+      "minDays": 1,
+      "maxDays": 30,
+      "order": 2,
+      "color": "amber"
+    },
+    {
+      "id": "b3",
+      "label": "31–60 Days Overdue",
+      "minDays": 31,
+      "maxDays": 60,
+      "order": 3,
+      "color": "orange"
+    },
+    {
+      "id": "b4",
+      "label": "61–90 Days Overdue",
+      "minDays": 61,
+      "maxDays": 90,
+      "order": 4,
+      "color": "rose"
+    },
+    {
+      "id": "b5",
+      "label": "90+ Days (Critical)",
+      "minDays": 91,
+      "maxDays": 9999,
+      "order": 5,
+      "color": "red"
+    }
+  ],
+  "matchTolerance": {
+    "qtyPercent": 2,
+    "ratePercent": 1
+  },
+  "reminderRules": [
+    {
+      "id": "rem_1",
+      "daysAfterDue": 3,
+      "action": "Send automated WhatsApp / Email payment alert",
+      "assigneeRole": "Accounts Executive"
+    },
+    {
+      "id": "rem_2",
+      "daysAfterDue": 15,
+      "action": "Formal Accounts Notice & Sales Owner Escalation",
+      "assigneeRole": "Finance Manager"
+    },
+    {
+      "id": "rem_3",
+      "daysAfterDue": 30,
+      "action": "Credit Stop on new orders & Legal Notice warning",
+      "assigneeRole": "Admin"
+    }
+  ],
+  "customers": [
+    {
+      "id": "cust_suryagrid",
+      "name": "SuryaGrid Projects",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_vector_mep",
+      "name": "Vector MEP Solutions",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_pragati",
+      "name": "Pragati Electrical",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_metrobuild",
+      "name": "MetroBuild Infra",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_nexvolt",
+      "name": "NexVolt EPC",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_greenarc",
+      "name": "GreenArc Solar Works",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_citygrid",
+      "name": "CityGrid Electricals",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_pioneer",
+      "name": "Pioneer Power Controls",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_omega",
+      "name": "Omega Industrial Projects",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_apex",
+      "name": "Apex Telecom Infra",
+      "gstin": "27AAACY1234F1Z5",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_tata_power",
+      "name": "Tata Power Renewable Energy Ltd",
+      "gstin": "27AAACT2819R1Z1",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    },
+    {
+      "id": "cust_adani_solar",
+      "name": "Adani Solar Energy Kutchh One",
+      "gstin": "24AAACA3412P1ZM",
+      "stateCode": "24",
+      "stateName": "Gujarat"
+    },
+    {
+      "id": "cust_lt_infra",
+      "name": "L&T Construction & Infrastructure",
+      "gstin": "27AAACL1290M1Z8",
+      "stateCode": "27",
+      "stateName": "Maharashtra"
+    }
+  ],
+  "salesOrders": [
+    {
+      "id": "so_118",
+      "orderNo": "SO-2026-118",
+      "customerId": "cust_suryagrid",
+      "orderDate": "2026-08-10",
+      "poNumber": "PO-SG-2026-99",
+      "billingPlan": "DISPATCH",
+      "hasOpenQcHold": false,
+      "items": [
+        {
+          "productId": "prod_rod_1",
+          "sku": "SKU-ROD-17X3000",
+          "description": "YEC Copper Bonded Earthing Rod 17.2mm x 3000mm",
+          "hsn": "85359090",
+          "orderedQty": 100,
+          "dispatchedQty": 100,
+          "invoicedQty": 0,
+          "rate": 2860,
+          "uom": "NOS"
+        }
+      ]
+    },
+    {
+      "id": "so_121",
+      "orderNo": "SO-2026-121",
+      "customerId": "cust_vector_mep",
+      "orderDate": "2026-08-12",
+      "poNumber": "PO-VM-2026-41",
+      "billingPlan": "DISPATCH",
+      "hasOpenQcHold": false,
+      "items": [
+        {
+          "productId": "prod_elec_2",
+          "sku": "SKU-ELEC-CU-50",
+          "description": "Pure Copper Earthing Electrode 50mm x 3000mm",
+          "hsn": "85359090",
+          "orderedQty": 40,
+          "dispatchedQty": 40,
+          "invoicedQty": 0,
+          "rate": 4350,
+          "uom": "NOS"
+        }
+      ]
+    },
+    {
+      "id": "so_116",
+      "orderNo": "SO-2026-116",
+      "customerId": "cust_pragati",
+      "orderDate": "2026-08-15",
+      "poNumber": "PO-PR-2026-44",
+      "billingPlan": "DISPATCH",
+      "hasOpenQcHold": false,
+      "items": [
+        {
+          "productId": "prod_cmp_1",
+          "sku": "SKU-CMP-7YES",
+          "description": "7-YES Carbon Earth Enhancement Backfill Compound (25kg)",
+          "hsn": "38249900",
+          "orderedQty": 80,
+          "dispatchedQty": 80,
+          "invoicedQty": 0,
+          "rate": 1200,
+          "uom": "BAG"
+        }
+      ]
+    },
+    {
+      "id": "so_109",
+      "orderNo": "SO-2026-109",
+      "customerId": "cust_greenarc",
+      "orderDate": "2026-08-18",
+      "poNumber": "PO-GA-2026-08",
+      "billingPlan": "DISPATCH",
+      "hasOpenQcHold": false,
+      "items": [
+        {
+          "productId": "prod_rod_1",
+          "sku": "SKU-ROD-17X3000",
+          "description": "YEC Copper Bonded Earthing Rod 17.2mm x 3000mm",
+          "hsn": "85359090",
+          "orderedQty": 100,
+          "dispatchedQty": 100,
+          "invoicedQty": 0,
+          "rate": 3180,
+          "uom": "NOS"
+        }
+      ]
+    },
+    {
+      "id": "so_105",
+      "orderNo": "SO-2026-105",
+      "customerId": "cust_lt_infra",
+      "orderDate": "2026-08-20",
+      "poNumber": "LT-INFRA-9021",
+      "billingPlan": "DISPATCH",
+      "hasOpenQcHold": true,
+      "items": [
+        {
+          "productId": "prod_ese_1",
+          "sku": "SKU-ESE-60M",
+          "description": "Yash ESE Early Streamer Emission Lightning Arrester (Radius 60m)",
+          "hsn": "85354030",
+          "orderedQty": 5,
+          "dispatchedQty": 5,
+          "invoicedQty": 0,
+          "rate": 28500,
+          "uom": "NOS"
+        }
+      ]
+    }
+  ],
+  "invoices": [
+    {
+      "id": "inv_suryagrid",
+      "invoiceNo": "INV-DRAFT",
+      "docType": "TAX_INVOICE",
+      "seriesId": "ser_tax_inv",
+      "fy": "2026-27",
+      "customerId": "cust_suryagrid",
+      "orderNo": "SO-2026-118",
+      "poNumber": "PO-SG-2026-99",
+      "invoiceDate": "2026-08-15",
+      "dueDate": "2026-08-22",
+      "paymentTermsId": "term_milestone",
+      "placeOfSupply": "27",
+      "taxType": "INTRA_STATE",
+      "customerSnapshot": {
+        "name": "SuryaGrid Projects",
+        "gstin": "27AAACY1234F1Z5",
+        "address": "Surya House, Plot 14, MIDC Bhosari, Pune - 411026",
+        "stateName": "Maharashtra"
+      },
+      "items": [
+        {
+          "id": "item_1",
+          "sku": "CP-ELECTRODE-17",
+          "description": "Copper Bonded Earth Electrode 17.2mm x 3m (250 Micron)",
+          "hsn": "85359090",
+          "qty": 130,
+          "uom": "NOS",
+          "rate": 2200,
+          "taxableValue": 286000,
+          "taxRate": 18,
+          "cgstAmount": 25740,
+          "sgstAmount": 25740,
+          "igstAmount": 0,
+          "lineTotal": 337480
+        }
+      ],
+      "taxableTotal": 286000,
+      "cgstTotal": 25740,
+      "sgstTotal": 25740,
+      "igstTotal": 0,
+      "grandTotal": 234520,
+      "paidAmount": 128700,
+      "balanceAmount": 105820,
+      "status": "Pending",
+      "isDisputed": false,
+      "disputeReason": null,
+      "notes": "Milestone 1 partial billing"
+    },
+    {
+      "id": "inv_pragati",
+      "invoiceNo": "INV-116",
+      "docType": "TAX_INVOICE",
+      "seriesId": "ser_tax_inv",
+      "fy": "2026-27",
+      "customerId": "cust_pragati",
+      "orderNo": "SO-2026-116",
+      "poNumber": "PO-PR-2026-44",
+      "invoiceDate": "2026-08-18",
+      "dueDate": "2026-08-28",
+      "paymentTermsId": "term_net15",
+      "placeOfSupply": "27",
+      "taxType": "INTRA_STATE",
+      "customerSnapshot": {
+        "name": "Pragati Electrical",
+        "gstin": "27AAACY1234F1Z5",
+        "address": "Shop 12, Electrical Market, Sadashiv Peth, Pune - 411030",
+        "stateName": "Maharashtra"
+      },
+      "items": [
+        {
+          "id": "item_2",
+          "sku": "GI-STRIP-25X3",
+          "description": "Hot Dip Galvanised Earthing Strip 25x3mm",
+          "hsn": "73269099",
+          "qty": 800,
+          "uom": "METER",
+          "rate": 120,
+          "taxableValue": 96000,
+          "taxRate": 18,
+          "cgstAmount": 8640,
+          "sgstAmount": 8640,
+          "igstAmount": 0,
+          "lineTotal": 113280
+        }
+      ],
+      "taxableTotal": 96000,
+      "cgstTotal": 8640,
+      "sgstTotal": 8640,
+      "igstTotal": 0,
+      "grandTotal": 78720,
+      "paidAmount": 43200,
+      "balanceAmount": 35520,
+      "status": "Part Paid",
+      "isDisputed": false,
+      "disputeReason": null,
+      "notes": "Part payment received"
+    },
+    {
+      "id": "inv_greenarc",
+      "invoiceNo": "INV-DRAFT",
+      "docType": "TAX_INVOICE",
+      "seriesId": "ser_tax_inv",
+      "fy": "2026-27",
+      "customerId": "cust_greenarc",
+      "orderNo": "SO-2026-109",
+      "poNumber": "PO-GA-2026-88",
+      "invoiceDate": "2026-08-20",
+      "dueDate": "2026-08-28",
+      "paymentTermsId": "term_milestone",
+      "placeOfSupply": "27",
+      "taxType": "INTRA_STATE",
+      "customerSnapshot": {
+        "name": "GreenArc Solar Works",
+        "gstin": "27AAACY1234F1Z5",
+        "address": "GreenArc Complex, Nagar Road, Wagholi, Pune - 412207",
+        "stateName": "Maharashtra"
+      },
+      "items": [
+        {
+          "id": "item_3",
+          "sku": "SKU-ESE-60M",
+          "description": "Yash ESE Early Streamer Emission Lightning Arrester (Radius 60m)",
+          "hsn": "85354030",
+          "qty": 10,
+          "uom": "NOS",
+          "rate": 31800,
+          "taxableValue": 318000,
+          "taxRate": 18,
+          "cgstAmount": 28620,
+          "sgstAmount": 28620,
+          "igstAmount": 0,
+          "lineTotal": 375240
+        }
+      ],
+      "taxableTotal": 318000,
+      "cgstTotal": 28620,
+      "sgstTotal": 28620,
+      "igstTotal": 0,
+      "grandTotal": 260760,
+      "paidAmount": 143100,
+      "balanceAmount": 117660,
+      "status": "Pending",
+      "isDisputed": false,
+      "disputeReason": null,
+      "notes": "Awaiting final QC release from factory floor"
+    }
+  ],
+  "receipts": [
+    {
+      "id": "rec_1792721597531",
+      "receiptNo": "REC/2026-27/0205",
+      "customerId": "cust_tata_power",
+      "receivedOn": "2026-10-23",
+      "method": "NEFT",
+      "referenceNo": "CMS-HDFC-99128471",
+      "bank": "HDFC Bank (Cash Mgmt)",
+      "amount": 51920,
+      "status": "VERIFIED",
+      "chequeStatus": null,
+      "idempotencyKey": "idem_1792721597531",
+      "unallocatedAmount": 0,
+      "notes": "",
+      "createdBy": "Accounts Executive (Pooja Rao)",
+      "allocations": [
+        {
+          "id": "alloc_1792721597531_eiwq",
+          "invoiceId": "inv_1792721573900",
+          "invoiceNo": "INV/2026-27/0104",
+          "amount": 51920,
+          "allocatedBy": "Accounts Executive (Pooja Rao)",
+          "allocatedAt": "2026-10-23T02:13:17.531Z"
+        }
+      ],
+      "deductions": []
+    },
+    {
+      "id": "rec_201",
+      "receiptNo": "REC/2026-27/0201",
+      "customerId": "cust_tata_power",
+      "receivedOn": "2026-10-12",
+      "method": "NEFT",
+      "referenceNo": "HDFCN2628591024",
+      "bank": "HDFC Bank Ltd",
+      "amount": 150000,
+      "status": "VERIFIED",
+      "chequeStatus": null,
+      "idempotencyKey": "idem_rec_201",
+      "unallocatedAmount": 0,
+      "notes": "Part payment received for INV/2026-27/0101",
+      "createdBy": "Accounts Executive (Pooja Rao)",
+      "allocations": [
+        {
+          "id": "alloc_1",
+          "invoiceId": "inv_101",
+          "invoiceNo": "INV/2026-27/0101",
+          "amount": 150000,
+          "allocatedBy": "Accounts Executive (Pooja Rao)",
+          "allocatedAt": "2026-10-12T15:20:00Z"
+        }
+      ],
+      "deductions": []
+    },
+    {
+      "id": "rec_202",
+      "receiptNo": "REC/2026-27/0202",
+      "customerId": "cust_sterling_wilson",
+      "receivedOn": "2026-10-14",
+      "method": "RTGS",
+      "referenceNo": "ICICR52026101400",
+      "bank": "HDFC Bank Ltd",
+      "amount": 115000,
+      "status": "VERIFIED",
+      "chequeStatus": null,
+      "idempotencyKey": "idem_rec_202",
+      "unallocatedAmount": 0,
+      "notes": "Full settlement with TDS deduction Sec 194C",
+      "createdBy": "Accounts Executive (Pooja Rao)",
+      "allocations": [
+        {
+          "id": "alloc_2",
+          "invoiceId": "inv_103",
+          "invoiceNo": "INV/2026-27/0103",
+          "amount": 115000,
+          "allocatedBy": "Accounts Executive (Pooja Rao)",
+          "allocatedAt": "2026-10-14T11:45:00Z"
+        }
+      ],
+      "deductions": [
+        {
+          "id": "ded_1",
+          "invoiceId": "inv_103",
+          "type": "TDS_194C",
+          "description": "TDS @ 2% deducted under Section 194C",
+          "amount": 3000
+        }
+      ]
+    },
+    {
+      "id": "rec_203",
+      "receiptNo": "REC/2026-27/0203",
+      "customerId": "cust_adani_solar",
+      "receivedOn": "2026-10-21",
+      "method": "NEFT",
+      "referenceNo": "SBIN920261021489",
+      "bank": "HDFC Bank Ltd",
+      "amount": 50000,
+      "status": "VERIFIED",
+      "chequeStatus": null,
+      "idempotencyKey": "idem_rec_203",
+      "unallocatedAmount": 50000,
+      "notes": "Advance deposit for next batch supply",
+      "createdBy": "Accounts Executive (Pooja Rao)",
+      "allocations": [],
+      "deductions": []
+    }
+  ],
+  "creditNotes": [
+    {
+      "id": "cn_1",
+      "cnNo": "CN/2026-27/0011",
+      "invoiceId": "inv_101",
+      "invoiceNo": "INV/2026-27/0101",
+      "customerId": "cust_tata_power",
+      "issueDate": "2026-10-16",
+      "reason": "Discount allowed for prompt site unloading clearance",
+      "taxableAmount": 5000,
+      "cgstAmount": 450,
+      "sgstAmount": 450,
+      "igstAmount": 0,
+      "totalAmount": 5900,
+      "status": "APPROVED",
+      "approvedBy": "Finance Manager (Anita Deshmukh)"
+    }
+  ],
+  "followups": [
+    {
+      "id": "fol_1",
+      "customerId": "cust_tata_power",
+      "customerName": "Tata Power Renewable Energy Ltd",
+      "invoiceId": "inv_101",
+      "invoiceNo": "INV/2026-27/0101",
+      "owner": "Vikram Malhotra (M1 Sales)",
+      "mode": "PHONE_CALL",
+      "nextActionDate": "2026-10-25",
+      "promiseAmount": 53550,
+      "promiseDate": "2026-10-28",
+      "outcome": "Mr. Kulkarni confirmed balance payment passed in Friday treasury run.",
+      "status": "OPEN"
+    }
+  ],
+  "vendors": [
+    {
+      "id": "ven_hindalco",
+      "name": "Hindalco Industries Ltd (Copper Division)",
+      "gstin": "27AAACH0123M1Z2",
+      "stateCode": "27",
+      "paymentTerms": "Net 30 Days",
+      "contact": "Alok Gupta (Sales Head)"
+    },
+    {
+      "id": "ven_jindal",
+      "name": "Jindal Stainless Steel Hisar Ltd",
+      "gstin": "06AAACJ1928L1Z1",
+      "stateCode": "06",
+      "paymentTerms": "Net 15 Days",
+      "contact": "Manoj Verma"
+    }
+  ],
+  "vendorBills": [
+    {
+      "id": "vb_1",
+      "billNo": "HINDALCO/INV/8812",
+      "vendorId": "ven_hindalco",
+      "vendorName": "Hindalco Industries Ltd",
+      "poNumber": "PO-2026-031",
+      "grnNumber": "GRN-2026-089",
+      "billDate": "2026-10-10",
+      "dueDate": "2026-11-09",
+      "taxableAmount": 125000,
+      "gstAmount": 22500,
+      "totalAmount": 147500,
+      "paidAmount": 0,
+      "balanceAmount": 147500,
+      "matchResult": "MATCHED",
+      "matchDetails": "PO qty 250kg matches GRN 250kg @ ₹500/kg. Within 1% rate variance.",
+      "status": "APPROVED",
+      "approvedBy": "Finance Manager (Anita Deshmukh)"
+    },
+    {
+      "id": "vb_2",
+      "billNo": "JINDAL/SS/9104",
+      "vendorId": "ven_jindal",
+      "vendorName": "Jindal Stainless Steel Hisar Ltd",
+      "poNumber": "PO-2026-042",
+      "grnNumber": "GRN-2026-095",
+      "billDate": "2026-10-14",
+      "dueDate": "2026-10-29",
+      "taxableAmount": 70000,
+      "gstAmount": 12600,
+      "totalAmount": 82600,
+      "paidAmount": 0,
+      "balanceAmount": 82600,
+      "matchResult": "RATE_MISMATCH",
+      "matchDetails": "PO contracted rate ₹320/m, Vendor billed ₹350/m (+9.3% variance exceeds 1% tolerance).",
+      "status": "DRAFT",
+      "approvedBy": null
+    }
+  ],
+  "vendorPayments": [
+    {
+      "id": "vpay_1",
+      "paymentNo": "VPAY/2026-27/0300",
+      "vendorId": "ven_hindalco",
+      "vendorName": "Hindalco Industries Ltd",
+      "billId": "vb_1",
+      "billNo": "HINDALCO/INV/8812",
+      "paymentDate": "2026-10-20",
+      "method": "RTGS",
+      "referenceNo": "HDFCR52026102011",
+      "amount": 100000,
+      "tdsDeduction": 1250,
+      "status": "APPROVED"
+    }
+  ],
+  "jobCostLedger": [
+    {
+      "id": "jc_1",
+      "jobRef": "SO-2026-081",
+      "orderNo": "SO-2026-081",
+      "customerName": "Tata Power Renewable Energy Ltd",
+      "costType": "MATERIAL",
+      "sourceModule": "M2_STORES",
+      "sourceId": "ISSUE-2026-041",
+      "description": "Mild steel pipes 50mm & copper cladding coils",
+      "amount": 88500,
+      "costDate": "2026-10-03"
+    },
+    {
+      "id": "jc_2",
+      "jobRef": "SO-2026-081",
+      "orderNo": "SO-2026-081",
+      "customerName": "Tata Power Renewable Energy Ltd",
+      "costType": "LABOUR",
+      "sourceModule": "M4_PRODUCTION",
+      "sourceId": "WO-2026-019-LAB",
+      "description": "Welding, crystalline paste filling & inspection hours",
+      "amount": 18200,
+      "costDate": "2026-10-04"
+    },
+    {
+      "id": "jc_3",
+      "jobRef": "SO-2026-081",
+      "orderNo": "SO-2026-081",
+      "customerName": "Tata Power Renewable Energy Ltd",
+      "costType": "EXPENSE",
+      "sourceModule": "M5_PROJECTS",
+      "sourceId": "EXP-LOGISTICS-081",
+      "description": "Dedicated transport & insurance to solar site",
+      "amount": 8500,
+      "costDate": "2026-10-05"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": "aud_fin_1792734876631_8148",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_suryagrid",
+      "details": "Updated invoice INV-DRAFT dispute/notes",
+      "timestamp": "2026-10-23T05:54:36.631Z"
+    },
+    {
+      "id": "aud_fin_1792734379338_t31o",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_suryagrid",
+      "details": "Updated invoice INV-DRAFT dispute/notes",
+      "timestamp": "2026-10-23T05:46:19.338Z"
+    },
+    {
+      "id": "aud_fin_1792725019662_0c6t",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_suryagrid",
+      "details": "Updated invoice INV-DRAFT dispute/notes",
+      "timestamp": "2026-10-23T03:10:19.662Z"
+    },
+    {
+      "id": "aud_fin_1792725015906_k9z0",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_suryagrid",
+      "details": "Updated invoice INV-DRAFT dispute/notes",
+      "timestamp": "2026-10-23T03:10:15.906Z"
+    },
+    {
+      "id": "aud_fin_1792725012628_9ul3",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_suryagrid",
+      "details": "Updated invoice INV-DRAFT dispute/notes",
+      "timestamp": "2026-10-23T03:10:12.628Z"
+    },
+    {
+      "id": "aud_fin_1792725010264_l8i1",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_suryagrid",
+      "details": "Updated invoice INV-DRAFT dispute/notes",
+      "timestamp": "2026-10-23T03:10:10.264Z"
+    },
+    {
+      "id": "aud_fin_1792721597534_84gz",
+      "actor": "Accounts Executive",
+      "action": "RECORD_RECEIPT",
+      "entity": "Receipt",
+      "entityId": "rec_1792721597531",
+      "details": "Recorded NEFT receipt REC/2026-27/0205 for ₹51920 (Reference: CMS-HDFC-99128471)",
+      "timestamp": "2026-10-23T02:13:17.534Z"
+    },
+    {
+      "id": "aud_fin_1792721573902_g79t",
+      "actor": "Accounts Executive",
+      "action": "CREATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_1792721573900",
+      "details": "Created & issued GST invoice INV/2026-27/0104 for ₹51920",
+      "timestamp": "2026-10-23T02:12:53.902Z"
+    },
+    {
+      "id": "aud_fin_1",
+      "actor": "Finance Manager (Anita Deshmukh)",
+      "action": "ISSUE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_101",
+      "details": "Issued GST Tax Invoice INV/2026-27/0101 to Tata Power for ₹2,03,550",
+      "timestamp": "2026-10-05T10:30:00Z"
+    },
+    {
+      "id": "aud_fin_2",
+      "actor": "Accounts Executive (Pooja Rao)",
+      "action": "RECORD_RECEIPT",
+      "entity": "Receipt",
+      "entityId": "rec_201",
+      "details": "Recorded NEFT receipt ₹1,50,000 and allocated to INV/2026-27/0101",
+      "timestamp": "2026-10-12T15:20:00Z"
+    }
+  ],
+  "unifiedRegister": [
+    {
+      "id": "reg_1",
+      "invoiceNo": "INV-DRAFT",
+      "orderNo": "SO-2026-118",
+      "customerId": "cust_suryagrid",
+      "customerName": "SuryaGrid Projects",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 286000,
+      "gst": 51480,
+      "invoiceValue": 234520,
+      "paid": 128700,
+      "balance": 105820,
+      "dueDate": "2026-08-22",
+      "dueDisplay": "22 Aug",
+      "status": "Pending",
+      "owner": "Vikram Malhotra",
+      "isDraft": true,
+      "hasDocument": true,
+      "notes": "Milestone 1 delivered; awaiting installation sign-off for final release"
+    },
+    {
+      "id": "reg_2",
+      "invoiceNo": "—",
+      "orderNo": "SO-2026-121",
+      "customerId": "cust_vector_mep",
+      "customerName": "Vector MEP Solutions",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 174000,
+      "gst": 31320,
+      "invoiceValue": 0,
+      "paid": 0,
+      "balance": 0,
+      "dueDate": "2026-08-25",
+      "dueDisplay": "25 Aug",
+      "status": "—",
+      "owner": "Priya Sharma",
+      "isDraft": false,
+      "hasDocument": true,
+      "notes": "Dispatch pending from plant warehouse"
+    },
+    {
+      "id": "reg_3",
+      "invoiceNo": "INV-116",
+      "orderNo": "SO-2026-116",
+      "customerId": "cust_pragati",
+      "customerName": "Pragati Electrical",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 96000,
+      "gst": 17280,
+      "invoiceValue": 78720,
+      "paid": 43200,
+      "balance": 35520,
+      "dueDate": "2026-08-28",
+      "dueDisplay": "28 Aug",
+      "status": "Part Paid",
+      "owner": "Vikram Malhotra",
+      "isDraft": false,
+      "hasDocument": true,
+      "notes": "Part payment received via UPI; follow up for remaining ₹35,520 balance"
+    },
+    {
+      "id": "reg_4",
+      "invoiceNo": "—",
+      "orderNo": "SO-2026-124",
+      "customerId": "cust_metrobuild",
+      "customerName": "MetroBuild Infra",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 118000,
+      "gst": 21240,
+      "invoiceValue": 0,
+      "paid": 0,
+      "balance": 0,
+      "dueDate": "2026-08-22",
+      "dueDisplay": "22 Aug",
+      "status": "—",
+      "owner": "Priya Sharma",
+      "isDraft": false,
+      "hasDocument": true,
+      "notes": "Awaiting final site inspection sign-off"
+    },
+    {
+      "id": "reg_5",
+      "invoiceNo": "—",
+      "orderNo": "SO-2026-129",
+      "customerId": "cust_nexvolt",
+      "customerName": "NexVolt EPC",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 142000,
+      "gst": 25560,
+      "invoiceValue": 0,
+      "paid": 0,
+      "balance": 0,
+      "dueDate": "2026-08-25",
+      "dueDisplay": "25 Aug",
+      "status": "—",
+      "owner": "Vikram Malhotra",
+      "isDraft": false,
+      "hasDocument": true,
+      "notes": "Materials scheduled for dispatch on 24th"
+    },
+    {
+      "id": "reg_6",
+      "invoiceNo": "INV-DRAFT",
+      "orderNo": "SO-2026-109",
+      "customerId": "cust_greenarc",
+      "customerName": "GreenArc Solar Works",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 318000,
+      "gst": 57240,
+      "invoiceValue": 260760,
+      "paid": 143100,
+      "balance": 117660,
+      "dueDate": "2026-08-28",
+      "dueDisplay": "28 Aug",
+      "status": "Pending",
+      "owner": "Vikram Malhotra",
+      "isDraft": true,
+      "hasDocument": true,
+      "notes": "Generate GST invoice after final QC verification"
+    },
+    {
+      "id": "reg_7",
+      "invoiceNo": "—",
+      "orderNo": "SO-DRAFT-132",
+      "customerId": "cust_citygrid",
+      "customerName": "CityGrid Electricals",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 126000,
+      "gst": 22680,
+      "invoiceValue": 0,
+      "paid": 0,
+      "balance": 0,
+      "dueDate": "2026-08-22",
+      "dueDisplay": "22 Aug",
+      "status": "—",
+      "owner": "Priya Sharma",
+      "isDraft": false,
+      "hasDocument": true,
+      "notes": "Draft sales quotation under commercial negotiation"
+    },
+    {
+      "id": "reg_8",
+      "invoiceNo": "—",
+      "orderNo": "SO-DRAFT-136",
+      "customerId": "cust_pioneer",
+      "customerName": "Pioneer Power Controls",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 198000,
+      "gst": 35640,
+      "invoiceValue": 0,
+      "paid": 0,
+      "balance": 0,
+      "dueDate": "2026-08-25",
+      "dueDisplay": "25 Aug",
+      "status": "—",
+      "owner": "Vikram Malhotra",
+      "isDraft": false,
+      "hasDocument": true,
+      "notes": "Credit limit verified; PO awaited"
+    },
+    {
+      "id": "reg_9",
+      "invoiceNo": "—",
+      "orderNo": "SO-DRAFT-141",
+      "customerId": "cust_omega",
+      "customerName": "Omega Industrial Projects",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 165000,
+      "gst": 29700,
+      "invoiceValue": 0,
+      "paid": 0,
+      "balance": 0,
+      "dueDate": "2026-08-28",
+      "dueDisplay": "28 Aug",
+      "status": "—",
+      "owner": "Priya Sharma",
+      "isDraft": false,
+      "hasDocument": true,
+      "notes": "Engineering drawing approved; BOM released"
+    },
+    {
+      "id": "reg_10",
+      "invoiceNo": "—",
+      "orderNo": "Not Created",
+      "customerId": "cust_apex",
+      "customerName": "Apex Telecom Infra",
+      "gstin": "27AAACY1234F1Z5",
+      "taxable": 0,
+      "gst": 0,
+      "invoiceValue": 0,
+      "paid": 0,
+      "balance": 0,
+      "dueDate": "2026-08-22",
+      "dueDisplay": "22 Aug",
+      "status": "—",
+      "owner": "Vikram Malhotra",
+      "isDraft": false,
+      "hasDocument": true,
+      "notes": "Enquiry in qualification stage"
+    }
+  ],
+  "dailyTodos": [
+    {
+      "id": "todo_1",
+      "title": "Collect Pragati balance",
+      "context": "INV-116 · part paid",
+      "dueText": "Today",
+      "isCompleted": false,
+      "assigneeRole": "Accounts Executive",
+      "actionType": "COLLECT"
+    },
+    {
+      "id": "todo_2",
+      "title": "Generate GreenArc GST invoice",
+      "context": "After final QC",
+      "dueText": "Today",
+      "isCompleted": false,
+      "assigneeRole": "Accounts Executive",
+      "actionType": "INVOICE"
+    },
+    {
+      "id": "todo_3",
+      "title": "Confirm billing milestone",
+      "context": "SuryaGrid installation",
+      "dueText": "Tomorrow",
+      "isCompleted": false,
+      "assigneeRole": "Finance Manager",
+      "actionType": "MILESTONE"
+    }
+  ],
+  "targetAchievement": {
+    "collectionsCurrent": 604000,
+    "collectionsTarget": 800000,
+    "dailyAchievementPercent": 76,
+    "weeklyPercent": 80,
+    "monthlyPercent": 73
+  },
+  "demoKpis": {
+    "invoiced": 948000,
+    "collected": 344000,
+    "collectedPercent": 36,
+    "receivable": 604000,
+    "overdue": 118000,
+    "dsoDays": 38
+  },
+  "profitabilityRegister": [
+    {
+      "id": "prof_1",
+      "orderNo": "SO-2026-118",
+      "customerName": "SuryaGrid Projects",
+      "product": "YEC Copper Bonded Rod",
+      "revenue": 286000,
+      "material": 103818,
+      "production": 41527,
+      "logistics": 16988,
+      "installation": 15101,
+      "grossProfit": 97240,
+      "margin": "34%",
+      "status": "Healthy",
+      "owner": "Vikram Malhotra",
+      "ledgerRef": "LEDG-2026-118",
+      "plRef": "PL-2026-118"
+    },
+    {
+      "id": "prof_2",
+      "orderNo": "SO-2026-121",
+      "customerName": "Vector MEP Solutions",
+      "product": "Pure Copper Earthing Electrode",
+      "revenue": 174000,
+      "material": 63162,
+      "production": 25265,
+      "logistics": 10336,
+      "installation": 9187,
+      "grossProfit": 59160,
+      "margin": "34%",
+      "status": "Healthy",
+      "owner": "Priya Sharma",
+      "ledgerRef": "LEDG-2026-121",
+      "plRef": "PL-2026-121"
+    },
+    {
+      "id": "prof_3",
+      "orderNo": "SO-2026-116",
+      "customerName": "Pragati Electrical",
+      "product": "7-YES Backfill Compound",
+      "revenue": 96000,
+      "material": 34848,
+      "production": 13939,
+      "logistics": 5702,
+      "installation": 5069,
+      "grossProfit": 32640,
+      "margin": "34%",
+      "status": "Healthy",
+      "owner": "Vikram Malhotra",
+      "ledgerRef": "LEDG-2026-116",
+      "plRef": "PL-2026-116"
+    },
+    {
+      "id": "prof_4",
+      "orderNo": "SO-2026-124",
+      "customerName": "MetroBuild Infra",
+      "product": "Earth Pit Cover",
+      "revenue": 118000,
+      "material": 42834,
+      "production": 17134,
+      "logistics": 7009,
+      "installation": 6230,
+      "grossProfit": 40120,
+      "margin": "34%",
+      "status": "Healthy",
+      "owner": "Amit Verma",
+      "ledgerRef": "LEDG-2026-124",
+      "plRef": "PL-2026-124"
+    },
+    {
+      "id": "prof_5",
+      "orderNo": "SO-2026-129",
+      "customerName": "NexVolt EPC",
+      "product": "ESE Lightning Arrester",
+      "revenue": 142000,
+      "material": 51546,
+      "production": 20618,
+      "logistics": 8435,
+      "installation": 7498,
+      "grossProfit": 48280,
+      "margin": "34%",
+      "status": "Healthy",
+      "owner": "Priya Sharma",
+      "ledgerRef": "LEDG-2026-129",
+      "plRef": "PL-2026-129"
+    },
+    {
+      "id": "prof_6",
+      "orderNo": "SO-2026-109",
+      "customerName": "GreenArc Solar Works",
+      "product": "YEC Copper Bonded Rod",
+      "revenue": 318000,
+      "material": 115434,
+      "production": 46174,
+      "logistics": 18889,
+      "installation": 16790,
+      "grossProfit": 108120,
+      "margin": "34%",
+      "status": "Healthy",
+      "owner": "Vikram Malhotra",
+      "ledgerRef": "LEDG-2026-109",
+      "plRef": "PL-2026-109"
+    },
+    {
+      "id": "prof_7",
+      "orderNo": "SO-DRAFT-132",
+      "customerName": "CityGrid Electricals",
+      "product": "Lightning Strike Counter",
+      "revenue": 126000,
+      "material": 45738,
+      "production": 18295,
+      "logistics": 7484,
+      "installation": 6653,
+      "grossProfit": 42840,
+      "margin": "34%",
+      "status": "Draft",
+      "owner": "Amit Verma",
+      "ledgerRef": "LEDG-2026-132",
+      "plRef": "PL-2026-132"
+    },
+    {
+      "id": "prof_8",
+      "orderNo": "SO-DRAFT-136",
+      "customerName": "Pioneer Power Controls",
+      "product": "Pure Copper Earthing Electrode",
+      "revenue": 198000,
+      "material": 71874,
+      "production": 28750,
+      "logistics": 11761,
+      "installation": 10454,
+      "grossProfit": 67320,
+      "margin": "34%",
+      "status": "Draft",
+      "owner": "Priya Sharma",
+      "ledgerRef": "LEDG-2026-136",
+      "plRef": "PL-2026-136"
+    },
+    {
+      "id": "prof_9",
+      "orderNo": "SO-DRAFT-141",
+      "customerName": "Omega Industrial Projects",
+      "product": "Earth Pit Cover",
+      "revenue": 165000,
+      "material": 59895,
+      "production": 23958,
+      "logistics": 9801,
+      "installation": 8712,
+      "grossProfit": 56100,
+      "margin": "34%",
+      "status": "Draft",
+      "owner": "Vikram Malhotra",
+      "ledgerRef": "LEDG-2026-141",
+      "plRef": "PL-2026-141"
+    },
+    {
+      "id": "prof_10",
+      "orderNo": "Not Created",
+      "customerName": "Apex Telecom Infra",
+      "product": "ESE Lightning Arrester",
+      "revenue": 0,
+      "material": 0,
+      "production": 0,
+      "logistics": 0,
+      "installation": 0,
+      "grossProfit": 0,
+      "margin": "0%",
+      "status": "Unassigned",
+      "owner": "Vikram Malhotra",
+      "ledgerRef": "LEDG-APEX",
+      "plRef": "PL-APEX"
+    }
+  ]
+}

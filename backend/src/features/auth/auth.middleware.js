@@ -1,5 +1,6 @@
 import prisma from "../../db/prisma.js";
 import { verifyToken } from "./auth.utils.js";
+import { findFallbackUserByEmail, findFallbackUserById } from "./auth.service.js";
 
 export async function authenticate(req, res, next) {
   try {
@@ -20,20 +21,30 @@ export async function authenticate(req, res, next) {
     }
 
     const decoded = verifyToken(token);
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        department: true,
-        designation: true,
-        approvalStatus: true,
-        isActive: true,
-        avatarUrl: true,
-      },
-    });
+    let user = null;
+
+    try {
+      user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          department: true,
+          designation: true,
+          approvalStatus: true,
+          isActive: true,
+          avatarUrl: true,
+        },
+      });
+    } catch {
+      // Database unavailable, try fallback
+    }
+
+    if (!user) {
+      user = findFallbackUserById(decoded.id) || findFallbackUserByEmail(decoded.email);
+    }
 
     if (!user) {
       return res.status(401).json({
