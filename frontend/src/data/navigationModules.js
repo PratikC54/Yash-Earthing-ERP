@@ -3,14 +3,39 @@
 
 export const initialNavSections = [
   {
-    id: 'overview',
-    title: 'OVERVIEW',
+    id: 'procurement',
+    title: 'PROCUREMENT & INVENTORY',
     items: [
       {
-        id: 'dashboard',
-        name: 'Dashboard',
+        id: 'procurement-dashboard',
+        name: 'Procurement Dashboard',
         icon: 'LayoutGrid',
         active: true,
+      },
+      {
+        id: 'vendors',
+        name: 'Vendor Directory',
+        icon: 'Users',
+      },
+      {
+        id: 'purchase-requests',
+        name: 'Requisitions & RFQs',
+        icon: 'ShoppingCart',
+      },
+      {
+        id: 'purchase-orders',
+        name: 'Purchase Orders',
+        icon: 'Layers',
+      },
+      {
+        id: 'goods-receipts',
+        name: 'Goods Receipts (GRN)',
+        icon: 'Truck',
+      },
+      {
+        id: 'inventory',
+        name: 'Inventory & Stock',
+        icon: 'Box',
       },
     ],
   },

@@ -37,24 +37,39 @@ export default function Sidebar({
   onSelectModule,
   onOpenAddModuleModal,
   user,
+  isOpen,
+  onClose,
 }) {
   const [searchQuery, setSearchQuery] = useState('')
 
-  return (
+  const sidebarContent = (
     <aside className="w-64 bg-[#141d30] text-slate-300 flex flex-col h-full border-r border-slate-800/90 select-none shrink-0 transition-all duration-200">
       {/* Top Branding */}
-      <div className="px-5 py-5 flex items-center space-x-3 border-b border-slate-800/60">
-        <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-md shadow-blue-900/30">
-          <Globe className="w-5 h-5 text-white" />
-        </div>
-        <div>
-          <div className="text-white font-bold text-base tracking-tight leading-none">
-            Meridian
+      <div className="px-5 py-5 flex items-center justify-between border-b border-slate-800/60">
+        <div className="flex items-center space-x-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center shadow-md shadow-emerald-900/30">
+            <Globe className="w-5 h-5 text-white" />
           </div>
-          <div className="text-[10px] font-semibold text-cyan-400/90 tracking-wider mt-1 uppercase">
-            ERP Cloud
+          <div>
+            <div className="text-white font-bold text-base tracking-tight leading-none">
+              Yash ERP
+            </div>
+            <div className="text-[9px] font-semibold text-emerald-400 tracking-wider mt-1 uppercase">
+              Industrial Earthing Solutions
+            </div>
           </div>
         </div>
+        {/* Mobile Close Button */}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+            aria-label="Close sidebar"
+          >
+            <ChevronRight className="w-5 h-5 rotate-180" />
+          </button>
+        )}
       </div>
 
       {/* Quick Search */}
@@ -162,5 +177,35 @@ export default function Sidebar({
         </div>
       </div>
     </aside>
+  )
+
+  return (
+    <>
+      {/* Desktop Persistent Sidebar */}
+      <div className="hidden lg:flex h-full shrink-0">
+        {sidebarContent}
+      </div>
+
+      {/* Mobile Drawer Overlay & Slide-out Sidebar */}
+      <div
+        className={`fixed inset-0 z-50 lg:hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+        }`}
+      >
+        {/* Backdrop */}
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+          onClick={onClose}
+        />
+        {/* Drawer Slider */}
+        <div
+          className={`fixed inset-y-0 left-0 w-64 max-w-[85vw] transform transition-transform duration-300 ease-in-out shadow-2xl ${
+            isOpen ? 'translate-x-0' : '-translate-x-full'
+          }`}
+        >
+          {sidebarContent}
+        </div>
+      </div>
+    </>
   )
 }
