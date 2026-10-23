@@ -1,4 +1,6 @@
 // Navigation modules configuration strictly for Module 1 (Sales, CRM & Order Management)
+// Navigation configuration with single dashboard module and Module 3
+// Easily extensible: additional modules can still be added dynamically via UI
 
 export const initialNavSections = [
   {
@@ -41,6 +43,19 @@ export const initialNavSections = [
         name: 'Orders & Dispatch Ready',
         desc: 'Customer PO · Manager SO · Physical stock check',
         icon: 'ShoppingCart',
+      },
+    ],
+  },
+  {
+    id: 'manufacturing',
+    title: 'MANUFACTURING & ENGINEERING',
+    items: [
+      {
+        id: 'engineering',
+        name: 'M3 · Product & Engineering',
+        icon: 'Layers',
+        badge: 'M3',
+        active: false,
       },
     ],
   },

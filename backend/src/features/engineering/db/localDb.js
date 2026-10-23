@@ -1,0 +1,553 @@
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DB_PATH = path.resolve(__dirname, '../../../data/engineering_db.json');
+
+const INITIAL_DATA = {
+  categories: [
+    {
+      id: "cat_electrode",
+      code: "CAT-ELECTRODE",
+      name: "Copper Chemical Earthing Electrodes",
+      description: "Pipe-in-pipe chemical earthing electrodes with crystalline compound filling",
+      specTemplate: [
+        { attribute: "Conductor Material", unit: "", required: true, standard: "IS 3043 / IEEE 80" },
+        { attribute: "Outer Diameter", unit: "mm", required: true, standard: "UL 467" },
+        { attribute: "Total Length", unit: "meter", required: true, standard: "IS 3043" },
+        { attribute: "Internal Pipe Thickness", unit: "mm", required: true, standard: "IS 1239" },
+        { attribute: "Terminal Hole Size", unit: "mm", required: false, standard: "Standard M10/M12" },
+        { attribute: "Short Circuit Current Rating", unit: "kA", required: false, standard: "CPRI Tested 40kA" }
+      ]
+    },
+    {
+      id: "cat_bonded_rod",
+      code: "CAT-BONDED-ROD",
+      name: "Copper Bonded Earthing Rods",
+      description: "High tensile low carbon steel core with molecularly bonded electrolytic copper",
+      specTemplate: [
+        { attribute: "Core Material", unit: "", required: true, standard: "High Tensile Carbon Steel" },
+        { attribute: "Rod Diameter", unit: "mm", required: true, standard: "UL 467" },
+        { attribute: "Rod Length", unit: "meter", required: true, standard: "IEC 62561-2" },
+        { attribute: "Copper Coating Thickness", unit: "microns", required: true, standard: "Min 250 microns (UL Listed)" },
+        { attribute: "Tensile Strength", unit: "N/mm²", required: false, standard: "600 N/mm²" }
+      ]
+    },
+    {
+      id: "cat_lightning",
+      code: "CAT-LIGHTNING",
+      name: "Lightning Protection & ESE Arresters",
+      description: "Early Streamer Emission (ESE) and Franklin rods for facility surge protection",
+      specTemplate: [
+        { attribute: "Discharge Current Rating", unit: "kA", required: true, standard: "NFC 17-102" },
+        { attribute: "Radius of Protection", unit: "meter", required: true, standard: "Level I - IV Protection" },
+        { attribute: "Housing Material Grade", unit: "", required: true, standard: "SS 304 / SS 316L" },
+        { attribute: "Mast Connector Thread", unit: "inch", required: false, standard: "1.25 inch BSP" }
+      ]
+    },
+    {
+      id: "cat_compound",
+      code: "CAT-COMPOUND",
+      name: "Ground Enhancing Compounds",
+      description: "Carbon and bentonite based low resistivity conductivity backfill material",
+      specTemplate: [
+        { attribute: "Resistivity", unit: "ohm-meter", required: true, standard: "< 0.05 ohm-m (IEC 62561-7)" },
+        { attribute: "Packaging Net Weight", unit: "kg", required: true, standard: "Standard HDPE Bag" },
+        { attribute: "Leaching & Toxics", unit: "", required: true, standard: "RoHS / Non-Leaching Certified" }
+      ]
+    },
+    {
+      id: "cat_pitcover",
+      code: "CAT-PITCOVER",
+      name: "Earth Pit Inspection Covers",
+      description: "Heavy duty non-conductive FRP and Cast Iron pit covers for chamber inspection",
+      specTemplate: [
+        { attribute: "Chamber Material", unit: "", required: true, standard: "Polypropylene / FRP / CI" },
+        { attribute: "Top Flange Diameter", unit: "mm", required: true, standard: "Factory Standard" },
+        { attribute: "Load Bearing Capacity", unit: "Ton", required: true, standard: "CPRI Tested 5T/10T" }
+      ]
+    },
+    {
+      id: "cat_raw_materials",
+      code: "CAT-RAW",
+      name: "Raw Materials & Fasteners",
+      description: "Base metals, ingots, pipes, brass terminals, and chemical additives used in BOMs",
+      specTemplate: [
+        { attribute: "Material Grade", unit: "", required: true, standard: "Standard Metallurgy" },
+        { attribute: "Purity / Content", unit: "%", required: false, standard: "99.9% Electrolytic" }
+      ]
+    }
+  ],
+
+  products: [
+    {
+      id: "prod_cbe_50_3m",
+      sku: "SKU-CBE-50-3M",
+      name: "Yash Copper Bonded Earthing Electrode 50mm x 3m",
+      categoryId: "cat_electrode",
+      itemType: "FINISHED",
+      material: "Copper Bonded Mild Steel with Crystalline Core",
+      size: "50 mm",
+      length: "3.0 m",
+      finish: "250 Microns Copper Coating",
+      uom: "NOS",
+      rate: 3450.0,
+      gstPercent: 18,
+      status: "ACTIVE",
+      description: "Premium dual-pipe earthing electrode with crystalline mineral paste filling for rocky/high-resistivity soil.",
+      referenceImage: "https://images.unsplash.com/photo-1581092160607-ee22621dd758?w=600&auto=format&fit=crop&q=80",
+      specifications: [
+        { attribute: "Conductor Material", value: "Copper Clad High Tensile Steel", unit: "", tolerance: "±0.5%", standard: "IS 3043" },
+        { attribute: "Outer Diameter", value: "50", unit: "mm", tolerance: "±0.2mm", standard: "UL 467" },
+        { attribute: "Total Length", value: "3.0", unit: "meter", tolerance: "±5mm", standard: "IS 3043" },
+        { attribute: "Internal Pipe Thickness", value: "3.2", unit: "mm", tolerance: "±0.1mm", standard: "IS 1239" },
+        { attribute: "Terminal Hole Size", value: "12", unit: "mm", tolerance: "±0.1mm", standard: "Standard M12" },
+        { attribute: "Short Circuit Current Rating", value: "40", unit: "kA", tolerance: "for 1 sec", standard: "CPRI Tested" }
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "prod_cbr_17_3m",
+      sku: "SKU-CBR-17-3M",
+      name: "Yash Solid Copper Bonded Rod 17.2mm x 3.0m (UL Listed)",
+      categoryId: "cat_bonded_rod",
+      itemType: "FINISHED",
+      material: "99.9% Electrolytic Copper on Carbon Steel",
+      size: "17.2 mm",
+      length: "3.0 m",
+      finish: "254 Microns Molecular Copper Bond",
+      uom: "NOS",
+      rate: 1850.0,
+      gstPercent: 18,
+      status: "ACTIVE",
+      description: "UL 467 Listed solid high-tensile steel core driven earth rod for substations and data centers.",
+      referenceImage: "https://images.unsplash.com/photo-1504917599217-d4dc5ebe6122?w=600&auto=format&fit=crop&q=80",
+      specifications: [
+        { attribute: "Core Material", value: "Low Carbon Steel Grade SAE 1018", unit: "", tolerance: "Grade Standard", standard: "ASTM A108" },
+        { attribute: "Rod Diameter", value: "17.2", unit: "mm", tolerance: "±0.15mm", standard: "UL 467" },
+        { attribute: "Rod Length", value: "3.0", unit: "meter", tolerance: "±5mm", standard: "IEC 62561-2" },
+        { attribute: "Copper Coating Thickness", value: "254", unit: "microns", tolerance: "Min 254um", standard: "UL 467 Listed" },
+        { attribute: "Tensile Strength", value: "620", unit: "N/mm²", tolerance: "±20 N/mm²", standard: "BS EN 50164" }
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "prod_ese_60m",
+      sku: "SKU-ESE-60M",
+      name: "Yash ESE Early Streamer Emission Lightning Arrester (Radius 60m)",
+      categoryId: "cat_lightning",
+      itemType: "FINISHED",
+      material: "Grade 316L Stainless Steel Housing",
+      size: "60m Protection Radius",
+      length: "420 mm",
+      finish: "Mirror Polished Electrolytic Passivated",
+      uom: "NOS",
+      rate: 28500.0,
+      gstPercent: 18,
+      status: "ACTIVE",
+      description: "Early Streamer Emission terminal tested as per French NFC 17-102:2011 standard with 60 microsecond emission advantage.",
+      referenceImage: "https://images.unsplash.com/photo-1541888946425-d0fbb186f5f7?w=600&auto=format&fit=crop&q=80",
+      specifications: [
+        { attribute: "Discharge Current Rating", value: "100", unit: "kA", tolerance: "10/350 us pulse", standard: "NFC 17-102:2011" },
+        { attribute: "Radius of Protection", value: "60", unit: "meter", tolerance: "At Level IV", standard: "NFC 17-102" },
+        { attribute: "Housing Material Grade", value: "SS 316L", unit: "", tolerance: "AISI Standard", standard: "Corrosion Proof" },
+        { attribute: "Mast Connector Thread", value: "1.25", unit: "inch", tolerance: "BSP Thread", standard: "Factory Standard" }
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "prod_bfc_25kg",
+      sku: "SKU-BFC-25KG",
+      name: "Yash Low-Resistivity Earth Enhancing Compound (25kg)",
+      categoryId: "cat_compound",
+      itemType: "FINISHED",
+      material: "Non-Soluble Carbonaceous Conductive Minerals",
+      size: "25 kg Bag",
+      length: "N/A",
+      finish: "Powder Formulation",
+      uom: "BAG",
+      rate: 780.0,
+      gstPercent: 18,
+      status: "ACTIVE",
+      description: "Low resistance backfill compound that retains moisture and prevents soil corrosion.",
+      referenceImage: "https://images.unsplash.com/photo-1589939705384-5185137a7f0f?w=600&auto=format&fit=crop&q=80",
+      specifications: [
+        { attribute: "Resistivity", value: "0.035", unit: "ohm-meter", tolerance: "< 0.05 max", standard: "IEC 62561-7" },
+        { attribute: "Packaging Net Weight", value: "25", unit: "kg", tolerance: "±0.2kg", standard: "Standard HDPE" },
+        { attribute: "Leaching & Toxics", value: "Nil / Eco-Safe", unit: "", tolerance: "Zero Toxicity", standard: "RoHS Compliant" }
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "prod_epc_frp",
+      sku: "SKU-EPC-FRP",
+      name: "Heavy Duty Polypropylene Inspection Pit Cover (300mm, 5 Ton)",
+      categoryId: "cat_pitcover",
+      itemType: "FINISHED",
+      material: "UV Stabilized Polypropylene / FRP",
+      size: "300 mm Top Dia",
+      length: "260 mm Depth",
+      finish: "High Visibility Green with Yash Embossed Logo",
+      uom: "NOS",
+      rate: 420.0,
+      gstPercent: 18,
+      status: "ACTIVE",
+      description: "Heavy duty non-corrosive earth pit cover with lockable lid for earthing testing access.",
+      referenceImage: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=600&auto=format&fit=crop&q=80",
+      specifications: [
+        { attribute: "Chamber Material", value: "Reinforced Polypropylene", unit: "", tolerance: "UV Grade", standard: "ISO 9001" },
+        { attribute: "Top Flange Diameter", value: "300", unit: "mm", tolerance: "±2mm", standard: "Standard Pit" },
+        { attribute: "Load Bearing Capacity", value: "5", unit: "Ton", tolerance: "5000 kg", standard: "CPRI Tested" }
+      ],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+
+    // Raw Materials & Components for BOMs
+    {
+      id: "raw_ms_pipe_50",
+      sku: "RAW-MS-PIPE-50",
+      name: "Heavy Duty Mild Steel Outer Pipe 50mm NB Class B",
+      categoryId: "cat_raw_materials",
+      itemType: "RAW_MATERIAL",
+      material: "IS 1239 Mild Steel",
+      size: "50 mm NB",
+      length: "3.0 m",
+      finish: "Pickled & Chemically Cleaned",
+      uom: "METER",
+      rate: 320.0,
+      gstPercent: 18,
+      status: "ACTIVE",
+      stockQuantity: 450, // For shortage check
+      description: "Base pipe for electrode fabrication.",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "raw_cu_strip_core",
+      sku: "RAW-CU-STRIP-25X3",
+      name: "Electrolytic Grade Copper Strip 25x3mm (99.9% Pure)",
+      categoryId: "cat_raw_materials",
+      itemType: "RAW_MATERIAL",
+      material: "Electrolytic Tough Pitch (ETP) Copper",
+      size: "25 x 3 mm",
+      length: "Per Meter",
+      finish: "Bright Annealed",
+      uom: "KG",
+      rate: 850.0,
+      gstPercent: 18,
+      status: "ACTIVE",
+      stockQuantity: 280,
+      description: "Central internal conductor rod/strip.",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "raw_cryst_fill",
+      sku: "RAW-CRYST-FILL",
+      name: "High Conductivity Crystalline Earth Mineral Mix",
+      categoryId: "cat_raw_materials",
+      itemType: "RAW_MATERIAL",
+      material: "Alkali-based mineral compound",
+      size: "Bulk Grain",
+      length: "N/A",
+      finish: "Factory Blended",
+      uom: "KG",
+      rate: 45.0,
+      gstPercent: 18,
+      status: "ACTIVE",
+      stockQuantity: 1200,
+      description: "Internal moisture-absorbing paste filled inside electrode.",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    },
+    {
+      id: "comp_brass_terminal",
+      sku: "COMP-BRASS-CLAMP-50",
+      name: "Cast Brass Terminal Clamp 50mm with SS M12 Hardware",
+      categoryId: "cat_raw_materials",
+      itemType: "COMPONENT",
+      material: "High Conductivity Cast Brass & SS304 Bolts",
+      size: "50 mm Clamp",
+      length: "Standard",
+      finish: "Electro-Tinned",
+      uom: "SET",
+      rate: 195.0,
+      gstPercent: 18,
+      status: "ACTIVE",
+      stockQuantity: 150,
+      description: "Top terminal assembly for strip/cable interconnection.",
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }
+  ],
+
+  costingPolicy: {
+    id: "policy_yash_std_2026",
+    name: "Yash Group Standard Engineering Costing Policy (v1.0)",
+    includeScrap: true,
+    materialRateSource: "PRODUCT_MASTER_RATE",
+    labourCostPerUnit: 140.0,
+    overheadPercent: 12.0,
+    targetMarginPercent: 28.0,
+    defaultGstPercent: 18.0,
+    requireSeparateApprover: true,
+    requireReleasedDrawingForBom: false,
+    isActive: true,
+    updatedAt: new Date().toISOString()
+  },
+
+  boms: [
+    {
+      id: "bom_cbe_50_3m",
+      productId: "prod_cbe_50_3m",
+      bomCode: "BOM-CBE-50-3M",
+      title: "Standard Bill of Materials for 50mm x 3m Copper Bonded Electrode",
+      createdAt: new Date().toISOString(),
+      revisions: [
+        {
+          id: "bom_rev_cbe_50_a",
+          revisionCode: "Rev A",
+          status: "RELEASED",
+          changeReason: "Initial approved manufacturing formulation for ISO 9001 audit.",
+          createdBy: "Eng. Vikram Sharma",
+          submittedBy: "Eng. Vikram Sharma",
+          submittedAt: "2026-10-10T10:00:00Z",
+          approvedBy: "Head of Engineering (Pratik Senapati)",
+          approvedAt: "2026-10-11T14:30:00Z",
+          releasedBy: "Head of Engineering (Pratik Senapati)",
+          releasedAt: "2026-10-11T14:35:00Z",
+          policyId: "policy_yash_std_2026",
+          costSnapshot: {
+            materialCost: 2012.50,
+            labourCost: 140.00,
+            overheadCost: 258.30,
+            totalCost: 2410.80,
+            suggestedPrice: 3085.82,
+            targetMarginPercent: 28.0,
+            computedAt: "2026-10-11T14:35:00Z"
+          },
+          items: [
+            {
+              id: "item_1",
+              componentProductId: "raw_ms_pipe_50",
+              componentSku: "RAW-MS-PIPE-50",
+              componentName: "Heavy Duty Mild Steel Outer Pipe 50mm NB Class B",
+              quantity: 3.0,
+              uom: "METER",
+              unitRate: 320.0,
+              scrapPercent: 2.5,
+              lineCost: 984.0,
+              note: "Cut to exactly 3.0m and pre-pierced with conductor diffusion holes"
+            },
+            {
+              id: "item_2",
+              componentProductId: "raw_cu_strip_core",
+              componentSku: "RAW-CU-STRIP-25X3",
+              componentName: "Electrolytic Grade Copper Strip 25x3mm (99.9% Pure)",
+              quantity: 0.85,
+              uom: "KG",
+              unitRate: 850.0,
+              scrapPercent: 1.5,
+              lineCost: 733.36,
+              note: "Internal conductor strip with dual welded terminal lug"
+            },
+            {
+              id: "item_3",
+              componentProductId: "raw_cryst_fill",
+              componentSku: "RAW-CRYST-FILL",
+              componentName: "High Conductivity Crystalline Earth Mineral Mix",
+              quantity: 12.0,
+              uom: "KG",
+              unitRate: 45.0,
+              scrapPercent: 1.0,
+              lineCost: 545.40,
+              note: "Vibrated pneumatic injection for zero air cavities"
+            },
+            {
+              id: "item_4",
+              componentProductId: "comp_brass_terminal",
+              componentSku: "COMP-BRASS-CLAMP-50",
+              componentName: "Cast Brass Terminal Clamp 50mm with SS M12 Hardware",
+              quantity: 1.0,
+              uom: "SET",
+              unitRate: 195.0,
+              scrapPercent: 0.0,
+              lineCost: 195.0,
+              note: "Includes double zinc plated spring washers and nylon lock nuts"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+
+  drawings: [
+    {
+      id: "drw_cbe_50_ga",
+      drawingNo: "YASH-ENG-DWG-501",
+      title: "General Arrangement & Fabrication Cross-Section: 50mm Electrode",
+      type: "FABRICATION",
+      productId: "prod_cbe_50_3m",
+      bomId: "bom_cbe_50_3m",
+      status: "RELEASED",
+      latestRevision: "Rev A",
+      revisions: [
+        {
+          id: "drw_rev_501_a",
+          revisionCode: "Rev A",
+          status: "RELEASED",
+          fileName: "YASH-ENG-DWG-501-RevA.pdf",
+          fileSize: "2.4 MB",
+          fileType: "application/pdf",
+          checksum: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          changeReason: "Initial shop-floor production release approved by engineering.",
+          uploadedBy: "Eng. Vikram Sharma",
+          uploadedAt: "2026-10-10T11:00:00Z",
+          releasedBy: "Head of Engineering (Pratik Senapati)",
+          releasedAt: "2026-10-11T15:00:00Z",
+          downloadUrl: "/api/v1/engineering/drawings/drw_cbe_50_ga/download?rev=Rev%20A"
+        }
+      ]
+    },
+    {
+      id: "drw_ese_60_inst",
+      drawingNo: "YASH-ENG-DWG-602",
+      title: "ESE Arrester Mast Mounting & Down-Conductor Installation Layout",
+      type: "INSTALLATION",
+      productId: "prod_ese_60m",
+      bomId: null,
+      status: "RELEASED",
+      latestRevision: "Rev A",
+      revisions: [
+        {
+          id: "drw_rev_602_a",
+          revisionCode: "Rev A",
+          status: "RELEASED",
+          fileName: "YASH-ENG-DWG-602-Installation.pdf",
+          fileSize: "4.1 MB",
+          fileType: "application/pdf",
+          checksum: "7c130d4b8f0cc3d410cfd7d54972ff9e3b97b10c9c57404e3860ea6d3ac18a54",
+          changeReason: "Approved for field execution teams and customer handover.",
+          uploadedBy: "Eng. Saurav Beura",
+          uploadedAt: "2026-10-12T09:15:00Z",
+          releasedBy: "Head of Engineering (Pratik Senapati)",
+          releasedAt: "2026-10-12T16:00:00Z",
+          downloadUrl: "/api/v1/engineering/drawings/drw_ese_60_inst/download?rev=Rev%20A"
+        }
+      ]
+    },
+    {
+      id: "drw_pit_cover_cad",
+      drawingNo: "YASH-ENG-DWG-705",
+      title: "300mm Heavy Duty FRP Earth Pit Cover Load Deflection Diagram",
+      type: "GENERAL_ARRANGEMENT",
+      productId: "prod_epc_frp",
+      bomId: null,
+      status: "IN_REVIEW",
+      latestRevision: "Rev B",
+      revisions: [
+        {
+          id: "drw_rev_705_b",
+          revisionCode: "Rev B",
+          status: "IN_REVIEW",
+          fileName: "YASH-ENG-DWG-705-RevB.pdf",
+          fileSize: "1.8 MB",
+          fileType: "application/pdf",
+          checksum: "a591a6d40bf420404a011733cfb7b190d62c65bf0bcda32b57b277d9ad9f146e",
+          changeReason: "Reinforced rib thickness to withstand 10 Ton point-load requirement.",
+          uploadedBy: "Eng. Vikram Sharma",
+          uploadedAt: "2026-10-20T14:20:00Z",
+          releasedBy: null,
+          releasedAt: null,
+          downloadUrl: "/api/v1/engineering/drawings/drw_pit_cover_cad/download?rev=Rev%20B"
+        }
+      ]
+    }
+  ],
+
+  auditLogs: [
+    {
+      id: "audit_1",
+      entity: "BOMRevision",
+      entityId: "bom_rev_cbe_50_a",
+      action: "RELEASE",
+      actor: "Head of Engineering (Pratik Senapati)",
+      details: "Released Rev A with frozen cost snapshot of ₹2,410.80 per unit.",
+      timestamp: "2026-10-11T14:35:00Z"
+    },
+    {
+      id: "audit_2",
+      entity: "DrawingRevision",
+      entityId: "drw_rev_501_a",
+      action: "RELEASE",
+      actor: "Head of Engineering (Pratik Senapati)",
+      details: "Released fabrication drawing Rev A for production floor execution.",
+      timestamp: "2026-10-11T15:00:00Z"
+    }
+  ]
+};
+
+class LocalEngineeringDb {
+  constructor() {
+    this.ensureDb();
+  }
+
+  ensureDb() {
+    try {
+      const dir = path.dirname(DB_PATH);
+      if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+      }
+      if (!fs.existsSync(DB_PATH)) {
+        fs.writeFileSync(DB_PATH, JSON.stringify(INITIAL_DATA, null, 2), 'utf-8');
+      }
+    } catch (err) {
+      console.error('Error initializing local engineering database:', err);
+    }
+  }
+
+  read() {
+    this.ensureDb();
+    try {
+      const content = fs.readFileSync(DB_PATH, 'utf-8');
+      return JSON.parse(content);
+    } catch (err) {
+      console.error('Error reading local engineering database:', err);
+      return INITIAL_DATA;
+    }
+  }
+
+  write(data) {
+    try {
+      fs.writeFileSync(DB_PATH, JSON.stringify(data, null, 2), 'utf-8');
+      return true;
+    } catch (err) {
+      console.error('Error saving local engineering database:', err);
+      return false;
+    }
+  }
+
+  logAudit(entity, entityId, action, actor, details) {
+    const db = this.read();
+    const log = {
+      id: `audit_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`,
+      entity,
+      entityId,
+      action,
+      actor: actor || "Engineering User",
+      details: details || "",
+      timestamp: new Date().toISOString()
+    };
+    db.auditLogs.unshift(log);
+    this.write(db);
+    return log;
+  }
+}
+
+export const localDb = new LocalEngineeringDb();
