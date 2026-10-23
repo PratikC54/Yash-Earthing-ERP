@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { RefreshCw, Truck, AlertCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import Card from "../../../components/common/Card";
@@ -10,7 +10,6 @@ import dispatchService from "../services/dispatchService";
 export default function DispatchPage() {
   const [dispatches, setDispatches] = useState([]);
   const [readyInspections, setReadyInspections] = useState([]);
-  const [dispatchCount, setDispatchCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -84,21 +83,17 @@ export default function DispatchPage() {
     setLoading(true);
     setError(null);
     try {
-      const [historyResponse, readyResponse, dashboardResponse] = await Promise.all([
+      const [historyResponse, readyResponse] = await Promise.all([
         dispatchService.getHistory(),
         dispatchService.getReadyForDispatch(),
-        dispatchService.getDashboard(),
       ]);
       const history = historyResponse?.data || historyResponse || [];
       const ready = readyResponse?.data || readyResponse || [];
-      const dashboard = dashboardResponse?.data || dashboardResponse;
-      const count = dashboard?.metrics?.totalDispatches ?? dashboard?.totalDispatches;
-      if (!Array.isArray(history) || !Array.isArray(ready) || !Number.isInteger(count)) {
-        throw new Error("Dispatch API returned an invalid count or list response.");
+      if (!Array.isArray(history) || !Array.isArray(ready)) {
+        throw new Error("Dispatch API returned an invalid dispatch history or ready-list response.");
       }
-      setDispatches(Array.isArray(history) ? history : []);
-      setReadyInspections(Array.isArray(ready) ? ready : []);
-      setDispatchCount(count);
+      setDispatches(history);
+      setReadyInspections(ready);
     } catch (err) {
       console.error("Failed to load dispatch records:", err);
       setError(err?.message || "Failed to load dispatch records from server.");
@@ -176,7 +171,7 @@ export default function DispatchPage() {
             <span className="text-xs font-semibold text-[#94a3b8] block">Total Dispatch Shipments</span>
             <span className="text-[10px] font-mono text-[#64748b]">RECORDS</span>
           </div>
-          <span className="text-3xl font-bold text-[#f1f5f9] mt-2 block">{dispatchCount}</span>
+          <span className="text-3xl font-bold text-[#f1f5f9] mt-2 block">{dispatches.length}</span>
           <span className="block text-[10px] text-[#64748b] mt-1">
             Completed dispatch consignments in history
           </span>
