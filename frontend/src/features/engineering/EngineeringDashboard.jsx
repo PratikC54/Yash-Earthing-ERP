@@ -315,7 +315,7 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <span>M3.1 · Product & Spec Master</span>
+          <span>Product & Spec Master</span>
           <span className="px-2 py-0.5 rounded-full text-xs bg-[#0a1020] border border-slate-800 text-slate-300">
             {products.length}
           </span>
@@ -329,7 +329,7 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <span>M3.2 · BOM & Costing</span>
+          <span>BOM & Costing</span>
           <span className="px-2 py-0.5 rounded-full text-xs bg-[#0a1020] border border-slate-800 text-slate-300">
             {boms.length}
           </span>
@@ -343,7 +343,7 @@ export default function EngineeringDashboard({ initialTab = 'products' }) {
               : 'text-slate-400 hover:text-slate-200'
           }`}
         >
-          <span>M3.3 · Drawing & Media Workspace</span>
+          <span>Controlled Drawings & Media</span>
           <span className="px-2 py-0.5 rounded-full text-xs bg-[#0a1020] border border-slate-800 text-slate-300">
             {drawings.length}
           </span>

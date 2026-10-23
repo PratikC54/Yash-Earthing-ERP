@@ -48,6 +48,7 @@ export default function AppLayout() {
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false)
   const [isTraceOpen, setIsTraceOpen] = useState(false)
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false)
+  const [globalSearch, setGlobalSearch] = useState('')
 
   // Compute initials and profile info
   const effectiveUser = {
@@ -78,7 +79,7 @@ export default function AppLayout() {
       return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
     }
     if (sectionId === 'commercial' || sectionId === 'module-6') {
-      return ['ADMIN', 'ACCOUNTS_MANAGER', 'FINANCE_MGR', 'SALES_MANAGER'].includes(userRole)
+      return userRole === 'ADMIN'
     }
     return true
   }
@@ -93,7 +94,7 @@ export default function AppLayout() {
       return ['ADMIN', 'PRODUCTION_MANAGER', 'SALES_MANAGER', 'BACK_OFFICER', 'RND_ENGINEER'].includes(userRole)
     }
     if (itemId.startsWith('m6-') || itemId === 'finance') {
-      return ['ADMIN', 'ACCOUNTS_MANAGER', 'FINANCE_MGR', 'SALES_MANAGER'].includes(userRole)
+      return userRole === 'ADMIN'
     }
     return true
   }
@@ -175,13 +176,13 @@ export default function AppLayout() {
       // Module 6: Finance & Commercial submodules
       case 'finance':
       case 'm6-invoices':
-        return <FinanceDashboard initialTab="invoices" />
+        return <FinanceDashboard initialTab="invoices" globalSearch={globalSearch} />
       case 'm6-payables':
-        return <FinanceDashboard initialTab="payables" />
+        return <FinanceDashboard initialTab="payables" globalSearch={globalSearch} />
       case 'm6-costing':
-        return <FinanceDashboard initialTab="costing" />
+        return <FinanceDashboard initialTab="costing" globalSearch={globalSearch} />
       case 'm6-settings':
-        return <FinanceDashboard initialTab="settings" />
+        return <FinanceDashboard initialTab="settings" globalSearch={globalSearch} />
       default:
         return isSuperUser ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />
@@ -233,6 +234,7 @@ export default function AppLayout() {
           activeSubModule={navSubModuleTitle}
           isAdmin={isAdmin}
           user={effectiveUser}
+          onSearch={setGlobalSearch}
           onScopeChange={handleScopeChange}
           onOpenAdminApprovals={() => setIsAdminApprovalsOpen(true)}
           onOpenTrace={() => setIsTraceOpen(true)}

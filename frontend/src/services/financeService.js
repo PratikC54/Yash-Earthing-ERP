@@ -134,6 +134,16 @@ export const financeService = {
     return res.data;
   },
 
+  deleteInvoice: async (id) => {
+    const res = await api.delete(`${BASE_URL}/invoices/${id}?purge=true`);
+    return res.data;
+  },
+
+  deleteProfitabilityItem: async (id) => {
+    const res = await api.delete(`${BASE_URL}/costing/${id}`);
+    return res.data;
+  },
+
   updateProfitabilityItem: async (id, updateData) => {
     const res = await api.patch(`${BASE_URL}/costing/${id}`, updateData);
     return res.data;

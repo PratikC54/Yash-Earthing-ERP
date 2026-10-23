@@ -44,6 +44,7 @@ router.post('/import/ingest', financeController.ingestImportData);
 // Costing & Margins (M6.3)
 router.get('/costing', financeController.getJobCosting);
 router.patch('/costing/:id', financeController.updateProfitabilityRegisterItem);
+router.delete('/costing/:id', financeController.deleteProfitabilityRegisterItem);
 
 // Admin Configuration
 router.get('/settings', financeController.getSettings);

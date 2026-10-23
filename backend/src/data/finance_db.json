@@ -855,6 +855,24 @@
   ],
   "auditLogs": [
     {
+      "id": "aud_fin_1792734876631_8148",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_suryagrid",
+      "details": "Updated invoice INV-DRAFT dispute/notes",
+      "timestamp": "2026-10-23T05:54:36.631Z"
+    },
+    {
+      "id": "aud_fin_1792734379338_t31o",
+      "actor": "Finance Manager",
+      "action": "UPDATE_INVOICE",
+      "entity": "Invoice",
+      "entityId": "inv_suryagrid",
+      "details": "Updated invoice INV-DRAFT dispute/notes",
+      "timestamp": "2026-10-23T05:46:19.338Z"
+    },
+    {
       "id": "aud_fin_1792725019662_0c6t",
       "actor": "Finance Manager",
       "action": "UPDATE_INVOICE",

@@ -834,6 +834,24 @@ export const financeController = {
     });
   },
 
+  deleteProfitabilityRegisterItem: (req, res) => {
+    const db = financeDb.read();
+    const { id } = req.params;
+    const list = db.profitabilityRegister || [];
+    const itemIdx = list.findIndex(r => r.id === id || r.orderNo === id);
+    if (itemIdx === -1) {
+      return res.status(404).json({ success: false, message: 'Job costing record not found.' });
+    }
+    const removed = list.splice(itemIdx, 1)[0];
+    db.profitabilityRegister = list;
+    financeDb.write(db);
+    financeDb.logAudit(req.user?.name || "Admin", "DELETE_PROFITABILITY", "ProfitabilityRegister", id, `Deleted job costing record ${removed.orderNo} (${removed.customerName})`);
+    res.status(200).json({
+      success: true,
+      message: `Job costing record ${removed.orderNo} removed successfully.`
+    });
+  },
+
   // ===================== 8. ADMIN SETTINGS =====================
   getSettings: (req, res) => {
     const db = financeDb.read();
@@ -924,6 +942,16 @@ export const financeController = {
           }
         });
       }
+    }
+
+    if (req.query?.purge === 'true' || req.body?.purge === true) {
+      db.invoices.splice(invoiceIdx, 1);
+      financeDb.write(db);
+      financeDb.logAudit(req.user?.name || "Admin", "DELETE_INVOICE", "Invoice", invoice.id, `Permanently deleted invoice ${invoice.invoiceNo}`);
+      return res.status(200).json({
+        success: true,
+        message: `Invoice ${invoice.invoiceNo} has been deleted permanently.`
+      });
     }
 
     invoice.status = 'CANCELLED';
