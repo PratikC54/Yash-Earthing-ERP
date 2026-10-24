@@ -18,6 +18,7 @@ import Button from "../../../components/common/Button";
 import Modal from "../../../components/common/Modal";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Loader from "../../../components/common/Loader";
+import KpiSection from "../../../components/common/KpiSection";
 import productionService from "../services/productionService";
 import { formatDateTime } from "../utils/productionQualityHelpers";
 import CustomDropdown from "../../../components/common/CustomDropdown";
@@ -712,60 +713,62 @@ export default function ShopFloorPage() {
 
       {/* Live Metrics Overview */}
       {metrics && (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-          <Card
-            className={`border-l-4 border-l-blue-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "ALL" ? "ring-1 ring-blue-500" : ""}`}
-            onClick={() => setStatusFilter("ALL")}
-          >
-            <p className="text-xs text-[#94a3b8] font-medium">Assigned / Active</p>
-            <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">{metrics.activeWorkOrdersCount ?? activeLines.length}</h3>
-          </Card>
-          <Card
-            className={`border-l-4 border-l-amber-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "IN_PROGRESS" ? "ring-1 ring-amber-500" : ""}`}
-            onClick={() => setStatusFilter("IN_PROGRESS")}
-          >
-            <p className="text-xs text-[#94a3b8] font-medium">In Production</p>
-            <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">{metrics.inProgressCount ?? 0}</h3>
-          </Card>
-          <Card
-            className={`border-l-4 border-l-slate-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "RELEASED" ? "ring-1 ring-slate-400" : ""}`}
-            onClick={() => setStatusFilter("RELEASED")}
-          >
-            <p className="text-xs text-[#94a3b8] font-medium">Released / Ready</p>
-            <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">{metrics.readyToStartCount ?? 0}</h3>
-          </Card>
-          <Card
-            className={`border-l-4 border-l-rose-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "ON_HOLD" ? "ring-1 ring-rose-500" : ""}`}
-            onClick={() => setStatusFilter("ON_HOLD")}
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-xs text-[#94a3b8] font-medium">On Hold</p>
-              {metrics.interruptedCount > 0 && (
-                <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30" title={`${metrics.interruptedCount} operation(s) logged machine downtime or delay`}>
-                  {metrics.interruptedCount} Interrupted
-                </span>
-              )}
-            </div>
-            <h3 className="text-xl font-bold text-rose-400 mt-1">{metrics.onHoldCount ?? 0}</h3>
-          </Card>
-          <Card
-            className={`border-l-4 border-l-emerald-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "COMPLETED" ? "ring-1 ring-emerald-500" : ""}`}
-            onClick={() => setStatusFilter("COMPLETED")}
-          >
-            <p className="text-xs text-[#94a3b8] font-medium">Completed</p>
-            <h3 className="text-xl font-bold text-emerald-400 mt-1">{metrics.completedCount ?? 0}</h3>
-          </Card>
-          <Card
-            className={`border-l-4 border-l-cyan-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "READY_FOR_QC" ? "ring-1 ring-cyan-500" : ""}`}
-            onClick={() => setStatusFilter("READY_FOR_QC")}
-          >
-            <p className="text-xs text-[#94a3b8] font-medium flex items-center justify-between">
-              <span>Ready for QC</span>
-              <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
-            </p>
-            <h3 className="text-xl font-bold text-cyan-400 mt-1">{metrics.readyForQualityCount ?? readyForQualityList.length}</h3>
-          </Card>
-        </div>
+        <KpiSection title="Shop-Floor Live Metrics">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            <Card
+              className={`border-l-4 border-l-blue-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "ALL" ? "ring-1 ring-blue-500" : ""}`}
+              onClick={() => setStatusFilter("ALL")}
+            >
+              <p className="text-xs text-[#94a3b8] font-medium">Assigned / Active</p>
+              <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">{metrics.activeWorkOrdersCount ?? activeLines.length}</h3>
+            </Card>
+            <Card
+              className={`border-l-4 border-l-amber-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "IN_PROGRESS" ? "ring-1 ring-amber-500" : ""}`}
+              onClick={() => setStatusFilter("IN_PROGRESS")}
+            >
+              <p className="text-xs text-[#94a3b8] font-medium">In Production</p>
+              <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">{metrics.inProgressCount ?? 0}</h3>
+            </Card>
+            <Card
+              className={`border-l-4 border-l-slate-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "RELEASED" ? "ring-1 ring-slate-400" : ""}`}
+              onClick={() => setStatusFilter("RELEASED")}
+            >
+              <p className="text-xs text-[#94a3b8] font-medium">Released / Ready</p>
+              <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">{metrics.readyToStartCount ?? 0}</h3>
+            </Card>
+            <Card
+              className={`border-l-4 border-l-rose-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "ON_HOLD" ? "ring-1 ring-rose-500" : ""}`}
+              onClick={() => setStatusFilter("ON_HOLD")}
+            >
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-[#94a3b8] font-medium">On Hold</p>
+                {metrics.interruptedCount > 0 && (
+                  <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/30" title={`${metrics.interruptedCount} operation(s) logged machine downtime or delay`}>
+                    {metrics.interruptedCount} Interrupted
+                  </span>
+                )}
+              </div>
+              <h3 className="text-xl font-bold text-rose-400 mt-1">{metrics.onHoldCount ?? 0}</h3>
+            </Card>
+            <Card
+              className={`border-l-4 border-l-emerald-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "COMPLETED" ? "ring-1 ring-emerald-500" : ""}`}
+              onClick={() => setStatusFilter("COMPLETED")}
+            >
+              <p className="text-xs text-[#94a3b8] font-medium">Completed</p>
+              <h3 className="text-xl font-bold text-emerald-400 mt-1">{metrics.completedCount ?? 0}</h3>
+            </Card>
+            <Card
+              className={`border-l-4 border-l-cyan-500 cursor-pointer transition hover:bg-slate-800/40 ${statusFilter === "READY_FOR_QC" ? "ring-1 ring-cyan-500" : ""}`}
+              onClick={() => setStatusFilter("READY_FOR_QC")}
+            >
+              <p className="text-xs text-[#94a3b8] font-medium flex items-center justify-between">
+                <span>Ready for QC</span>
+                <span className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse" />
+              </p>
+              <h3 className="text-xl font-bold text-cyan-400 mt-1">{metrics.readyForQualityCount ?? readyForQualityList.length}</h3>
+            </Card>
+          </div>
+        </KpiSection>
       )}
 
       {/* Completion Success Notification */}

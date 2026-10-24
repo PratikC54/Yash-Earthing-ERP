@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
-import { X } from "lucide-react";
 import ERPSidebar from "./components/ERPSidebar";
 import ERPNavbar from "./components/ERPNavbar";
 import ModuleTabs from "../features/production_quality/components/shared/ModuleTabs";
@@ -29,7 +28,9 @@ export default function ERPLayout() {
       .catch((error) => {
         if (isMounted) {
           setUserError(error.message || "Unable to load account details.");
-          if (error.status === 401) {
+          const status = error?.response?.status || error?.status;
+          if (status === 401) {
+            authService.logout();
             navigate("/login", { state: { from: location }, replace: true });
           }
         }
@@ -38,7 +39,7 @@ export default function ERPLayout() {
     return () => {
       isMounted = false;
     };
-  }, [location, navigate]);
+  }, [navigate]);
 
   const initials = user?.name
     ?.trim()
@@ -83,23 +84,13 @@ export default function ERPLayout() {
         <ERPNavbar
           onToggleMobileSidebar={() => setIsMobileOpen((prev) => !prev)}
           onOpenQuickAction={handleOpenQuickAction}
+          onClose={handleClose}
           user={userProfile}
           userError={userError}
         />
 
         {/* Dynamic Main Content Workspace */}
         <main className="flex-1 min-h-0 min-w-0 w-full overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#070e1e] text-[#f1f5f9]">
-          <div className="mb-4">
-            <button
-              type="button"
-              onClick={handleClose}
-              className="inline-flex items-center gap-2 rounded-lg border border-[#1e2a4a] bg-[#10182f] px-3 py-2 text-xs font-semibold text-[#94a3b8] transition hover:bg-slate-800/40 hover:text-[#f1f5f9]"
-              aria-label="Close and return to the previous or parent page"
-            >
-              <X className="h-4 w-4" />
-              Close
-            </button>
-          </div>
           <div className="mb-6">
             <ModuleTabs />
           </div>

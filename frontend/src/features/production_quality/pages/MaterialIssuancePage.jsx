@@ -5,6 +5,7 @@ import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
 import Modal from "../../../components/common/Modal";
 import Loader from "../../../components/common/Loader";
+import KpiSection from "../../../components/common/KpiSection";
 import productionService from "../services/productionService";
 import { validateQuantityInput, validateRequiredField, validateMinLength } from "../utils/formValidation";
 
@@ -316,55 +317,57 @@ export default function MaterialIssuancePage() {
       />
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="border-l-4 border-l-blue-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-[#94a3b8] font-medium">Active Pick-Lists</p>
-              <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">12 Orders</h3>
+      <KpiSection title="Material & Issuance KPIs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="border-l-4 border-l-blue-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#94a3b8] font-medium">Active Pick-Lists</p>
+                <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">12 Orders</h3>
+              </div>
+              <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
+                <FileText className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
-              <FileText className="w-5 h-5" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="border-l-4 border-l-emerald-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-[#94a3b8] font-medium">Issued Today</p>
-              <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">3,450 KG</h3>
+          <Card className="border-l-4 border-l-emerald-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#94a3b8] font-medium">Issued Today</p>
+                <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">3,450 KG</h3>
+              </div>
+              <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
+                <ArrowUpRight className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400">
-              <ArrowUpRight className="w-5 h-5" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="border-l-4 border-l-amber-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-[#94a3b8] font-medium">Shop-Floor WIP Stock</p>
-              <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">1,820 KG</h3>
+          <Card className="border-l-4 border-l-amber-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#94a3b8] font-medium">Shop-Floor WIP Stock</p>
+                <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">1,820 KG</h3>
+              </div>
+              <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
+                <Package className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400">
-              <Package className="w-5 h-5" />
-            </div>
-          </div>
-        </Card>
+          </Card>
 
-        <Card className="border-l-4 border-l-purple-500">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-[#94a3b8] font-medium">Reconciliation Variance</p>
-              <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">0.4% (Normal)</h3>
+          <Card className="border-l-4 border-l-purple-500">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-xs text-[#94a3b8] font-medium">Reconciliation Variance</p>
+                <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">0.4% (Normal)</h3>
+              </div>
+              <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
+                <CheckCircle2 className="w-5 h-5" />
+              </div>
             </div>
-            <div className="p-2.5 rounded-xl bg-purple-500/10 text-purple-400">
-              <CheckCircle2 className="w-5 h-5" />
-            </div>
-          </div>
-        </Card>
-      </div>
+          </Card>
+        </div>
+      </KpiSection>
 
       {/* Material Reconciliation against Work Order */}
       <Card
