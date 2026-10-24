@@ -245,8 +245,7 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
             <div className="text-xs text-amber-800 font-medium mt-1">Waiting dispatch handover</div>
           )}
         </div>
-        </div>
-      </KpiSection>
+      </div>
 
       {/* Filter and Search Bar */}
       <FilterBar
