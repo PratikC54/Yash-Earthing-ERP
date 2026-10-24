@@ -16,6 +16,7 @@ import {
   listWorkOrders,
   rejectWorkOrder,
   releaseWorkOrder,
+  recordWorkOrderCompletion,
   resumeWorkOrder,
   submitWorkOrder,
   updateWorkOrder,
@@ -128,6 +129,13 @@ planningRouter.post(
   authorizeRoles("ADMIN", "PRODUCTION_MANAGER"),
   validateRequest({ params: workOrderIdParamSchema, body: transitionStatusSchema }),
   cancelWorkOrder
+);
+
+planningRouter.post(
+  "/work-orders/:id/completion",
+  authorizeRoles("ADMIN", "PRODUCTION_MANAGER", "ENGINEER"),
+  validateRequest({ params: workOrderIdParamSchema }),
+  recordWorkOrderCompletion
 );
 
 planningRouter.get(

@@ -15,3 +15,16 @@ package-lock.json
 .vscode/
 README.md
 CONTRIBUTING.md
+
+# Tests
+tests/
+*.test.js
+*.test.jsx
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.jsx
+*.spec.ts
+*.spec.tsx
+test-*.js
+test_*.js

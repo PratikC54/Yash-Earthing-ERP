@@ -9,13 +9,9 @@ export const productionService = {
   // 1. Planning & Work Orders (M4.1)
   // ==========================================
 
-  // GET /api/pq/dashboard
+  // GET /api/production-quality/planning/dashboard
   getPlanningDashboard: async () => {
-    try {
-      return await axiosInstance.get("/pq/dashboard");
-    } catch {
-      return await axiosInstance.get("/production-quality/planning/dashboard");
-    }
+    return await axiosInstance.get("/production-quality/planning/dashboard");
   },
 
   // GET /api/production-quality/production-calendar (supports ?startDate=...&endDate=...)
@@ -88,6 +84,11 @@ export const productionService = {
     return await axiosInstance.post(`/production-quality/work-orders/${id}/reject`, data);
   },
 
+  // POST /api/production-quality/work-orders/:id/completion
+  recordProductionCompletion: async (id, data) => {
+    return await axiosInstance.post(`/production-quality/work-orders/${id}/completion`, data);
+  },
+
   // POST /api/production-quality/work-orders/:id/cancel
   cancelWorkOrder: async (id, data = {}) => {
     return await axiosInstance.post(`/production-quality/work-orders/${id}/cancel`, data);
@@ -155,6 +156,19 @@ export const productionService = {
   // GET /api/production-quality/manufacturing/reports/production (supports ?groupBy=daily)
   getProductionReport: async (params = {}) => {
     return await axiosInstance.get("/production-quality/manufacturing/reports/production", { params });
+  },
+
+  // ==========================================
+  // 3. Master Data & Configurable Dropdowns
+  // ==========================================
+  getDropdownOptions: async (category) => {
+    return await axiosInstance.get("/production-quality/master-data/dropdown-options", {
+      params: category ? { category } : {},
+    });
+  },
+
+  createDropdownOption: async (data) => {
+    return await axiosInstance.post("/production-quality/master-data/dropdown-options", data);
   },
 };
 
