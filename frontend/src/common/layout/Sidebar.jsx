@@ -145,7 +145,7 @@ export default function Sidebar({
 
             return (
               <div key={section.id} className="space-y-1">
-                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400/90 flex items-center justify-between">
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400/90 flex items-center justify-between sidebar-section-title">
                   <span>{section.title}</span>
                 </div>
 
@@ -162,6 +162,7 @@ export default function Sidebar({
                           onSelectModule(item)
                           if (onClose) onClose()
                         }}
+                        data-sidebar-active={isActive ? "true" : "false"}
                         className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-left transition-all duration-150 group cursor-pointer ${
                           isActive
                             ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold shadow-md shadow-blue-600/30 ring-1 ring-white/20'
@@ -169,7 +170,7 @@ export default function Sidebar({
                         }`}
                       >
                         <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                          className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors sidebar-icon-wrap ${
                             isActive
                               ? 'bg-white/20 text-white'
                               : 'bg-[#122240] text-slate-400 group-hover:text-cyan-400 group-hover:bg-[#162c52]'
@@ -180,11 +181,12 @@ export default function Sidebar({
 
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center justify-between">
-                            <span className="text-xs font-semibold truncate leading-tight">
+                            <span className="text-xs font-semibold truncate leading-tight sidebar-item-name">
                               {item.name}
                             </span>
                             {item.badge && (
                               <span
+                                data-sidebar-badge="true"
                                 className={`text-[9px] font-bold px-1.5 py-0.2 rounded-md ${
                                   isActive
                                     ? 'bg-white/25 text-white'
@@ -197,7 +199,7 @@ export default function Sidebar({
                           </div>
                           {item.desc && (
                             <p
-                              className={`text-[9.5px] truncate mt-0.5 ${
+                              className={`text-[9.5px] truncate mt-0.5 sidebar-item-desc ${
                                 isActive ? 'text-blue-100' : 'text-slate-400'
                               }`}
                             >
