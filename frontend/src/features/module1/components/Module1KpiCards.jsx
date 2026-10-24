@@ -1,5 +1,3 @@
-import KpiSection from "../../../components/common/KpiSection";
-
 export default function Module1KpiCards({ stats, loading = false }) {
   const {
     totalPipelineValue = 0,
@@ -40,6 +38,7 @@ export default function Module1KpiCards({ stats, loading = false }) {
             `${totalLeads} Total Customer Enquiries`
           )}
         </div>
+      </div>
 
       {/* 2. In Active Discussion */}
       <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg relative overflow-hidden transition-all duration-200 hover:border-cyan-500/40">
@@ -60,6 +59,7 @@ export default function Module1KpiCards({ stats, loading = false }) {
             "Contacted & qualified enquiries"
           )}
         </div>
+      </div>
 
       {/* 3. Quotes Requested */}
       <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg relative overflow-hidden transition-all duration-200 hover:border-amber-500/40">
@@ -80,6 +80,7 @@ export default function Module1KpiCards({ stats, loading = false }) {
             "Commercial sizing & proposal phase"
           )}
         </div>
+      </div>
 
       {/* 4. PO / Confirmed */}
       <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg relative overflow-hidden transition-all duration-200 hover:border-emerald-500/40">
@@ -101,6 +102,6 @@ export default function Module1KpiCards({ stats, loading = false }) {
           )}
         </div>
       </div>
-    </KpiSection>
+    </div>
   );
 }
