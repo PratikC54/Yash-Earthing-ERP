@@ -7,18 +7,33 @@ import {
   QUALITY_STATUS,
   WORK_ORDER_STATUS,
 } from "../shared/productionQuality.constants.js";
-import { generateInspectionNo } from "../shared/productionQuality.utils.js";
+import {
+  generateInspectionNo,
+  validateFutureOrTodayDate,
+  validateQuantityValue,
+} from "../shared/productionQuality.utils.js";
 
 export class ManufacturingService {
   /**
    * Manufacturing execution dashboard
    */
   static async getDashboard() {
-    const [activeOrders, inProgressCount, releasedCount, onHoldCount] = await Promise.all([
+    const [activeOrders, downtimeLogs] = await Promise.all([
       prisma.workOrder.findMany({
         where: {
+          status: { not: WORK_ORDER_STATUS.CANCELLED },
           OR: [
-            { status: { in: [WORK_ORDER_STATUS.RELEASED, WORK_ORDER_STATUS.IN_PROGRESS] } },
+            {
+              status: {
+                in: [
+                  WORK_ORDER_STATUS.RELEASED,
+                  WORK_ORDER_STATUS.IN_PROGRESS,
+                  WORK_ORDER_STATUS.COMPLETED,
+                  WORK_ORDER_STATUS.MATERIAL_HOLD,
+                  WORK_ORDER_STATUS.QC_HOLD,
+                ],
+              },
+            },
             {
               status: { in: [WORK_ORDER_STATUS.DRAFT, WORK_ORDER_STATUS.PLANNED] },
               assignedLine: { not: null },
@@ -26,50 +41,249 @@ export class ManufacturingService {
           ],
         },
         include: {
-          salesOrder: { select: { orderNumber: true } },
-          bomRevision: { select: { revision: true } },
+          salesOrder: {
+            select: {
+              orderNumber: true,
+              productSummary: true,
+              items: { include: { product: true } },
+            },
+          },
+          bomRevision: {
+            select: {
+              revision: true,
+              productId: true,
+              product: {
+                select: {
+                  id: true,
+                  name: true,
+                  sku: true,
+                  unitOfMeasure: true,
+                },
+              },
+            },
+          },
           items: true,
           inspections: {
             select: {
               id: true,
+              inspectionNo: true,
               inspectedQuantity: true,
               status: true,
+              createdAt: true,
             },
           },
         },
-        orderBy: { priority: "desc" },
       }),
-      prisma.workOrder.count({ where: { status: WORK_ORDER_STATUS.IN_PROGRESS } }),
-      prisma.workOrder.count({ where: { status: WORK_ORDER_STATUS.RELEASED } }),
-      prisma.workOrder.count({
+      prisma.auditLog.findMany({
         where: {
-          status: { in: [WORK_ORDER_STATUS.MATERIAL_HOLD, WORK_ORDER_STATUS.QC_HOLD] },
+          entityType: { in: ["MachineDowntime", "ProductionDelay"] },
         },
+        orderBy: { createdAt: "desc" },
       }),
     ]);
 
     const enrichedOrders = activeOrders.map((wo) => {
+      const plannedQuantity = Number(wo.plannedQuantity || 0);
+      const goodQuantity = Number(wo.goodQuantity || 0);
+      const rejectedQuantity = Number(wo.rejectedQuantity || 0);
       const transferredQuantity = (wo.inspections || []).reduce(
         (sum, insp) => sum + Number(insp.inspectedQuantity || 0),
         0
       );
-      const goodQuantity = Number(wo.goodQuantity || 0);
+      const pendingQuantity = Math.max(0, plannedQuantity - goodQuantity);
       const availableForTransfer = Math.max(0, goodQuantity - transferredQuantity);
+      const completionPercentage =
+        plannedQuantity > 0
+          ? Math.min(100, Math.round((goodQuantity / plannedQuantity) * 100))
+          : 0;
+
+      const isCancelled = wo.status === WORK_ORDER_STATUS.CANCELLED;
+      const isHold = [
+        WORK_ORDER_STATUS.MATERIAL_HOLD,
+        WORK_ORDER_STATUS.QC_HOLD,
+        "ON_HOLD",
+      ].includes(wo.status);
+
+      // Distinct check for shop-floor operation interruption (Machine Downtime or Production Delay)
+      const woDowntimes = downtimeLogs.filter((d) => String(d.entityId) === String(wo.id));
+      const isInterrupted = woDowntimes.length > 0;
+      // Convert BigInt IDs for clean JSON serialization
+      const serializedDowntimes = woDowntimes.map((d) => ({
+        id: Number(d.id),
+        action: d.action,
+        entityType: d.entityType,
+        entityId: d.entityId,
+        details: d.after,
+        createdAt: d.createdAt,
+      }));
+      const latestDowntime = serializedDowntimes[0] || null;
+
+      // Production-completed qualification:
+      // A work order qualifies as production-completed when its persisted good production quantity
+      // equals or exceeds planned quantity (with plannedQuantity > 0), provided its status is not Cancelled or On Hold.
+      const isCompleted =
+        !isCancelled &&
+        !isHold &&
+        (wo.status === WORK_ORDER_STATUS.COMPLETED || (plannedQuantity > 0 && goodQuantity >= plannedQuantity));
+
+      // Effective status calculation based on real production quantities and life-cycle state
+      let effectiveStatus = wo.status;
+      if (isCancelled) {
+        effectiveStatus = WORK_ORDER_STATUS.CANCELLED;
+      } else if (isHold) {
+        effectiveStatus = "ON_HOLD";
+      } else if (isCompleted) {
+        effectiveStatus = WORK_ORDER_STATUS.COMPLETED;
+      } else if (goodQuantity > 0 && goodQuantity < plannedQuantity) {
+        effectiveStatus = WORK_ORDER_STATUS.IN_PROGRESS;
+      } else if (goodQuantity === 0) {
+        effectiveStatus = wo.status === WORK_ORDER_STATUS.RELEASED ? WORK_ORDER_STATUS.RELEASED : wo.status;
+      }
+
+      // Condition for Ready for Quality Inspection:
+      // 1. Production is 100% complete (goodQuantity >= plannedQuantity)
+      // 2. Pending quantity is zero
+      // 3. Batch has not yet been transferred to Quality Inspection (transferredQuantity === 0)
+      // 4. Work order is not cancelled or on hold
+      const isReadyForQC =
+        isCompleted &&
+        pendingQuantity === 0 &&
+        transferredQuantity === 0 &&
+        !isHold &&
+        !isCancelled;
+
+      // Completion Date: actualEnd if present, or updatedAt, or createdAt
+      const completionDate = wo.actualEnd || wo.updatedAt || wo.createdAt;
+
+      // 4-tier sorting priority:
+      // Tier 1: Ready for Quality Inspection (100% complete, untransferred)
+      // Tier 2: In Production (started but not complete)
+      // Tier 3: Not Started (no production completed)
+      // Tier 4: Transferred to Quality (batch already transferred)
+      let priorityTier = 3;
+      let priorityTierLabel = "Not Started";
+
+      if (isReadyForQC) {
+        priorityTier = 1;
+        priorityTierLabel = "Ready for Quality Inspection";
+      } else if (transferredQuantity > 0 && availableForTransfer === 0) {
+        priorityTier = 4;
+        priorityTierLabel = "Transferred to Quality";
+      } else if (effectiveStatus === WORK_ORDER_STATUS.IN_PROGRESS) {
+        priorityTier = 2;
+        priorityTierLabel = "In Production";
+      } else if (goodQuantity === 0 && transferredQuantity === 0) {
+        priorityTier = 3;
+        priorityTierLabel = "Not Started";
+      } else if (isCompleted) {
+        priorityTier = 1;
+        priorityTierLabel = "Completed";
+      } else {
+        priorityTier = 2;
+        priorityTierLabel = "In Production";
+      }
+
+      // Resolve finished product name, SKU, and UOM
+      const targetProduct =
+        wo.bomRevision?.product ||
+        wo.salesOrder?.items?.find((i) => i.productId === wo.bomRevision?.productId)?.product ||
+        wo.salesOrder?.items?.[0]?.product ||
+        null;
+
+      const productName =
+        targetProduct?.name ||
+        wo.productName ||
+        wo.salesOrder?.productSummary ||
+        "Standard Manufactured Product";
+
+      const productSku = targetProduct?.sku || "—";
+      const uom = targetProduct?.unitOfMeasure || targetProduct?.unit || targetProduct?.uom || "NOS";
 
       return {
         ...wo,
+        rawStatus: wo.status,
+        status: effectiveStatus,
+        effectiveStatus,
+        holdType: isHold ? wo.status : null,
+        isHold,
+        isInterrupted,
+        downtimes: serializedDowntimes,
+        latestDowntime,
+        isCompleted,
+        plannedQuantity,
+        goodQuantity,
+        rejectedQuantity,
         transferredQuantity,
+        pendingQuantity,
         availableForTransfer,
+        completionPercentage,
+        isReadyForQC,
+        completionDate,
+        priorityTier,
+        priorityTierLabel,
+        productName,
+        productSku,
+        uom,
       };
     });
 
+    // Sort work orders according to required prioritization rules:
+    // 1. Ready for Quality Inspection first, sorted by completion date (oldest completed batch first)
+    // 2. In Production
+    // 3. Not Started
+    // 4. Transferred to Quality
+    enrichedOrders.sort((a, b) => {
+      if (a.priorityTier !== b.priorityTier) {
+        return a.priorityTier - b.priorityTier;
+      }
+
+      if (a.priorityTier === 1) {
+        // Oldest completed batch first (ascending)
+        const dateA = new Date(a.completionDate || 0).getTime();
+        const dateB = new Date(b.completionDate || 0).getTime();
+        return dateA - dateB;
+      }
+
+      if (a.priorityTier === 2) {
+        const pOrder = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+        const pDiff = (pOrder[b.priority] || 0) - (pOrder[a.priority] || 0);
+        if (pDiff !== 0) return pDiff;
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      }
+
+      if (a.priorityTier === 3) {
+        const pOrder = { URGENT: 4, HIGH: 3, MEDIUM: 2, LOW: 1 };
+        return (pOrder[b.priority] || 0) - (pOrder[a.priority] || 0);
+      }
+
+      return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+
+    const readyForQualityOrders = enrichedOrders.filter((o) => o.isReadyForQC);
+
+    // Compute metrics directly from the enriched active orders list to ensure 100% synchronization
+    // between dashboard counters and filtered tab counts
+    const activeWorkOrdersCount = enrichedOrders.length;
+    const completedCount = enrichedOrders.filter((o) => o.effectiveStatus === WORK_ORDER_STATUS.COMPLETED).length;
+    const onHoldCount = enrichedOrders.filter((o) => o.isHold || o.effectiveStatus === "ON_HOLD").length;
+    const inProgressCount = enrichedOrders.filter((o) => o.effectiveStatus === WORK_ORDER_STATUS.IN_PROGRESS).length;
+    const readyToStartCount = enrichedOrders.filter(
+      (o) => o.effectiveStatus === WORK_ORDER_STATUS.RELEASED || o.effectiveStatus === WORK_ORDER_STATUS.PLANNED
+    ).length;
+    const readyForQualityCount = readyForQualityOrders.length;
+    const interruptedCount = enrichedOrders.filter((o) => o.isInterrupted).length;
+
     return {
       metrics: {
-        activeWorkOrdersCount: enrichedOrders.length,
+        activeWorkOrdersCount,
         inProgressCount,
-        readyToStartCount: releasedCount,
+        readyToStartCount,
         onHoldCount,
+        completedCount,
+        readyForQualityCount,
+        interruptedCount,
       },
+      readyForQualityOrders,
       activeWorkOrders: enrichedOrders,
     };
   }
@@ -123,71 +337,146 @@ export class ManufacturingService {
   }
 
   /**
-   * Record daily / shift production entry
+   * Record daily / shift production entry or manual production completion
    */
   static async recordProductionEntry(data, user) {
-    const { workOrderId, quantityProduced, shift, operatorId, workCenter, timestamp, notes } = data;
+    const rawWorkOrderId = data.workOrderId;
+    const workOrderId = Number(rawWorkOrderId);
+    const quantityToAdd = Number(data.quantityCompleted ?? data.quantityProduced ?? data.quantity);
+    const notes = data.remarks ?? data.notes ?? "";
+    const shift = data.shift || "GENERAL";
+    const operatorId = data.operatorId ? Number(data.operatorId) : undefined;
+    const workCenter = data.workCenter;
+    const dateInput = data.completionDate || data.timestamp || new Date().toISOString();
+
+    if (!workOrderId || isNaN(workOrderId)) {
+      throw ApiError.badRequest("Valid Work Order ID is required");
+    }
+
+    if (data.completionDate) {
+      validateFutureOrTodayDate(data.completionDate, "Completion date");
+    }
 
     const workOrder = await prisma.workOrder.findUnique({
-      where: { id: Number(workOrderId) },
+      where: { id: workOrderId },
+      include: {
+        bomRevision: { select: { product: true } },
+        salesOrder: { select: { items: { include: { product: true } } } },
+      },
     });
 
     if (!workOrder) {
       throw ApiError.notFound(`Work Order #${workOrderId} not found`);
     }
 
-    if (workOrder.status !== WORK_ORDER_STATUS.IN_PROGRESS) {
+    // Preserve existing business rules for Cancelled and On-Hold work orders
+    if (workOrder.status === WORK_ORDER_STATUS.CANCELLED) {
+      throw ApiError.badRequest("Cannot record production completion for a cancelled Work Order.");
+    }
+
+    if (
+      workOrder.status === WORK_ORDER_STATUS.ON_HOLD ||
+      workOrder.status === WORK_ORDER_STATUS.QC_HOLD ||
+      workOrder.status === WORK_ORDER_STATUS.MATERIAL_HOLD
+    ) {
       throw ApiError.badRequest(
-        `Cannot record production for Work Order in status '${workOrder.status}'. Status must be IN_PROGRESS.`
+        `Cannot record production completion for Work Order in status '${workOrder.status}'. Please resume the order first.`
       );
     }
 
-    const currentGood = Number(workOrder.goodQuantity);
+    const uom =
+      workOrder.bomRevision?.product?.unitOfMeasure ||
+      workOrder.salesOrder?.items?.[0]?.product?.unitOfMeasure ||
+      "NOS";
+
+    const currentGood = Number(workOrder.goodQuantity || 0);
     const planned = Number(workOrder.plannedQuantity);
-    const newGood = currentGood + Number(quantityProduced);
+    const pendingBefore = Math.max(0, planned - currentGood);
 
-    // Overproduction protection: cannot exceed planned quantity by more than 10% without authorization
-    if (newGood > planned * 1.1) {
+    validateQuantityValue({
+      quantity: quantityToAdd,
+      uom,
+      fieldName: "Quantity completed",
+      allowZero: false,
+    });
+
+    const newGood = currentGood + quantityToAdd;
+
+    if (newGood > planned && !data.allowOverproduction) {
       throw ApiError.badRequest(
-        `Production quantity (${newGood}) exceeds authorized planned quantity (${planned}) beyond permissible tolerance.`
+        `Completed production (${newGood}) cannot exceed the planned quantity (${planned}). Maximum additional quantity allowed is ${pendingBefore} units.`
       );
     }
+
+    // Update the production status according to the actual completed quantity:
+    // * Not Started: Completed quantity is zero.
+    // * In Progress: Completed quantity is greater than zero but less than the planned quantity.
+    // * Completed: Completed quantity equals the planned quantity.
+    let newStatus = workOrder.status;
+    if (newGood >= planned) {
+      newStatus = WORK_ORDER_STATUS.COMPLETED;
+    } else if (newGood > 0) {
+      newStatus = WORK_ORDER_STATUS.IN_PROGRESS;
+    } else {
+      newStatus = workOrder.status === WORK_ORDER_STATUS.IN_PROGRESS ? WORK_ORDER_STATUS.RELEASED : workOrder.status;
+    }
+
+    const recordDate = new Date(dateInput);
+    const validDate = isNaN(recordDate.getTime()) ? new Date() : recordDate;
+    const actualStart = workOrder.actualStart || (newGood > 0 ? validDate : null);
+    const actualEnd = newGood >= planned ? validDate : workOrder.actualEnd;
 
     return await prisma.$transaction(async (tx) => {
-      await tx.workOrder.update({
-        where: { id: Number(workOrderId) },
+      const updatedOrder = await tx.workOrder.update({
+        where: { id: workOrderId },
         data: {
           goodQuantity: newGood,
+          status: newStatus,
+          ...(actualStart && !workOrder.actualStart ? { actualStart } : {}),
+          ...(newGood >= planned ? { actualEnd } : {}),
         },
       });
 
       const entryLog = {
         workOrderId,
-        quantityProduced: Number(quantityProduced),
+        quantityCompleted: quantityToAdd,
+        quantityProduced: quantityToAdd,
+        previouslyCompleted: currentGood,
+        totalCompleted: newGood,
+        plannedQuantity: planned,
+        pendingQuantity: Math.max(0, planned - newGood),
+        completionPercentage: planned > 0 ? Math.min(100, Math.round((newGood / planned) * 100)) : 0,
+        status: newStatus,
         shift,
         operatorId,
         workCenter,
-        timestamp: timestamp || new Date().toISOString(),
+        completionDate: validDate.toISOString(),
+        timestamp: validDate.toISOString(),
+        remarks: notes,
         notes,
-        totalProducedSoFar: newGood,
-        remainingPlanned: Math.max(0, planned - newGood),
       };
 
       await AuditService.record({
         userId: user?.id,
-        action: "PRODUCTION_ENTRY_RECORDED",
-        entityType: "ProductionEntry",
+        action: "PRODUCTION_COMPLETION_RECORDED",
+        entityType: "ProductionCompletion",
         entityId: workOrderId,
+        before: { goodQuantity: currentGood, status: workOrder.status },
         after: entryLog,
         client: tx,
       });
 
       return {
         workOrderId,
-        quantityProduced: Number(quantityProduced),
+        quantityCompleted: quantityToAdd,
+        quantityProduced: quantityToAdd,
         goodQuantity: newGood,
+        completedQuantity: newGood,
         plannedQuantity: planned,
-        remainingQuantity: Math.max(0, planned - newGood),
+        pendingQuantity: Math.max(0, planned - newGood),
+        completionPercentage: planned > 0 ? Math.min(100, Math.round((newGood / planned) * 100)) : 0,
+        status: newStatus,
+        workOrder: updatedOrder,
         entryLog,
       };
     });
@@ -467,6 +756,12 @@ export class ManufacturingService {
   static async recordScrap(data, user) {
     const { workOrderId, quantity, reason, operationId, notes } = data;
 
+    validateQuantityValue({
+      quantity,
+      fieldName: "Scrap quantity",
+      allowZero: false,
+    });
+
     const workOrder = await prisma.workOrder.findUnique({
       where: { id: Number(workOrderId) },
     });
@@ -583,86 +878,138 @@ export class ManufacturingService {
   /**
    * Transfer finished or partially finished manufactured output to Quality Inspection
    */
-  static async transferToQuality(workOrderId, data, user) {
-    const { quantity, batchNumber, notes } = data;
-    const transferQty = Number(quantity);
+  static async transferToQuality(workOrderId, data = {}, user) {
+    const { batchNumber, notes } = data;
 
-    if (!transferQty || transferQty <= 0) {
-      throw ApiError.badRequest("Transfer quantity must be greater than zero.");
-    }
-
-    const inspectionNo = await generateInspectionNo();
-
-    // Step 1: Pre-fetch or lock workOrder
+    // Step 1: Pre-fetch workOrder
     const baseWorkOrder = await prisma.workOrder.findUnique({
       where: { id: Number(workOrderId) },
-      include: { inspections: true },
+      include: {
+        inspections: true,
+        bomRevision: { select: { product: { select: { id: true, name: true, sku: true } } } },
+      },
     });
 
     if (!baseWorkOrder) {
       throw ApiError.notFound(`Work Order #${workOrderId} not found`);
     }
 
+    // 8 & 12. Cancelled and on-hold work orders cannot be transferred
+    if (baseWorkOrder.status === WORK_ORDER_STATUS.CANCELLED) {
+      throw ApiError.badRequest("Cannot transfer a cancelled work order to Quality Inspection.");
+    }
     if (
-      baseWorkOrder.status !== WORK_ORDER_STATUS.IN_PROGRESS &&
-      baseWorkOrder.status !== WORK_ORDER_STATUS.RELEASED
+      baseWorkOrder.status === WORK_ORDER_STATUS.MATERIAL_HOLD ||
+      baseWorkOrder.status === WORK_ORDER_STATUS.QC_HOLD ||
+      baseWorkOrder.status === "ON_HOLD"
     ) {
       throw ApiError.badRequest(
-        `Cannot transfer output to quality in status '${baseWorkOrder.status}'. Work order must be IN_PROGRESS or RELEASED.`
+        `Cannot transfer work order in '${baseWorkOrder.status}' status. Resume the order first.`
+      );
+    }
+    if (
+      baseWorkOrder.status !== WORK_ORDER_STATUS.IN_PROGRESS &&
+      baseWorkOrder.status !== WORK_ORDER_STATUS.RELEASED &&
+      baseWorkOrder.status !== WORK_ORDER_STATUS.COMPLETED
+    ) {
+      throw ApiError.badRequest(
+        `Cannot transfer output to quality in status '${baseWorkOrder.status}'. Work order must be IN_PROGRESS, RELEASED, or COMPLETED.`
       );
     }
 
+    // 3. Planned quantity must be greater than zero
+    const plannedQty = Number(baseWorkOrder.plannedQuantity || 0);
+    if (plannedQty <= 0) {
+      throw ApiError.badRequest("Work order planned quantity must be greater than zero.");
+    }
+
+    // 4 & 5. Completed good production equals/exceeds planned quantity (100% complete)
+    // Note: Rejected units do not count toward completed good quantity
+    const goodQty = Number(baseWorkOrder.goodQuantity || 0);
+    if (goodQty < plannedQty) {
+      throw ApiError.badRequest(
+        `Cannot transfer incomplete batch to Quality Inspection. Completed good output (${goodQty}) is less than planned quantity (${plannedQty}). Production must be 100% complete.`
+      );
+    }
+
+    // 6. No production quantity remains pending
+    const pendingQty = Math.max(0, plannedQty - goodQty);
+    if (pendingQty > 0) {
+      throw ApiError.badRequest(`Cannot transfer batch while ${pendingQty} units remain pending.`);
+    }
+
+    // 7. No part of the batch has already been transferred (prevent duplicate transfers)
+    const alreadyTransferred = (baseWorkOrder.inspections || []).reduce(
+      (sum, insp) => sum + Number(insp.inspectedQuantity || 0),
+      0
+    );
+    if (alreadyTransferred > 0) {
+      const existingInspection = baseWorkOrder.inspections[0];
+      throw ApiError.badRequest(
+        `This batch has already been transferred to Quality Inspection (Inspection #${existingInspection?.inspectionNo || existingInspection?.id}, quantity: ${alreadyTransferred}). Duplicate transfers are not permitted.`
+      );
+    }
+
+    // 6. Partial batch transfers are rejected
+    if (data.quantity !== undefined && data.quantity !== null && data.quantity !== "") {
+      const requestedQty = Number(data.quantity);
+      if (requestedQty <= 0) {
+        throw ApiError.badRequest("Transfer quantity must be greater than zero.");
+      }
+      if (requestedQty < plannedQty) {
+        throw ApiError.badRequest(
+          `Partial batch transfers are not allowed. The entire completed batch of ${plannedQty} units must be transferred.`
+        );
+      }
+    }
+
+    // Full batch transfer quantity is persisted planned quantity
+    const transferQty = plannedQty;
+
     return await prisma.$transaction(async (tx) => {
       // 1. Attempt row-level lock on real database table to serialize concurrent transfers
-      let goodQty = Number(baseWorkOrder.goodQuantity || 0);
       try {
         const lockedRows = await tx.$queryRawUnsafe(
-          'SELECT id, status, "goodQuantity" FROM "WorkOrder" WHERE id = $1 FOR UPDATE',
+          'SELECT id, status, "plannedQuantity", "goodQuantity" FROM "WorkOrder" WHERE id = $1 FOR UPDATE',
           Number(workOrderId)
         );
         if (lockedRows && lockedRows.length > 0) {
           const lockedWo = lockedRows[0];
           if (
-            lockedWo.status !== WORK_ORDER_STATUS.IN_PROGRESS &&
-            lockedWo.status !== WORK_ORDER_STATUS.RELEASED
+            lockedWo.status === WORK_ORDER_STATUS.CANCELLED ||
+            lockedWo.status === WORK_ORDER_STATUS.MATERIAL_HOLD ||
+            lockedWo.status === WORK_ORDER_STATUS.QC_HOLD ||
+            lockedWo.status === "ON_HOLD"
           ) {
+            throw ApiError.badRequest(`Cannot transfer work order in '${lockedWo.status}' status.`);
+          }
+          const lockedPlanned = Number(lockedWo.plannedQuantity || 0);
+          const lockedGood = Number(lockedWo.goodQuantity || 0);
+          if (lockedPlanned <= 0 || lockedGood < lockedPlanned) {
             throw ApiError.badRequest(
-              `Cannot transfer output to quality in status '${lockedWo.status}'. Work order must be IN_PROGRESS or RELEASED.`
+              `Cannot transfer incomplete batch. Completed good output (${lockedGood}) must equal planned quantity (${lockedPlanned}).`
             );
           }
-          goodQty = Number(lockedWo.goodQuantity || 0);
         }
       } catch (lockErr) {
-        // If lockedRows throws an explicit business badRequest, rethrow it
         if (lockErr?.statusCode) throw lockErr;
       }
 
-      // 2. Sum already transferred/inspected quantities inside the locked transaction
-      const inspections = await tx.qualityInspection.findMany({
+      // 8 & 9. Verify no simultaneous transfer request has already created an inspection
+      const currentInspections = await tx.qualityInspection.findMany({
         where: { workOrderId: Number(workOrderId) },
-        select: { inspectedQuantity: true },
+        select: { id: true, inspectionNo: true, inspectedQuantity: true, status: true },
       });
 
-      const alreadyTransferred = inspections.reduce(
-        (sum, insp) => sum + Number(insp.inspectedQuantity || 0),
-        0
-      );
-
-      const availableToTransfer = Math.max(0, goodQty - alreadyTransferred);
-
-      if (availableToTransfer <= 0) {
+      if (currentInspections.length > 0) {
         throw ApiError.badRequest(
-          `All completed good output has already been transferred to Quality Inspection (${alreadyTransferred}/${goodQty} units transferred). Record additional good production before transferring again.`
+          `This batch has already been transferred to Quality Inspection (Inspection #${currentInspections[0].inspectionNo}). Duplicate transfers are prevented.`
         );
       }
 
-      if (transferQty > availableToTransfer) {
-        throw ApiError.badRequest(
-          `Total quantity transferred for inspection (${alreadyTransferred + transferQty}) cannot exceed completed good production quantity (${goodQty}). Remaining available for transfer: ${availableToTransfer}.`
-        );
-      }
+      const inspectionNo = await generateInspectionNo(tx);
 
-      // 3. Create QualityInspection lot in transaction (status PENDING_ASSIGNMENT, inspector unassigned)
+      // Create QualityInspection lot in transaction (status PENDING_ASSIGNMENT, inspector unassigned)
       const inspection = await tx.qualityInspection.create({
         data: {
           inspectionNo,
@@ -675,7 +1022,7 @@ export class ManufacturingService {
           decisionOfficer: null,
           evidenceNotes: [
             batchNumber && `Transfer Batch: ${batchNumber}`,
-            notes,
+            notes || "Full batch transfer to Quality Inspection",
           ].filter(Boolean).join(". ") || null,
         },
         include: {
@@ -688,6 +1035,15 @@ export class ManufacturingService {
               bomRevision: { select: { product: { select: { id: true, name: true, sku: true } } } },
             },
           },
+        },
+      });
+
+      // Atomically update WorkOrder status to COMPLETED and set actualEnd
+      await tx.workOrder.update({
+        where: { id: Number(workOrderId) },
+        data: {
+          status: WORK_ORDER_STATUS.COMPLETED,
+          actualEnd: baseWorkOrder.actualEnd || new Date(),
         },
       });
 

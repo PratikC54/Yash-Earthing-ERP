@@ -21,6 +21,12 @@ import Loader from "../../../components/common/Loader";
 import Modal from "../../../components/common/Modal";
 import qualityService from "../services/qualityService";
 import productionService from "../services/productionService";
+import CustomDropdown from "../../../components/common/CustomDropdown";
+import {
+  getTodayDateString,
+  validatePastDate,
+  validateQuantityInput,
+} from "../utils/formValidation";
 
 export default function InspectionDetailsPage() {
   const { id } = useParams();
@@ -215,17 +221,22 @@ export default function InspectionDetailsPage() {
       setIsPassModalOpen(false);
       return;
     }
+    if (!decisionOfficer?.trim()) {
+      alert("Please select a qualified Quality Officer.");
+      return;
+    }
+
+    const qtyErr = validateQuantityInput(passForm.quantity, {
+      max: pendingQty,
+      allowZero: false,
+      fieldName: "Pass quantity",
+    });
+    if (qtyErr) {
+      alert(qtyErr);
+      return;
+    }
+
     const qty = Number(passForm.quantity);
-
-    if (!qty || qty <= 0) {
-      alert("Please enter a valid pass quantity greater than zero.");
-      return;
-    }
-
-    if (qty > pendingQty && pendingQty > 0) {
-      alert(`Cannot pass ${qty} units. Only ${pendingQty} units are pending decision.`);
-      return;
-    }
 
     setActionLoading(true);
     try {
@@ -277,17 +288,25 @@ export default function InspectionDetailsPage() {
       setIsReworkModalOpen(false);
       return;
     }
+    if (reworkForm.targetCompletionDate) {
+      const dateErr = validatePastDate(reworkForm.targetCompletionDate, "Target completion date");
+      if (dateErr) {
+        alert(dateErr);
+        return;
+      }
+    }
+
+    const qtyErr = validateQuantityInput(reworkForm.quantity, {
+      max: pendingQty,
+      allowZero: false,
+      fieldName: "Rework quantity",
+    });
+    if (qtyErr) {
+      alert(qtyErr);
+      return;
+    }
+
     const qty = Number(reworkForm.quantity);
-
-    if (!qty || qty <= 0) {
-      alert("Please enter a valid rework quantity greater than zero.");
-      return;
-    }
-
-    if (qty > pendingQty && pendingQty > 0) {
-      alert(`Cannot assign ${qty} units to rework. Only ${pendingQty} units are pending decision.`);
-      return;
-    }
 
     if (!reworkForm.defectDescription.trim()) {
       alert("A defect description is required when routing for rework.");
@@ -334,17 +353,17 @@ export default function InspectionDetailsPage() {
       setIsRejectModalOpen(false);
       return;
     }
+    const qtyErr = validateQuantityInput(rejectForm.quantity, {
+      max: pendingQty,
+      allowZero: false,
+      fieldName: "Rejection quantity",
+    });
+    if (qtyErr) {
+      alert(qtyErr);
+      return;
+    }
+
     const qty = Number(rejectForm.quantity);
-
-    if (!qty || qty <= 0) {
-      alert("Please enter a valid rejection quantity greater than zero.");
-      return;
-    }
-
-    if (qty > pendingQty && pendingQty > 0) {
-      alert(`Cannot reject ${qty} units. Only ${pendingQty} units are pending decision.`);
-      return;
-    }
 
     if (!rejectForm.defectReason.trim()) {
       alert("A rejection reason / defect description is required.");
@@ -1020,38 +1039,27 @@ export default function InspectionDetailsPage() {
           </div>
 
           <div>
-            <label className="block text-[#f1f5f9] font-medium mb-1">
-              Defect Description & Cause for Rework <span className="text-rose-400">*</span>
-            </label>
-            <select
-              value={reworkForm.defectDescription}
-              onChange={(e) => setReworkForm({ ...reworkForm, defectDescription: e.target.value })}
-              className="w-full bg-[#0a1020] border border-[#1e2a4a] text-[#f1f5f9] rounded-lg p-2.5 focus:outline-none focus:border-[#3b82f6]"
+            <CustomDropdown
+              label="Defect Description & Cause for Rework"
               required
-            >
-              <option value="">-- Select Defect Cause --</option>
-              <option value="Sub-optimal plating immersion timing or surface oxidation">Sub-optimal plating immersion timing or surface oxidation</option>
-              <option value="Thread pitch misalignment on rolling die">Thread pitch misalignment on rolling die</option>
-              <option value="Current density fluctuation during electrodeposition">Current density fluctuation during electrodeposition</option>
-              <option value="Minor surface porosity / burrs on terminal ends">Minor surface porosity / burrs on terminal ends</option>
-              <option value="Core steel rod straightness deviation">Core steel rod straightness deviation</option>
-            </select>
+              category="rejectionReason"
+              categoryLabel="Defect Cause"
+              value={reworkForm.defectDescription}
+              onChange={(val) => setReworkForm({ ...reworkForm, defectDescription: val })}
+              placeholder="-- Select Defect Cause --"
+            />
           </div>
 
           <div>
-            <label className="block text-[#f1f5f9] font-medium mb-1">Corrective Action Required</label>
-            <select
+            <CustomDropdown
+              label="Corrective Action Required"
               required
+              category="correctiveAction"
+              categoryLabel="Corrective Action"
               value={reworkForm.correctiveAction}
-              onChange={(e) => setReworkForm({ ...reworkForm, correctiveAction: e.target.value })}
-              className="w-full bg-[#0a1020] border border-[#1e2a4a] text-[#f1f5f9] rounded-lg p-2.5 focus:outline-none focus:border-[#3b82f6]"
-            >
-              <option value="">-- Select Corrective Action --</option>
-              <option value="Re-dip in degreasing & electroplating bath">Re-dip in degreasing & electroplating bath</option>
-              <option value="Recut and rethread terminal ends">Recut and rethread terminal ends</option>
-              <option value="Manual polish and electrochemical re-coating">Manual polish and electrochemical re-coating</option>
-              <option value="Mechanical straightening & tolerance recalibration">Mechanical straightening & tolerance recalibration</option>
-            </select>
+              onChange={(val) => setReworkForm({ ...reworkForm, correctiveAction: val })}
+              placeholder="-- Select Corrective Action --"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -1078,10 +1086,16 @@ export default function InspectionDetailsPage() {
               <label className="block text-[#f1f5f9] font-medium mb-1">Target Completion Date</label>
               <input
                 type="date"
+                min={getTodayDateString()}
                 value={reworkForm.targetCompletionDate}
                 onChange={(e) => setReworkForm({ ...reworkForm, targetCompletionDate: e.target.value })}
                 className="w-full bg-[#0a1020] border border-[#1e2a4a] text-[#f1f5f9] rounded-lg p-2.5 font-mono focus:outline-none focus:border-[#3b82f6]"
               />
+              {reworkForm.targetCompletionDate && validatePastDate(reworkForm.targetCompletionDate) && (
+                <p className="text-[11px] text-rose-400 mt-1">
+                  Past dates are not allowed. Please select today or a future date.
+                </p>
+              )}
             </div>
           </div>
 
@@ -1173,37 +1187,26 @@ export default function InspectionDetailsPage() {
           </div>
 
           <div>
-            <label className="block text-[#f1f5f9] font-medium mb-1">Defect Category</label>
-            <select
+            <CustomDropdown
+              label="Defect Category"
+              category="defectType"
+              categoryLabel="Defect Category"
               value={rejectForm.defectType}
-              onChange={(e) => setRejectForm({ ...rejectForm, defectType: e.target.value })}
-              className="w-full bg-[#0a1020] border border-[#1e2a4a] text-[#f1f5f9] rounded-lg p-2.5 focus:outline-none focus:border-[#3b82f6]"
-            >
-              <option value="METALLURGICAL_DEFECT">Metallurgical Defect / Core Flaw</option>
-              <option value="COATING_PEELING">Coating Adhesion Failure / Peeling</option>
-              <option value="DIMENSIONAL_OUT_OF_SPEC">Critical Dimensional Variance</option>
-              <option value="HIGH_RESISTANCE">Electrical Resistance Exceeds Spec</option>
-              <option value="SURFACE_PITTING">Severe Surface Porosity / Pitting</option>
-            </select>
+              onChange={(val) => setRejectForm({ ...rejectForm, defectType: val })}
+              placeholder="-- Select Defect Category --"
+            />
           </div>
 
           <div>
-            <label className="block text-[#f1f5f9] font-medium mb-1">
-              Rejection Reason & Root Defect Description <span className="text-rose-400">*</span>
-            </label>
-            <select
-              value={rejectForm.defectReason}
-              onChange={(e) => setRejectForm({ ...rejectForm, defectReason: e.target.value })}
-              className="w-full bg-[#0a1020] border border-[#1e2a4a] text-[#f1f5f9] rounded-lg p-2.5 focus:outline-none focus:border-[#3b82f6]"
+            <CustomDropdown
+              label="Rejection Reason & Root Defect Description"
               required
-            >
-              <option value="">-- Select Rejection Defect Cause --</option>
-              <option value="Failed copper adhesion tape test (IS 3043)">Failed copper adhesion tape test (IS 3043)</option>
-              <option value="Ohmic resistance exceeds 0.05 ohm threshold">Ohmic resistance exceeds 0.05 ohm threshold</option>
-              <option value="Severe surface pitting and core exposure">Severe surface pitting and core exposure</option>
-              <option value="Radial crack detected post-rolling">Radial crack detected post-rolling</option>
-              <option value="Dimensional diameter out of tolerance">Dimensional diameter out of tolerance</option>
-            </select>
+              category="rejectionReason"
+              categoryLabel="Rejection Reason"
+              value={rejectForm.defectReason}
+              onChange={(val) => setRejectForm({ ...rejectForm, defectReason: val })}
+              placeholder="-- Select Rejection Defect Cause --"
+            />
           </div>
 
           <div>

@@ -3,8 +3,12 @@ import dispatchRouter from "./dispatch/dispatch.routes.js";
 import manufacturingRouter from "./manufacturing/manufacturing.routes.js";
 import planningRouter from "./planning/planning.routes.js";
 import qualityRouter from "./quality/quality.routes.js";
+import masterDataRouter from "./master-data/masterData.routes.js";
 
 const productionQualityRouter = Router();
+
+// Master Data & Custom Dropdowns
+productionQualityRouter.use("/master-data", masterDataRouter);
 
 // Submodule M4.1 — Planning & Work Orders
 productionQualityRouter.use("/planning", planningRouter);

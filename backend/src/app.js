@@ -38,7 +38,8 @@ app.use(cookieParser());
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: 300,
+    limit: env.NODE_ENV === "development" ? 50000 : 300,
+    skip: () => env.NODE_ENV === "development",
     standardHeaders: "draft-7",
     legacyHeaders: false,
   }),

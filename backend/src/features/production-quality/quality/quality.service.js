@@ -7,6 +7,10 @@ import {
   QUALITY_STATUS,
   WORK_ORDER_STATUS,
 } from "../shared/productionQuality.constants.js";
+import {
+  validateFutureOrTodayDate,
+  validateQuantityValue,
+} from "../shared/productionQuality.utils.js";
 
 export class QualityService {
   /**
@@ -909,6 +913,10 @@ export class QualityService {
       rootCause,
     } = data;
 
+    if (targetCompletionDate) {
+      validateFutureOrTodayDate(targetCompletionDate, "Target completion date");
+    }
+
     const totalInspected = Number(inspection.inspectedQuantity);
     const prevPassed = Number(inspection.acceptedQuantity || 0);
     const prevRework = Number(inspection.reworkQuantity || 0);
@@ -925,15 +933,15 @@ export class QualityService {
       ? Number(quantity)
       : availablePending;
 
-    if (decideQty <= 0) {
-      throw ApiError.badRequest("Decision quantity must be greater than zero.");
-    }
+    const uom = inspection.workOrder?.bomRevision?.product?.unitOfMeasure || "NOS";
 
-    if (decideQty > availablePending) {
-      throw ApiError.badRequest(
-        `Requested decision quantity (${decideQty}) exceeds available pending inspection quantity (${availablePending}).`
-      );
-    }
+    validateQuantityValue({
+      quantity: decideQty,
+      uom,
+      max: availablePending,
+      fieldName: "Decision quantity",
+      allowZero: false,
+    });
 
     const decisionOfficer = data.officer || inspection.assignedInspector?.name || user?.name || "Quality Inspector";
     const decisionTime = new Date();

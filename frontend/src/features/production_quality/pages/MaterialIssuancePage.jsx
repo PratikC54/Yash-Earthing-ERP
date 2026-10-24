@@ -6,6 +6,7 @@ import Button from "../../../components/common/Button";
 import Modal from "../../../components/common/Modal";
 import Loader from "../../../components/common/Loader";
 import productionService from "../services/productionService";
+import { validateQuantityInput, validateRequiredField, validateMinLength } from "../utils/formValidation";
 
 export default function MaterialIssuancePage() {
   const [loading, setLoading] = useState(false);
@@ -129,8 +130,31 @@ export default function MaterialIssuancePage() {
 
   const handleIssueSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setActionError("");
+
+    if (!issueData.workOrderId) {
+      setActionError("Please select a target Work Order.");
+      return;
+    }
+    if (!issueData.materialSku) {
+      setActionError("Please select a raw material or component.");
+      return;
+    }
+    const qtyErr = validateQuantityInput(issueData.quantityIssued, {
+      uom: issueData.unit || "NOS",
+      allowZero: false,
+      fieldName: "Issued quantity",
+    });
+    if (qtyErr) {
+      setActionError(qtyErr);
+      return;
+    }
+    if (!issueData.fromLocation) {
+      setActionError("Please select a source warehouse location.");
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await productionService.issueMaterial({
         ...issueData,
@@ -148,8 +172,38 @@ export default function MaterialIssuancePage() {
 
   const handleConsumeSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setActionError("");
+
+    if (!consumeData.workOrderId) {
+      setActionError("Please select a target Work Order.");
+      return;
+    }
+    if (!consumeData.materialSku) {
+      setActionError("Please select a raw material or component.");
+      return;
+    }
+    const qtyErr = validateQuantityInput(consumeData.quantityConsumed, {
+      uom: consumeData.unit || "NOS",
+      allowZero: false,
+      fieldName: "Consumed quantity",
+    });
+    if (qtyErr) {
+      setActionError(qtyErr);
+      return;
+    }
+    if (consumeData.scrapQuantity && String(consumeData.scrapQuantity).trim() !== "") {
+      const scrapErr = validateQuantityInput(consumeData.scrapQuantity, {
+        uom: consumeData.unit || "NOS",
+        allowZero: true,
+        fieldName: "Scrap quantity",
+      });
+      if (scrapErr) {
+        setActionError(scrapErr);
+        return;
+      }
+    }
+
+    setSubmitting(true);
     try {
       await productionService.recordMaterialConsumption({
         ...consumeData,
@@ -168,8 +222,35 @@ export default function MaterialIssuancePage() {
 
   const handleReturnSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setActionError("");
+
+    if (!returnData.workOrderId) {
+      setActionError("Please select a target Work Order.");
+      return;
+    }
+    if (!returnData.materialSku) {
+      setActionError("Please select a raw material or component.");
+      return;
+    }
+    const qtyErr = validateQuantityInput(returnData.quantityReturned, {
+      uom: returnData.unit || "NOS",
+      allowZero: false,
+      fieldName: "Returned quantity",
+    });
+    if (qtyErr) {
+      setActionError(qtyErr);
+      return;
+    }
+    if (!returnData.toLocation) {
+      setActionError("Please select a destination warehouse location.");
+      return;
+    }
+    if (!returnData.reason?.trim() || returnData.reason.trim().length < 3) {
+      setActionError("Please specify a valid reason for return (minimum 3 characters).");
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await productionService.returnMaterial({
         ...returnData,

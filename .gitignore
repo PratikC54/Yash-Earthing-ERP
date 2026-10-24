@@ -16,3 +16,17 @@ package-lock.json
 README.md
 CONTRIBUTING.md
 schema/
+
+# Tests
+tests/
+backend/tests/
+*.test.js
+*.test.jsx
+*.test.ts
+*.test.tsx
+*.spec.js
+*.spec.jsx
+*.spec.ts
+*.spec.tsx
+test-*.js
+test_*.js
