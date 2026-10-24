@@ -189,6 +189,45 @@
   ],
   "products": [
     {
+      "id": 4,
+      "sku": "SKU-CBE-50-3M",
+      "name": "Yash Copper Chemical Earthing Electrode 50mm x 7m",
+      "categoryId": "1",
+      "categoryName": "Earthing Accessories",
+      "itemType": "FINISHED",
+      "material": "99.9%",
+      "size": "50 mm",
+      "length": "3.0 meter",
+      "finish": "250 Microns Copper Coating",
+      "uom": "METER",
+      "rate": 3400,
+      "gstPercent": 18,
+      "status": "ACTIVE",
+      "description": "This is copper chemical earthing electrods - best product",
+      "referenceImage": "https://5.imimg.com/data5/SELLER/Default/2024/8/441817152/ZU/HX/XL/9811501/copper-bonded-chemical-earthing-electrode-50mm-1mtr-1000x1000.jpg",
+      "stockQuantity": 0,
+      "specifications": [
+        {
+          "attribute": "Standard Compliance",
+          "value": "IS 3043 / IEEE 80 / UL 467",
+          "unit": "",
+          "standard": "CPRI Tested"
+        },
+        {
+          "attribute": "Conductor Material",
+          "value": "99.9%",
+          "unit": "",
+          "standard": "IEC 62561-2"
+        },
+        {
+          "attribute": "Dimensions",
+          "value": "50 mm x 3.0 meter",
+          "unit": "",
+          "standard": "Factory Standard"
+        }
+      ]
+    },
+    {
       "id": 3,
       "sku": "ABC-7",
       "name": "ABC iron rods",
@@ -1208,6 +1247,15 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "audit_1792820014063_mwd7o",
+      "entity": "Product",
+      "entityId": "4",
+      "action": "CREATE",
+      "actor": "Product Engineer",
+      "details": "Created product SKU-CBE-50-3M in PostgreSQL",
+      "timestamp": "2026-10-24T05:33:34.063Z"
+    },
     {
       "id": "audit_1792818627037_csuof",
       "entity": "Product",
