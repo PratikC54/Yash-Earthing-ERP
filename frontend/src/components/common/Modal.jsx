@@ -35,23 +35,25 @@ export default function Modal({
 
       {/* Modal Dialog */}
       <div
-        className={`relative w-full ${maxWidth} bg-[#10182f] rounded-2xl shadow-2xl border border-[#1e2a4a] overflow-hidden z-10 animate-in zoom-in-95 duration-150 text-[#f1f5f9]`}
+        role="dialog"
+        aria-modal="true"
+        className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-10 animate-in zoom-in-95 duration-150 text-slate-900`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 border-b border-[#1e2a4a] bg-[#0b172d]">
+        <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-200 bg-slate-50">
           <div>
-            <h3 className="text-base font-bold text-[#f1f5f9] tracking-tight">
+            <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
               {title}
             </h3>
             {subtitle && (
-              <p className="text-xs text-[#94a3b8] mt-0.5">{subtitle}</p>
+              <p className="text-xs text-slate-600 font-semibold mt-0.5">{subtitle}</p>
             )}
           </div>
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-lg text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-slate-800/40 transition cursor-pointer"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>
@@ -59,13 +61,13 @@ export default function Modal({
         </div>
 
         {/* Body */}
-        <div className="p-6 max-h-[calc(85vh-130px)] overflow-y-auto text-[#f1f5f9]">
+        <div className="p-6 max-h-[calc(85vh-130px)] overflow-y-auto text-slate-800">
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-[#0a1020] border-t border-[#1e2a4a]">
+          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-200">
             {footer}
           </div>
         )}

@@ -184,73 +184,109 @@ export default function OverviewDashboard({ onNavigate, onSelectPage }) {
         {/* KPI 1: Pipeline Value */}
         <div
           onClick={() => navigate && navigate("leads")}
-          className="bg-[#0e172e] border border-[#1b2a4e] hover:border-blue-500/50 rounded-2xl p-5 shadow-lg transition-all duration-150 cursor-pointer group"
+          className="bg-white border border-slate-200 hover:border-slate-400 rounded-2xl p-5 shadow-xs transition-all duration-150 cursor-pointer group"
         >
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+          <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-600 uppercase tracking-wider mb-2">
             <span>TOTAL PIPELINE VALUE</span>
-            <TrendingUp className="w-4 h-4 text-blue-400 group-hover:translate-x-0.5 transition" />
+            <TrendingUp className="w-4 h-4 text-blue-600 group-hover:translate-x-0.5 transition" />
           </div>
-          <div className="text-3xl font-black text-white">
-            {formatCurrency(stats?.totalPipelineValue || 1040737)}
-          </div>
-          <div className="text-xs text-blue-400 mt-1.5 font-medium flex items-center justify-between">
-            <span>{stats?.totalLeads || 11} Total Inbound Leads</span>
-            <span className="text-[10px] text-slate-500 group-hover:text-blue-300 transition">View Leads →</span>
-          </div>
+          {loading ? (
+            <div className="space-y-2 py-1">
+              <div className="h-8 w-32 bg-slate-200/80 animate-pulse rounded-lg" />
+              <div className="h-3.5 w-40 bg-slate-200/60 animate-pulse rounded" />
+            </div>
+          ) : (
+            <>
+              <div className="text-3xl font-black text-slate-900">
+                {formatCurrency(stats?.totalPipelineValue || 0)}
+              </div>
+              <div className="text-xs text-slate-800 mt-2 font-bold flex items-center justify-between">
+                <span>{stats?.totalLeads || 0} Total Inbound Leads</span>
+                <span className="text-[11px] text-slate-900 font-extrabold group-hover:underline transition">View Leads →</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* KPI 2: Active Discussion */}
         <div
           onClick={() => navigate && navigate("calling")}
-          className="bg-[#0e172e] border border-[#1b2a4e] hover:border-cyan-500/50 rounded-2xl p-5 shadow-lg transition-all duration-150 cursor-pointer group"
+          className="bg-white border border-slate-200 hover:border-slate-400 rounded-2xl p-5 shadow-xs transition-all duration-150 cursor-pointer group"
         >
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+          <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-600 uppercase tracking-wider mb-2">
             <span>IN ACTIVE CALLING</span>
-            <PhoneCall className="w-4 h-4 text-cyan-400 group-hover:scale-110 transition" />
+            <PhoneCall className="w-4 h-4 text-sky-600 group-hover:scale-110 transition" />
           </div>
-          <div className="text-3xl font-black text-cyan-400">
-            {stats?.inDiscussion || 4}
-          </div>
-          <div className="text-xs text-cyan-300/80 mt-1.5 font-medium flex items-center justify-between">
-            <span>Assigned to Sales Consultants</span>
-            <span className="text-[10px] text-slate-500 group-hover:text-cyan-300 transition">Open Calling →</span>
-          </div>
+          {loading ? (
+            <div className="space-y-2 py-1">
+              <div className="h-8 w-16 bg-slate-200/80 animate-pulse rounded-lg" />
+              <div className="h-3.5 w-44 bg-slate-200/60 animate-pulse rounded" />
+            </div>
+          ) : (
+            <>
+              <div className="text-3xl font-black text-sky-700">
+                {stats?.inDiscussion || 0}
+              </div>
+              <div className="text-xs text-slate-800 mt-2 font-bold flex items-center justify-between">
+                <span>Assigned to Sales Consultants</span>
+                <span className="text-[11px] text-slate-900 font-extrabold group-hover:underline transition">Open Calling →</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* KPI 3: Quotes Requested / Draft */}
         <div
           onClick={() => navigate && navigate("quotations")}
-          className="bg-[#0e172e] border border-[#1b2a4e] hover:border-amber-500/50 rounded-2xl p-5 shadow-lg transition-all duration-150 cursor-pointer group"
+          className="bg-white border border-slate-200 hover:border-slate-400 rounded-2xl p-5 shadow-xs transition-all duration-150 cursor-pointer group"
         >
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+          <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-600 uppercase tracking-wider mb-2">
             <span>QUOTATIONS & PI</span>
-            <FileText className="w-4 h-4 text-amber-400 group-hover:scale-110 transition" />
+            <FileText className="w-4 h-4 text-amber-600 group-hover:scale-110 transition" />
           </div>
-          <div className="text-3xl font-black text-amber-400">
-            {recentQuotations.length || 3}
-          </div>
-          <div className="text-xs text-amber-300/80 mt-1.5 font-medium flex items-center justify-between">
-            <span>Back Officer Commercial Phase</span>
-            <span className="text-[10px] text-slate-500 group-hover:text-amber-300 transition">View Quotes →</span>
-          </div>
+          {loading ? (
+            <div className="space-y-2 py-1">
+              <div className="h-8 w-16 bg-slate-200/80 animate-pulse rounded-lg" />
+              <div className="h-3.5 w-44 bg-slate-200/60 animate-pulse rounded" />
+            </div>
+          ) : (
+            <>
+              <div className="text-3xl font-black text-amber-700">
+                {recentQuotations.length || 0}
+              </div>
+              <div className="text-xs text-slate-800 mt-2 font-bold flex items-center justify-between">
+                <span>Back Officer Commercial Phase</span>
+                <span className="text-[11px] text-slate-900 font-extrabold group-hover:underline transition">View Quotes →</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* KPI 4: Orders & Dispatch */}
         <div
           onClick={() => navigate && navigate("orders")}
-          className="bg-[#0e172e] border border-[#1b2a4e] hover:border-emerald-500/50 rounded-2xl p-5 shadow-lg transition-all duration-150 cursor-pointer group"
+          className="bg-white border border-slate-200 hover:border-slate-400 rounded-2xl p-5 shadow-xs transition-all duration-150 cursor-pointer group"
         >
-          <div className="flex items-center justify-between text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
+          <div className="flex items-center justify-between text-[11px] font-extrabold text-slate-600 uppercase tracking-wider mb-2">
             <span>CONFIRMED SO & DISPATCH</span>
-            <ShoppingCart className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition" />
+            <ShoppingCart className="w-4 h-4 text-emerald-600 group-hover:scale-110 transition" />
           </div>
-          <div className="text-3xl font-black text-emerald-400">
-            {stats?.poConfirmed || recentOrders.length || 4}
-          </div>
-          <div className="text-xs text-emerald-300/80 mt-1.5 font-medium flex items-center justify-between">
-            <span>Stock Reserved & Released</span>
-            <span className="text-[10px] text-slate-500 group-hover:text-emerald-300 transition">View Orders →</span>
-          </div>
+          {loading ? (
+            <div className="space-y-2 py-1">
+              <div className="h-8 w-16 bg-slate-200/80 animate-pulse rounded-lg" />
+              <div className="h-3.5 w-40 bg-slate-200/60 animate-pulse rounded" />
+            </div>
+          ) : (
+            <>
+              <div className="text-3xl font-black text-emerald-700">
+                {stats?.poConfirmed || recentOrders.length || 0}
+              </div>
+              <div className="text-xs text-slate-800 mt-2 font-bold flex items-center justify-between">
+                <span>Stock Reserved & Released</span>
+                <span className="text-[11px] text-slate-900 font-extrabold group-hover:underline transition">View Orders →</span>
+              </div>
+            </>
+          )}
         </div>
         </div>
       </KpiSection>
@@ -367,7 +403,32 @@ export default function OverviewDashboard({ onNavigate, onSelectPage }) {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/80">
-                {recentLeads.length === 0 ? (
+                {loading ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="py-3 px-4">
+                        <div className="h-4 w-16 bg-slate-200/80 rounded" />
+                      </td>
+                      <td className="py-3 px-4 space-y-1">
+                        <div className="h-4 w-28 bg-slate-200/80 rounded" />
+                        <div className="h-3 w-20 bg-slate-200/50 rounded" />
+                      </td>
+                      <td className="py-3 px-4 space-y-1">
+                        <div className="h-4 w-32 bg-slate-200/80 rounded" />
+                        <div className="h-3 w-16 bg-slate-200/50 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="h-5 w-20 bg-slate-200/70 rounded-full" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="h-4 w-24 bg-slate-200/60 rounded" />
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="h-7 w-16 bg-slate-200/70 rounded-lg mx-auto" />
+                      </td>
+                    </tr>
+                  ))
+                ) : recentLeads.length === 0 ? (
                   <tr>
                     <td colSpan={6} className="py-8 text-center text-slate-500">
                       No recent leads found in database.
@@ -500,7 +561,20 @@ export default function OverviewDashboard({ onNavigate, onSelectPage }) {
             </div>
 
             <div className="space-y-2 text-xs">
-              {recentOrders.length === 0 ? (
+              {loading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between animate-pulse"
+                  >
+                    <div className="space-y-1.5 flex-1">
+                      <div className="h-3.5 w-24 bg-slate-200/80 rounded" />
+                      <div className="h-3 w-32 bg-slate-200/50 rounded" />
+                    </div>
+                    <div className="h-6 w-20 bg-slate-200/70 rounded-lg" />
+                  </div>
+                ))
+              ) : recentOrders.length === 0 ? (
                 <div className="text-center py-4 text-slate-500">No orders released yet</div>
               ) : (
                 recentOrders.slice(0, 3).map((o) => (

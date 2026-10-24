@@ -27,15 +27,15 @@ export default function Button({
 
   const variantStyles = {
     primary:
-      "bg-[#3b82f6] hover:bg-blue-600 text-white shadow-sm focus:ring-[#3b82f6]/50 border border-transparent",
+      "bg-[#d4ff00] hover:bg-[#c2ed00] text-black font-black shadow-xs focus:ring-lime-400/50 border border-lime-400",
     secondary:
-      "bg-[#10182f] hover:bg-slate-800/40 text-[#f1f5f9] border border-[#1e2a4a] shadow-xs focus:ring-[#3b82f6]/30",
+      "bg-white hover:bg-slate-50 text-slate-800 font-bold border border-slate-300 shadow-xs focus:ring-slate-300",
     outline:
-      "bg-transparent hover:bg-[#10182f] text-[#94a3b8] hover:text-[#f1f5f9] border border-[#1e2a4a]",
+      "bg-transparent hover:bg-slate-100 text-slate-700 font-bold border border-slate-300",
     danger:
       "bg-rose-600 hover:bg-rose-500 text-white font-bold shadow-xs focus:ring-rose-500/50 border border-transparent",
     ghost:
-      "bg-transparent hover:bg-slate-800/40 text-[#94a3b8] hover:text-[#f1f5f9] border border-transparent",
+      "bg-transparent hover:bg-slate-100 text-slate-700 hover:text-slate-900 border border-transparent",
   };
 
   return (

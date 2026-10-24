@@ -3,7 +3,7 @@ import { ShieldCheck, CheckCircle2, AlertOctagon, RotateCcw } from "lucide-react
 import Card from "../../../../components/common/Card";
 import KpiSection from "../../../../components/common/KpiSection";
 
-export default function QualityStats({ metrics = {} }) {
+export default function QualityStats({ metrics = {}, loading = false }) {
   const stats = [
     {
       label: "Total Inspections",

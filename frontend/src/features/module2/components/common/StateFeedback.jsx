@@ -3,11 +3,16 @@ import { AlertCircle, FolderOpen, RefreshCw } from "lucide-react";
 
 export function LoadingSkeleton({ rows = 4, className = "" }) {
   return (
-    <div className={`space-y-3 animate-pulse p-4 ${className}`}>
-      <div className="h-4 bg-slate-800/80 rounded-md w-1/4"></div>
-      <div className="space-y-2">
+    <div className={`space-y-3 animate-pulse p-2 ${className}`}>
+      <div className="h-4 bg-slate-200/80 rounded-md w-1/4"></div>
+      <div className="space-y-2.5">
         {Array.from({ length: rows }).map((_, i) => (
-          <div key={i} className="h-10 bg-[#10182f] border border-[#1e2a4a] rounded-xl w-full"></div>
+          <div key={i} className="h-12 bg-white border border-slate-200 rounded-xl px-4 flex items-center justify-between shadow-xs">
+            <div className="h-4 bg-slate-200/80 rounded w-1/3"></div>
+            <div className="h-4 bg-slate-200/60 rounded w-1/4"></div>
+            <div className="h-5 bg-slate-200/60 rounded-full w-20"></div>
+            <div className="h-4 bg-slate-200/50 rounded w-12"></div>
+          </div>
         ))}
       </div>
     </div>

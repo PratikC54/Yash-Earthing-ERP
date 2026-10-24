@@ -1,4 +1,4 @@
-﻿import { prisma } from "../../db/prisma.js";
+import { prisma } from "../../db/prisma.js";
 
 const VALID_PO_TRANSITIONS = {
   DRAFT: ["PENDING_APPROVAL", "CANCELLED"],
@@ -23,8 +23,8 @@ export async function listPurchaseOrders({
   const skip = (page - 1) * limit;
   const where = {};
 
-  if (status) {
-    where.status = status;
+  if (status && status !== "ALL" && status.trim() !== "") {
+    where.status = status.toUpperCase();
   }
 
   if (vendorId) {

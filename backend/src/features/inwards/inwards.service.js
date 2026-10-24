@@ -12,8 +12,8 @@ export async function listGoodsReceipts({
   const skip = (page - 1) * limit;
   const where = {};
 
-  if (status) {
-    where.status = status;
+  if (status && status !== "ALL" && status.trim() !== "") {
+    where.status = status.toUpperCase();
   }
 
   if (purchaseOrderId) {

@@ -15,30 +15,30 @@ export default function Card({
 }) {
   return (
     <div
-      className={`bg-[#10182f] border border-[#1e2a4a] rounded-2xl shadow-md overflow-hidden transition-all duration-200 ${className}`}
+      className={`bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden transition-all duration-200 ${className}`}
     >
       {(title || subtitle || action) && (
         <div
-          className={`px-5 py-4 border-b border-[#1e2a4a] flex items-center justify-between gap-4 ${headerClassName}`}
+          className={`px-5 py-4 border-b border-slate-100 flex items-center justify-between gap-4 ${headerClassName}`}
         >
           <div>
             {title && (
-              <h3 className="text-sm font-bold text-[#f1f5f9] tracking-tight">
+              <h3 className="text-sm font-extrabold text-slate-900 tracking-tight">
                 {title}
               </h3>
             )}
             {subtitle && (
-              <p className="text-xs text-[#94a3b8] mt-0.5">{subtitle}</p>
+              <p className="text-xs text-slate-600 font-semibold mt-0.5">{subtitle}</p>
             )}
           </div>
           {action && <div className="shrink-0">{action}</div>}
         </div>
       )}
 
-      <div className={`p-5 text-[#f1f5f9] ${bodyClassName}`}>{children}</div>
+      <div className={`p-5 text-slate-800 ${bodyClassName}`}>{children}</div>
 
       {footer && (
-        <div className="px-5 py-3.5 bg-[#0a1020] border-t border-[#1e2a4a] text-xs text-[#94a3b8]">
+        <div className="px-5 py-3.5 bg-slate-50 border-t border-slate-100 text-xs text-slate-600 font-medium">
           {footer}
         </div>
       )}

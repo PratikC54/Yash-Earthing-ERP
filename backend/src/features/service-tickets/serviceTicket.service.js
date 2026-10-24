@@ -5,7 +5,9 @@ export async function listServiceTickets(filters = {}) {
   const { status, customerId, assignedToId, search, page = 1, limit = 20 } = filters;
   const where = {};
 
-  if (status) where.status = status;
+  if (status && status !== "ALL" && status.trim() !== "") {
+    where.status = status.toUpperCase();
+  }
   if (customerId) where.customerId = Number(customerId);
   if (assignedToId) where.assignedToId = Number(assignedToId);
   if (search) {

@@ -23,6 +23,8 @@ import {
 } from 'lucide-react';
 
 import { engineeringService } from '../../services/engineeringService';
+import { module1Service } from '../../services/dataServices';
+import { productionService } from '../production_quality/services/productionService';
 import AddProductModal from './AddProductModal';
 import BOMEditorModal from './BOMEditorModal';
 import CreateBOMModal from './CreateBOMModal';
@@ -30,7 +32,7 @@ import CostingPolicyModal from './CostingPolicyModal';
 import ShortageCalculatorModal from './ShortageCalculatorModal';
 import AddDrawingModal from './AddDrawingModal';
 
-export default function EngineeringDashboard({ initialTab = 'products', onNavigate }) {
+export default function EngineeringDashboard({ initialTab = 'products', onNavigate, globalSearch = '' }) {
   const [activeTab, setActiveTab] = useState(initialTab); // 'products', 'boms', 'drawings'
 
   useEffect(() => {
@@ -49,11 +51,19 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
   const [boms, setBoms] = useState([]);
   const [drawings, setDrawings] = useState([]);
   const [costingPolicy, setCostingPolicy] = useState(null);
+  const [connectedSalesOrders, setConnectedSalesOrders] = useState([]);
+  const [connectedWorkOrders, setConnectedWorkOrders] = useState([]);
 
   // Filters & Selected states
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(globalSearch || '');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  useEffect(() => {
+    if (globalSearch !== undefined && globalSearch !== null) {
+      setSearchQuery(globalSearch);
+    }
+  }, [globalSearch]);
 
   // Modals state
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
@@ -88,6 +98,24 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
 
       if (prodRes.data.length > 0 && !selectedProduct) {
         setSelectedProduct(prodRes.data[0]);
+      }
+
+      // Load connected module chain data asynchronously
+      try {
+        const [soRes, woRes] = await Promise.allSettled([
+          module1Service.getOrders({ limit: 50 }),
+          productionService.listWorkOrders({ limit: 50 })
+        ]);
+        if (soRes.status === 'fulfilled') {
+          const raw = soRes.value?.orders || soRes.value?.data?.orders || soRes.value?.data || (Array.isArray(soRes.value) ? soRes.value : []);
+          setConnectedSalesOrders(Array.isArray(raw) ? raw : (Array.isArray(raw?.orders) ? raw.orders : []));
+        }
+        if (woRes.status === 'fulfilled') {
+          const raw = woRes.value?.data?.workOrders || woRes.value?.data || (Array.isArray(woRes.value) ? woRes.value : []);
+          setConnectedWorkOrders(Array.isArray(raw) ? raw : (Array.isArray(raw?.workOrders) ? raw.workOrders : []));
+        }
+      } catch (err) {
+        console.warn('Could not load connected module data:', err);
       }
     } catch (err) {
       console.error('Failed to load engineering data:', err);
@@ -299,7 +327,11 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
         <div className="p-4 rounded-2xl bg-[#10182f] border border-[#1e2a4a] shadow-xl flex items-center justify-between">
           <div>
             <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Active Products</div>
-            <div className="text-2xl font-mono font-bold text-white mt-1">{kpis.activeProducts}</div>
+            {loading ? (
+              <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-2xl font-mono font-bold text-white mt-1">{kpis.activeProducts}</div>
+            )}
             <div className="text-[11px] text-emerald-400 font-semibold mt-1">Single Master Catalog</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-blue-600/20 text-cyan-400 border border-blue-500/30 flex items-center justify-center font-bold">
@@ -311,7 +343,11 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
         <div className="p-4 rounded-2xl bg-[#10182f] border border-[#1e2a4a] shadow-xl flex items-center justify-between">
           <div>
             <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Released BOMs</div>
-            <div className="text-2xl font-mono font-bold text-white mt-1">{kpis.releasedBoms}</div>
+            {loading ? (
+              <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-2xl font-mono font-bold text-white mt-1">{kpis.releasedBoms}</div>
+            )}
             <div className="text-[11px] text-cyan-400 font-semibold mt-1">Frozen Cost Snapshots</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold">
@@ -323,7 +359,11 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
         <div className="p-4 rounded-2xl bg-[#10182f] border border-[#1e2a4a] shadow-xl flex items-center justify-between">
           <div>
             <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Released Drawings</div>
-            <div className="text-2xl font-mono font-bold text-white mt-1">{kpis.releasedDrawings}</div>
+            {loading ? (
+              <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-2xl font-mono font-bold text-white mt-1">{kpis.releasedDrawings}</div>
+            )}
             <div className="text-[11px] text-indigo-400 font-semibold mt-1">Shop-Floor Approved</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center font-bold">
@@ -335,7 +375,11 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
         <div className="p-4 rounded-2xl bg-[#10182f] border border-[#1e2a4a] shadow-xl flex items-center justify-between">
           <div>
             <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Material Shortages</div>
-            <div className="text-2xl font-mono font-bold text-amber-400 mt-1">{kpis.materialShortages}</div>
+            {loading ? (
+              <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-2xl font-mono font-bold text-amber-400 mt-1">{kpis.materialShortages}</div>
+            )}
             <div className="text-[11px] text-slate-400 font-medium mt-1">Handed to Procurement (M2)</div>
           </div>
           <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold">
@@ -438,7 +482,19 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-[#1e2a4a]/60">
-                  {filteredProducts.map((p) => {
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
+                        <td className="py-3 px-4 space-y-1"><div className="h-4 w-36 bg-slate-200/80 rounded" /><div className="h-3 w-20 bg-slate-200/50 rounded" /></td>
+                        <td className="py-3 px-3"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                        <td className="py-3 px-3"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                        <td className="py-3 px-3 text-right"><div className="h-4 w-16 bg-slate-200/80 rounded ml-auto" /></td>
+                        <td className="py-3 px-3"><div className="h-5 w-16 bg-slate-200/70 rounded mx-auto" /></td>
+                        <td className="py-3 px-3"><div className="h-6 w-12 bg-slate-200/60 rounded mx-auto" /></td>
+                      </tr>
+                    ))
+                  ) : filteredProducts.map((p) => {
                     const isSelected = selectedProduct?.id === p.id;
                     return (
                       <tr
@@ -805,6 +861,8 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
         isOpen={isCreateBomOpen}
         onClose={() => setIsCreateBomOpen(false)}
         products={products}
+        salesOrders={connectedSalesOrders}
+        workOrders={connectedWorkOrders}
         costingPolicy={costingPolicy}
         onBomCreated={handleBomCreated}
       />

@@ -179,6 +179,27 @@ export async function registerUser(input) {
 
     const passwordHash = await hashPassword(input.password);
 
+    // Map designation to UserRole enum
+    const designationRoleMap = {
+      "Sales Consultant": "SALES_CONSULTANT",
+      "Sales Manager": "SALES_MANAGER",
+      "Back Office Executive": "BACK_OFFICER",
+      "Production Manager": "PRODUCTION_MANAGER",
+      "Design & Project Engineer": "ENGINEER",
+      "Quality Control Inspector": "QUALITY_INSPECTOR",
+      "Procurement / Purchase Officer": "PROCUREMENT_OFFICER",
+      "Dispatch & Logistics Officer": "DISPATCH_OFFICER",
+      "Factory Inward / Store Officer": "FACTORY_INWARD_OFFICER",
+      "Finance & Accounts Manager": "FINANCE_MANAGER",
+      "Bank & Treasury Executive": "BANK_OFFICE_EXECUTIVE",
+      "HR & Payroll Manager": "HR_MANAGER",
+      "Turnkey Project Manager": "PROJECT_MANAGER",
+      "Field Service Executive": "SERVICE_EXECUTIVE",
+      "System Administrator": "ADMIN",
+    };
+
+    const assignedRole = input.role || designationRoleMap[input.designation] || "SALES_CONSULTANT";
+
     // New self-registered user defaults to PENDING approval
     const user = await prisma.user.create({
       data: {
@@ -189,7 +210,7 @@ export async function registerUser(input) {
         department: input.department || "Sales",
         designation: input.designation || "Sales Consultant",
         employeeCode: code,
-        role: "SALES_CONSULTANT",
+        role: assignedRole,
         approvalStatus: "PENDING",
         isActive: true,
         canEditPhoto: true,
@@ -201,6 +222,25 @@ export async function registerUser(input) {
   } catch (error) {
     if (error.statusCode) throw error;
     // Fallback in-memory user if DB is unavailable
+    const designationRoleMap = {
+      "Sales Consultant": "SALES_CONSULTANT",
+      "Sales Manager": "SALES_MANAGER",
+      "Back Office Executive": "BACK_OFFICER",
+      "Production Manager": "PRODUCTION_MANAGER",
+      "Design & Project Engineer": "ENGINEER",
+      "Quality Control Inspector": "QUALITY_INSPECTOR",
+      "Procurement / Purchase Officer": "PROCUREMENT_OFFICER",
+      "Dispatch & Logistics Officer": "DISPATCH_OFFICER",
+      "Factory Inward / Store Officer": "FACTORY_INWARD_OFFICER",
+      "Finance & Accounts Manager": "FINANCE_MANAGER",
+      "Bank & Treasury Executive": "BANK_OFFICE_EXECUTIVE",
+      "HR & Payroll Manager": "HR_MANAGER",
+      "Turnkey Project Manager": "PROJECT_MANAGER",
+      "Field Service Executive": "SERVICE_EXECUTIVE",
+      "System Administrator": "ADMIN",
+    };
+    const assignedRole = input.role || designationRoleMap[input.designation] || "SALES_CONSULTANT";
+
     const fallbackUser = {
       id: Date.now(),
       name: input.name,
@@ -209,7 +249,7 @@ export async function registerUser(input) {
       department: input.department || "Sales",
       designation: input.designation || "Sales Consultant",
       employeeCode: input.employeeCode || `EMP-${Date.now().toString().slice(-3)}`,
-      role: "SALES_CONSULTANT",
+      role: assignedRole,
       approvalStatus: "PENDING",
       isActive: true,
       canEditPhoto: true,
