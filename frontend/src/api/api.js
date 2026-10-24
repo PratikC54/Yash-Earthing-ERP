@@ -29,10 +29,17 @@ api.interceptors.request.use(
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status = error.response?.status;
     const message =
       error.response?.data?.message ||
       error.message ||
       "An unexpected API error occurred.";
+
+    if (status === 401) {
+      localStorage.removeItem("yash_auth_token");
+      localStorage.removeItem("yash_auth_user");
+      sessionStorage.removeItem("yash_auth_token");
+    }
 
     console.error("API Error:", message);
 

@@ -1,3 +1,4 @@
+import KpiSection from "../../../components/common/KpiSection";
 import React, { useEffect, useState } from 'react';
 import { module5Api } from '../api/module5Api';
 import { CyberCard } from '../components/CyberUI';
@@ -76,7 +77,8 @@ export default function Module5Dashboard({ onNavigate }) {
       )}
 
       {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <KpiSection title="Projects & Services Overview">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Projects */}
         <CyberCard className="relative overflow-hidden group hover:border-cyan-500/40 transition-all">
           <div className="flex items-center justify-between">
@@ -177,7 +179,8 @@ export default function Module5Dashboard({ onNavigate }) {
             </button>
           </div>
         </CyberCard>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* Operational Workflow Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

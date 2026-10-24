@@ -1,3 +1,4 @@
+import KpiSection from "../../../components/common/KpiSection";
 import { useState, useEffect, useCallback } from "react";
 import { PhoneCall, MessageSquare } from "lucide-react";
 import FilterBar from "../components/FilterBar";
@@ -78,7 +79,8 @@ export default function FollowupPage() {
   return (
     <div className="min-h-full">
       {/* 4 KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <KpiSection title="Customer Follow-ups Overview" className="mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             TOTAL SCHEDULED FOLLOW-UPS
@@ -110,7 +112,8 @@ export default function FollowupPage() {
           <div className="text-3xl font-black text-emerald-400">72%</div>
           <div className="text-xs text-emerald-400/80 mt-1">Callback to quotation rate</div>
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* Filter and Search Bar */}
       <FilterBar

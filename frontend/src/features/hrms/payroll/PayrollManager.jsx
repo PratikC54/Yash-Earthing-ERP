@@ -1,3 +1,4 @@
+import KpiSection from "../../../components/common/KpiSection";
 import React, { useState, useEffect } from 'react';
 import apiClient from '../../../services/api';
 import {
@@ -337,7 +338,8 @@ export default function PayrollManager() {
       )}
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <KpiSection title="Payroll & Earnings Overview">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 shadow-lg">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Base Salary</span>
@@ -375,7 +377,8 @@ export default function PayrollManager() {
           </div>
           <div className="text-[11px] text-slate-400 mt-1">Post Fine Deductions</div>
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {statusMsg && (
         <div

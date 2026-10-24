@@ -17,6 +17,8 @@ import {
   X,
   Layers,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   AlertOctagon,
 } from "lucide-react";
 import productionService from "../../production_quality/services/productionService";
@@ -31,6 +33,7 @@ export default function DashboardPage() {
   // State
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showKpis, setShowKpis] = useState(true);
 
   // Raw data from APIs
   const [planningMetrics, setPlanningMetrics] = useState(null);
@@ -464,46 +467,77 @@ export default function DashboardPage() {
       )}
 
       {/* 2. SECTION 3A: 8 Required KPI Cards */}
-      <div>
-        <div className="flex items-center justify-between mb-3">
-          <h2 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#94a3b8]">
-            Core Production & Quality KPIs
-          </h2>
-          <span className="text-[11px] text-[#64748b]">Calculated from active ERP records</span>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
-          {kpiCardsData.map((card) => {
-            const Icon = card.icon;
-            return (
-              <div
-                key={card.id}
-                onClick={() => navigate(card.link)}
-                className="bg-[#10182f] border border-[#1e2a4a] hover:border-[#3b82f6]/60 rounded-xl p-4 flex flex-col justify-between shadow-xs hover:bg-slate-800/40 transition-all cursor-pointer group"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] leading-tight">
-                    {card.label}
-                  </span>
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${card.bgAccent} ${card.accent}`}>
-                    <Icon className="w-4 h-4" />
-                  </div>
-                </div>
+      <section aria-labelledby="core-kpis-heading">
+        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+          <div className="flex items-center gap-3">
+            <h2 id="core-kpis-heading" className="text-xs sm:text-sm font-bold uppercase tracking-wider text-[#94a3b8]">
+              Core Production & Quality KPIs
+            </h2>
+            <span className="hidden sm:inline-block text-[11px] text-[#64748b]">
+              Calculated from active ERP records
+            </span>
+          </div>
 
-                <div className="my-2.5">
-                  <div className="text-xl sm:text-2xl font-black text-[#f1f5f9] tracking-tight group-hover:text-white">
-                    {card.value}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-[#94a3b8] pt-1 border-t border-[#1e2a4a]">
-                  <span className="truncate">{card.subtext}</span>
-                  <ArrowRight className="w-3 h-3 text-[#3b82f6] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
-                </div>
-              </div>
-            );
-          })}
+          <button
+            type="button"
+            onClick={() => setShowKpis((prev) => !prev)}
+            aria-expanded={showKpis}
+            aria-controls="production-quality-kpi-cards"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[#1e2a4a] bg-[#10182f] text-xs font-semibold text-[#94a3b8] hover:text-[#f1f5f9] hover:border-[#3b82f6]/60 hover:bg-slate-800/40 transition-all cursor-pointer focus:outline-none focus:ring-1 focus:ring-[#3b82f6]"
+          >
+            <span>{showKpis ? "Hide KPIs" : "Show KPIs"}</span>
+            {showKpis ? (
+              <ChevronUp className="w-3.5 h-3.5 text-[#3b82f6]" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5 text-[#3b82f6]" aria-hidden="true" />
+            )}
+          </button>
         </div>
-      </div>
+
+        <div
+          id="production-quality-kpi-cards"
+          className={`grid transition-all duration-300 ease-in-out ${
+            showKpis
+              ? "grid-rows-[1fr] opacity-100"
+              : "grid-rows-[0fr] opacity-0 pointer-events-none"
+          }`}
+        >
+          <div className="overflow-hidden">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5 pt-0.5 pb-1">
+              {kpiCardsData.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <div
+                    key={card.id}
+                    onClick={() => navigate(card.link)}
+                    className="bg-[#10182f] border border-[#1e2a4a] hover:border-[#3b82f6]/60 rounded-xl p-4 flex flex-col justify-between shadow-xs hover:bg-slate-800/40 transition-all cursor-pointer group"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] leading-tight">
+                        {card.label}
+                      </span>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${card.bgAccent} ${card.accent}`}>
+                        <Icon className="w-4 h-4" />
+                      </div>
+                    </div>
+
+                    <div className="my-2.5">
+                      <div className="text-xl sm:text-2xl font-black text-[#f1f5f9] tracking-tight group-hover:text-white">
+                        {card.value}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-[#94a3b8] pt-1 border-t border-[#1e2a4a]">
+                      <span className="truncate">{card.subtext}</span>
+                      <ArrowRight className="w-3 h-3 text-[#3b82f6] opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* 3. SECTION 3F: Production Workflow Pipeline */}
       <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-md">

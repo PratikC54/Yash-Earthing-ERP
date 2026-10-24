@@ -8,7 +8,7 @@ export default function LoginPage() {
   const location = useLocation();
 
   const [email, setEmail] = useState("admin@yashgroup.com");
-  const [password, setPassword] = useState("admin123");
+  const [password, setPassword] = useState("YashERP@2026");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -46,7 +46,7 @@ export default function LoginPage() {
 
   const handleFillDemo = () => {
     setEmail("admin@yashgroup.com");
-    setPassword("admin123");
+    setPassword("YashERP@2026");
     setError("");
   };
 
@@ -77,56 +77,56 @@ export default function LoginPage() {
 
         {/* Error Alert */}
         {error && (
-          <div className="p-3.5 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center gap-2.5 text-xs text-rose-300 animate-in fade-in">
+          <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs flex items-center gap-2">
             <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
             <span>{error}</span>
           </div>
         )}
 
-        {/* Login Form */}
+        {/* Sign In Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
-            <label className="block text-[#94a3b8] font-medium mb-1.5">
-              Official Email Address
+            <label className="block text-[#94a3b8] font-semibold mb-1.5">
+              Authorized Email
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 text-[#64748b] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="email"
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="name@yashgroup.com"
-                className="w-full bg-[#070e1e] border border-[#1e2a4a] text-[#f1f5f9] rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition text-xs"
+                placeholder="user@yashgroup.com"
+                className="w-full bg-[#070e1e] border border-[#1e2a4a] rounded-xl px-3.5 py-2.5 pl-9 text-xs text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6] transition"
               />
+              <Mail className="w-4 h-4 text-[#475569] absolute left-3 top-3 pointer-events-none" />
             </div>
           </div>
 
           <div>
-            <label className="block text-[#94a3b8] font-medium mb-1.5">
+            <label className="block text-[#94a3b8] font-semibold mb-1.5">
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-[#64748b] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="password"
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full bg-[#070e1e] border border-[#1e2a4a] text-[#f1f5f9] rounded-xl pl-9 pr-3 py-2.5 focus:outline-none focus:border-[#3b82f6] focus:ring-1 focus:ring-[#3b82f6] transition text-xs"
+                className="w-full bg-[#070e1e] border border-[#1e2a4a] rounded-xl px-3.5 py-2.5 pl-9 text-xs text-[#f1f5f9] placeholder-[#475569] focus:outline-none focus:border-[#3b82f6] transition font-mono"
               />
+              <Lock className="w-4 h-4 text-[#475569] absolute left-3 top-3 pointer-events-none" />
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full mt-2 py-3 px-4 rounded-xl bg-[#3b82f6] hover:bg-blue-600 text-white font-semibold flex items-center justify-center gap-2 transition shadow-md shadow-blue-900/30 cursor-pointer disabled:opacity-50"
+            className="w-full mt-2 py-2.5 px-4 rounded-xl bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs shadow-lg shadow-blue-900/40 transition flex items-center justify-center gap-2 disabled:opacity-60 cursor-pointer"
           >
             {loading ? (
-              <span className="flex items-center gap-2">
-                <span className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+              <span className="inline-flex items-center gap-2">
+                <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
                 Authenticating...
               </span>
             ) : (
@@ -149,7 +149,7 @@ export default function LoginPage() {
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#10182f] border border-[#1e2a4a] text-[11px] text-[#2DD4BF] hover:bg-[#1e2a4a]/50 transition cursor-pointer"
           >
             <KeyRound className="w-3.5 h-3.5" />
-            <span>admin@yashgroup.com · admin123</span>
+            <span>admin@yashgroup.com · YashERP@2026</span>
           </button>
         </div>
 

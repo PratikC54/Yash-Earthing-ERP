@@ -1,3 +1,4 @@
+import KpiSection from "../../components/common/KpiSection";
 import React, { useState, useEffect } from 'react';
 import {
   Layers,
@@ -292,7 +293,8 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
       </div>
 
       {/* 4 KPI Cards (Dark Navy & Cyber Steel Theme) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <KpiSection title="Engineering & Catalog Metrics">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* KPI 1 */}
         <div className="p-4 rounded-2xl bg-[#10182f] border border-[#1e2a4a] shadow-xl flex items-center justify-between">
           <div>
@@ -340,7 +342,8 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
             <AlertTriangle className="w-5 h-5" />
           </div>
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* Tabs Navigation */}
       <div className="flex border-b border-[#1e2a4a] space-x-8 text-sm font-bold">

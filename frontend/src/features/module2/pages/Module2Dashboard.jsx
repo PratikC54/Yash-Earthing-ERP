@@ -1,3 +1,4 @@
+import KpiSection from "../../../components/common/KpiSection";
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Sparkles,
@@ -98,7 +99,8 @@ export default function Module2Dashboard({ onNavigate }) {
       </div>
 
       {/* 1. Procurement KPIs (5-card grid) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+      <KpiSection title="Procurement & Inventory KPIs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div
           onClick={() => onNavigate && onNavigate("purchase-requests")}
           className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-blue-500/50 transition-all cursor-pointer flex flex-col justify-between"
@@ -208,7 +210,8 @@ export default function Module2Dashboard({ onNavigate }) {
             <span>Expected date passed</span>
           </div>
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* 2. Action Centre & Low-Stock Alerts */}
       <div className="bg-[#10182f] rounded-2xl p-5 border border-[#1e2a4a] shadow-lg">

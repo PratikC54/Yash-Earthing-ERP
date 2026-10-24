@@ -1,3 +1,4 @@
+import KpiSection from "../../../components/common/KpiSection";
 import React, { useState } from 'react';
 import {
   Users,
@@ -74,7 +75,8 @@ export default function EmployeeDirectory({
       </div>
 
       {/* High-level KPI Matrix Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <KpiSection title="Workforce & Headcount KPIs">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 flex items-center space-x-3 shadow-lg">
           <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
             <Users className="w-5 h-5" />
@@ -130,7 +132,8 @@ export default function EmployeeDirectory({
             </div>
           </div>
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* Department Filter Tabs */}
       <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700">

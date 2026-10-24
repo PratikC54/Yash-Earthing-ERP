@@ -5,6 +5,7 @@ import ModuleHeader from "../components/shared/ModuleHeader";
 import Card from "../../../components/common/Card";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Loader from "../../../components/common/Loader";
+import KpiSection from "../../../components/common/KpiSection";
 import qualityService from "../services/qualityService";
 
 export default function ReworkTrackingPage() {
@@ -110,26 +111,28 @@ export default function ReworkTrackingPage() {
       />
 
       {/* Rework KPI Overview */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-amber-500">
-          <p className="text-xs text-[#94a3b8] font-medium">Batches in Rework</p>
-          <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">
-            {reworkBatches.filter((b) => ["OPEN", "IN_PROGRESS", "HOLD"].includes(b.status)).length} Active Batches
-          </h3>
-        </Card>
+      <KpiSection title="Rework KPIs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <Card className="border-l-4 border-l-amber-500">
+            <p className="text-xs text-[#94a3b8] font-medium">Batches in Rework</p>
+            <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">
+              {reworkBatches.filter((b) => ["OPEN", "IN_PROGRESS", "HOLD"].includes(b.status)).length} Active Batches
+            </h3>
+          </Card>
 
-        <Card className="border-l-4 border-l-emerald-500">
-          <p className="text-xs text-[#94a3b8] font-medium">Ready for Re-Inspection</p>
-          <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">
-            {reworkBatches.filter((b) => b.status === "READY_FOR_REINSPECTION" || b.status === "COMPLETED").length} Batches
-          </h3>
-        </Card>
+          <Card className="border-l-4 border-l-emerald-500">
+            <p className="text-xs text-[#94a3b8] font-medium">Ready for Re-Inspection</p>
+            <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">
+              {reworkBatches.filter((b) => b.status === "READY_FOR_REINSPECTION" || b.status === "COMPLETED").length} Batches
+            </h3>
+          </Card>
 
-        <Card className="border-l-4 border-l-blue-500">
-          <p className="text-xs text-[#94a3b8] font-medium">Rework Yield Recovery</p>
-          <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">—</h3>
-        </Card>
-      </div>
+          <Card className="border-l-4 border-l-blue-500">
+            <p className="text-xs text-[#94a3b8] font-medium">Rework Yield Recovery</p>
+            <h3 className="text-xl font-bold text-[#f1f5f9] mt-1">—</h3>
+          </Card>
+        </div>
+      </KpiSection>
 
       {/* Filter Toolbar */}
       <div className="bg-[#10182f] p-4 rounded-xl border border-[#1e2a4a] flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
