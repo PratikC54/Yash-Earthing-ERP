@@ -259,7 +259,7 @@ export default function ERPSidebar({
           {filteredSections.map((section) => (
             <div key={section.id} className="space-y-1">
               {!collapsed && section.title && (
-                <div className="px-2.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#64748b] flex items-center justify-between">
+                <div className="px-2.5 pt-2 pb-1 text-[10px] font-bold uppercase tracking-wider text-[#64748b] flex items-center justify-between sidebar-section-title">
                   <span>{section.title}</span>
                 </div>
               )}
@@ -281,6 +281,7 @@ export default function ERPSidebar({
                             ? "bg-[#10182f] text-[#f1f5f9] border-l-4 border-[#3b82f6] shadow-sm font-semibold border border-[#1e2a4a]"
                             : "text-[#94a3b8] hover:bg-[#10182f]/60 hover:text-[#f1f5f9]"
                         }`}
+                        data-sidebar-active={isActive ? "true" : "false"}
                         title={item.label}
                       >
                         <NavIcon
@@ -315,6 +316,7 @@ export default function ERPSidebar({
                             ? "bg-[#10182f] text-[#f1f5f9] font-semibold border border-[#1e2a4a]"
                             : "text-[#94a3b8] hover:bg-[#10182f]/60 hover:text-[#f1f5f9]"
                         }`}
+                        data-sidebar-active={hasActiveSub ? "true" : "false"}
                         title={item.label}
                       >
                         <div className="flex items-center gap-2.5 min-w-0">
@@ -356,6 +358,7 @@ export default function ERPSidebar({
                                 key={sub.id}
                                 to={sub.path}
                                 onClick={onCloseMobile}
+                                data-sidebar-active={isSubActive ? "true" : "false"}
                                 className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[11.5px] transition-all duration-150 ${
                                   isSubActive
                                     ? "bg-[#10182f] text-[#f1f5f9] font-semibold border-l-2 border-[#3b82f6] pl-2 shadow-xs border border-[#1e2a4a]"

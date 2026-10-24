@@ -164,7 +164,7 @@ export default function Sidebar({
 
             return (
               <div key={section.id} className="space-y-1">
-                <div className="sidebar-section-title px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-slate-300 flex items-center justify-between">
+                <div className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400/90 flex items-center justify-between sidebar-section-title">
                   <span>{section.title}</span>
                 </div>
 
@@ -183,7 +183,8 @@ export default function Sidebar({
                           onSelectModule(item)
                           if (onClose) onClose()
                         }}
-                        className={`w-full flex items-center space-x-3 px-3 py-2.5 rounded-xl text-left transition-all duration-150 group cursor-pointer ${
+                        data-sidebar-active={isActive ? "true" : "false"}
+                        className={`w-full flex items-center space-x-3 px-3 py-2 rounded-xl text-left transition-all duration-150 group cursor-pointer ${
                           isActive
                             ? 'bg-[#d4ff00] text-black font-black shadow-md ring-2 ring-[#d4ff00]'
                             : 'bg-transparent text-white hover:text-white hover:bg-[#18253d] font-bold'

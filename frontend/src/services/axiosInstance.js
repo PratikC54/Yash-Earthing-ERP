@@ -55,6 +55,9 @@ axiosInstance.interceptors.response.use(
         // Clear invalid auth credentials
         window.localStorage.removeItem("authToken");
         window.localStorage.removeItem("authUser");
+        window.localStorage.removeItem("yash_auth_token");
+        window.localStorage.removeItem("yash_auth_user");
+        window.sessionStorage.removeItem("yash_auth_token");
 
         // Only redirect to login if not already on the login page
         if (window.location.pathname !== "/login") {

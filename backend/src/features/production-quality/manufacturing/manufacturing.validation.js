@@ -9,13 +9,18 @@ export const startWorkOrderSchema = z.object({
 });
 
 export const productionEntrySchema = z.object({
-  workOrderId: z.coerce.number().int().positive("Work Order ID is required"),
-  quantityProduced: z.coerce.number().positive("Quantity produced must be greater than zero"),
-  shift: z.enum(["GENERAL", "SHIFT_A", "SHIFT_B", "SHIFT_C"]).default("GENERAL"),
+  workOrderId: z.coerce.number().int().positive("Work Order ID is required").optional(),
+  quantityProduced: z.coerce.number().positive("Quantity must be greater than zero").optional(),
+  quantityCompleted: z.coerce.number().positive("Quantity must be greater than zero").optional(),
+  quantity: z.coerce.number().positive("Quantity must be greater than zero").optional(),
+  shift: z.enum(["GENERAL", "SHIFT_A", "SHIFT_B", "SHIFT_C"]).default("GENERAL").optional(),
   operatorId: z.coerce.number().int().positive().optional(),
   workCenter: z.string().optional(),
-  timestamp: z.string().datetime().optional(),
+  timestamp: z.string().optional(),
+  completionDate: z.string().optional(),
   notes: z.string().max(500).optional(),
+  remarks: z.string().max(500).optional(),
+  allowOverproduction: z.boolean().optional(),
 });
 
 export const materialIssueSchema = z.object({
@@ -65,7 +70,7 @@ export const delayRecordSchema = z.object({
 });
 
 export const transferToQualitySchema = z.object({
-  quantity: z.coerce.number().positive("Transfer quantity must be greater than zero"),
+  quantity: z.coerce.number().positive("Transfer quantity must be greater than zero").optional(),
   batchNumber: z.string().optional(),
   notes: z.string().max(500).optional(),
 });

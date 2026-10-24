@@ -1,3 +1,4 @@
+import KpiSection from "../../../components/common/KpiSection";
 import React, { useState } from 'react';
 import apiClient from '../../../services/api';
 import {
@@ -95,7 +96,8 @@ export default function TrainingManager() {
       </div>
 
       {/* 4-Card Training KPI Matrix */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+      <KpiSection title="Skills & Training Compliance">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 shadow-lg">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Courses Required</span>
@@ -131,7 +133,8 @@ export default function TrainingManager() {
           <div className="text-xl font-bold text-amber-300 mt-2">12 Endorsed</div>
           <div className="text-[11px] text-slate-400 mt-1">Lathe, CNC & Assembly</div>
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* Safety Clearance Banner */}
       {safetyCheckResult && (

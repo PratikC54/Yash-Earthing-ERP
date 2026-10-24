@@ -3,7 +3,8 @@ import { AuditService } from "../../../services/audit.service.js";
 import { ApiError } from "../../../utils/apiResponse.js";
 import { formatPaginatedResult, getPaginationParams } from "../../../utils/pagination.js";
 import { PRIORITY, WORK_ORDER_STATUS } from "../shared/productionQuality.constants.js";
-import { generateWorkOrderNo } from "../shared/productionQuality.utils.js";
+import { generateWorkOrderNo, validateFutureOrTodayDate, validateQuantityValue } from "../shared/productionQuality.utils.js";
+import { MasterDataService } from "../master-data/masterData.service.js";
 
 export class PlanningService {
   /**
@@ -125,21 +126,14 @@ export class PlanningService {
         role: u.role,
         department: u.department,
       })),
-      productionLines: [
-        "Line A · Continuous Coating",
-        "Line B · Automated Threading",
-        "Line C · Finishing & Inspection",
-        "Line D · Chemical Treatment",
-      ],
-      machines: [
-        "Line A · Continuous Coating",
-        "Line B · Automated Threading",
-        "Line C · Finishing & Inspection",
-        "Line D · Chemical Treatment",
-        "M-01 CNC Lathe",
-        "M-02 Thread Roller",
-        "Furnace-01",
-      ],
+      productionLines: (await MasterDataService.getDropdownOptions("productionLine")).map((o) => o.value),
+      machines: (await MasterDataService.getDropdownOptions("machine")).map((o) => o.value),
+      workCenters: (await MasterDataService.getDropdownOptions("workCenter")).map((o) => o.value),
+      downtimeReasons: (await MasterDataService.getDropdownOptions("downtimeReason")).map((o) => o.value),
+      scrapReasons: (await MasterDataService.getDropdownOptions("scrapReason")).map((o) => o.value),
+      defectTypes: (await MasterDataService.getDropdownOptions("defectType")).map((o) => o.value),
+      rejectionReasons: (await MasterDataService.getDropdownOptions("rejectionReason")).map((o) => o.value),
+      correctiveActions: (await MasterDataService.getDropdownOptions("correctiveAction")).map((o) => o.value),
       warehouseLocations: [
         "FG-WH-BAY-01 · Finished Goods Main",
         "FG-WH-BAY-02 · Export Buffer",
@@ -188,6 +182,24 @@ export class PlanningService {
     if (!product) {
       throw ApiError.notFound(`Product with ID ${productId} does not exist`);
     }
+
+    // Date validation — Prevent past dates for scheduled production activities
+    if (plannedStart) {
+      validateFutureOrTodayDate(plannedStart, "Planned start date");
+    }
+    if (plannedEnd) {
+      validateFutureOrTodayDate(plannedEnd, "Planned completion date");
+      if (plannedStart && new Date(plannedEnd).getTime() < new Date(plannedStart).getTime()) {
+        throw ApiError.badRequest("Planned completion date cannot be earlier than planned start date.");
+      }
+    }
+
+    // Quantity validation — Non-negative, non-zero, whole units checked
+    validateQuantityValue({
+      quantity: plannedQuantity,
+      uom: product.unitOfMeasure || "NOS",
+      fieldName: "Planned quantity",
+    });
 
     // 3. Resolve BOM Revision
     let targetBOMId = bomRevisionId;

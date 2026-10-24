@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { Boxes, CheckCircle2, AlertTriangle, ArrowRight, Trash2, Loader2, Clock, ShoppingCart } from "lucide-react";
+import KpiSection from "../../../components/common/KpiSection";
+import { useState, useEffect, useCallback } from "react";
+import { Boxes, CheckCircle2, AlertTriangle, ArrowRight, Trash2 } from "lucide-react";
 import FilterBar from "../components/FilterBar";
 import CreateSalesOrderModal from "../components/CreateSalesOrderModal";
 import InventoryCheckModal from "../components/InventoryCheckModal";
@@ -298,7 +299,8 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
             <div className="text-xs text-amber-800 font-medium mt-1">Waiting dispatch handover</div>
           )}
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* Filter and Search Bar */}
       <FilterBar

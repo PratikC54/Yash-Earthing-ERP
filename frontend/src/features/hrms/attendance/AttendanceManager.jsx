@@ -1,3 +1,4 @@
+import KpiSection from "../../../components/common/KpiSection";
 import React, { useState, useEffect, useCallback } from 'react';
 import apiClient from '../../../services/api';
 import {
@@ -258,7 +259,8 @@ export default function AttendanceManager() {
   return (
     <div className="space-y-6">
       {/* Attendance KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+      <KpiSection title="Daily Attendance Overview">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs font-medium">Total Registered</div>
           {isLoading ? (
@@ -314,7 +316,8 @@ export default function AttendanceManager() {
             <div className="text-[11px] text-amber-500/80 mt-1">Pending check-in or roster</div>
           )}
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* Action Tabs */}
       <div className="flex items-center space-x-2 border-b border-slate-800 pb-2">

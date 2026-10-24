@@ -8,7 +8,7 @@ export default function LoginPage() {
   const location = useLocation();
 
   const [email, setEmail] = useState("admin@yashgroup.com");
-  const [password, setPassword] = useState("admin123");
+  const [password, setPassword] = useState("YashERP@2026");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
@@ -46,7 +46,7 @@ export default function LoginPage() {
 
   const handleFillDemo = () => {
     setEmail("admin@yashgroup.com");
-    setPassword("admin123");
+    setPassword("YashERP@2026");
     setError("");
   };
 
@@ -86,7 +86,7 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* Login Form */}
+        {/* Sign In Form */}
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           <div>
             <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -102,6 +102,7 @@ export default function LoginPage() {
                 placeholder="name@yashgroup.com"
                 className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-3.5 py-2.5 focus:outline-none focus:border-slate-800 focus:bg-white focus:ring-1 focus:ring-slate-800 transition text-xs font-medium"
               />
+              <Mail className="w-4 h-4 text-[#475569] absolute left-3 top-3 pointer-events-none" />
             </div>
           </div>
 

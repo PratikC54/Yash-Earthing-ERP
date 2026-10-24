@@ -19,6 +19,7 @@ import LogCallModal from "../components/LogCallModal";
 import QuotationModal from "../components/QuotationModal";
 import InventoryCheckModal from "../components/InventoryCheckModal";
 import TraceJobModal from "../components/TraceJobModal";
+import KpiSection from "../../../components/common/KpiSection";
 
 export default function OverviewDashboard({ onNavigate, onSelectPage }) {
   const navigate = onNavigate || onSelectPage;
@@ -178,7 +179,8 @@ export default function OverviewDashboard({ onNavigate, onSelectPage }) {
       </div>
 
       {/* 4 Primary Top KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <KpiSection title="Sales Pipeline Overview">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* KPI 1: Pipeline Value */}
         <div
           onClick={() => navigate && navigate("leads")}
@@ -286,7 +288,8 @@ export default function OverviewDashboard({ onNavigate, onSelectPage }) {
             </>
           )}
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* 5-Step Connected Workflow Stepper Navigation */}
       <div className="bg-[#0e172e] border border-[#1b2a4e] rounded-2xl p-4 shadow-xl">

@@ -1,3 +1,4 @@
+import KpiSection from "../../../components/common/KpiSection";
 import React from "react";
 import { Link } from "react-router-dom";
 import {
@@ -8,7 +9,8 @@ import {
 
 export default function KpiCards({ kpis = [] }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+    <KpiSection title="Operations KPIs">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
       {kpis.length === 0 && (
         <p className="text-sm text-[#94a3b8]">No KPI data available.</p>
       )}
@@ -67,6 +69,7 @@ export default function KpiCards({ kpis = [] }) {
           </div>
         );
       })}
-    </div>
+      </div>
+    </KpiSection>
   );
 }

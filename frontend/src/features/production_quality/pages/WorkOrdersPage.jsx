@@ -11,6 +11,12 @@ import {
   ExternalLink,
 } from "lucide-react";
 import productionService from "../services/productionService";
+import CustomDropdown from "../../../components/common/CustomDropdown";
+import {
+  getTodayDateString,
+  validatePastDate,
+  validateQuantityInput,
+} from "../utils/formValidation";
 
 export const initialWorkOrders = [];
 
@@ -162,8 +168,51 @@ export default function WorkOrdersPage() {
 
   const handleCreateSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setActionError("");
+
+    if (!newOrder.salesOrderId) {
+      setActionError("Please select a Sales Order reference.");
+      return;
+    }
+
+    if (!newOrder.productId) {
+      setActionError("Please select a target Product.");
+      return;
+    }
+
+    const qtyErr = validateQuantityInput(newOrder.plannedQuantity, {
+      fieldName: "Planned quantity",
+      allowZero: false,
+    });
+    if (qtyErr) {
+      setActionError(qtyErr);
+      return;
+    }
+
+    if (newOrder.plannedStartDate) {
+      const startErr = validatePastDate(newOrder.plannedStartDate, "Planned start date");
+      if (startErr) {
+        setActionError(startErr);
+        return;
+      }
+    }
+
+    if (newOrder.plannedCompletionDate) {
+      const endErr = validatePastDate(newOrder.plannedCompletionDate, "Planned completion date");
+      if (endErr) {
+        setActionError(endErr);
+        return;
+      }
+    }
+
+    if (newOrder.plannedStartDate && newOrder.plannedCompletionDate) {
+      if (newOrder.plannedCompletionDate < newOrder.plannedStartDate) {
+        setActionError("Planned completion date cannot be earlier than planned start date.");
+        return;
+      }
+    }
+
+    setSubmitting(true);
     try {
       const payload = {
         salesOrderId: Number(newOrder.salesOrderId),
@@ -544,25 +593,19 @@ export default function WorkOrdersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-3 items-end">
                 <div>
-                  <label className="block text-[#94a3b8] font-semibold mb-1">
-                    Assigned Production Line
-                  </label>
-                  <select
-                    className="w-full bg-[#0a1020] border border-[#1e2a4a] rounded-lg px-3 py-2 text-xs text-[#f1f5f9] focus:outline-none focus:border-[#3b82f6]"
+                  <CustomDropdown
+                    label="Assigned Production Line"
+                    category="productionLine"
+                    categoryLabel="Production Line"
+                    options={refData.productionLines}
                     value={newOrder.assignedLine}
-                    onChange={(e) =>
-                      setNewOrder({ ...newOrder, assignedLine: e.target.value })
+                    onChange={(val) =>
+                      setNewOrder({ ...newOrder, assignedLine: val })
                     }
-                  >
-                    <option value="">-- Select Production Line --</option>
-                    {refData.productionLines.map((line) => (
-                      <option key={line} value={line}>
-                        {line}
-                      </option>
-                    ))}
-                  </select>
+                    placeholder="-- Select Production Line --"
+                  />
                 </div>
                 <div>
                   <label className="block text-[#94a3b8] font-semibold mb-1">
@@ -591,6 +634,7 @@ export default function WorkOrdersPage() {
                   </label>
                   <input
                     type="date"
+                    min={getTodayDateString()}
                     className="w-full bg-[#0a1020] border border-[#1e2a4a] rounded-lg px-3 py-2 text-xs text-[#f1f5f9]"
                     value={newOrder.plannedStartDate}
                     onChange={(e) =>
@@ -600,6 +644,11 @@ export default function WorkOrdersPage() {
                       })
                     }
                   />
+                  {newOrder.plannedStartDate && validatePastDate(newOrder.plannedStartDate) && (
+                    <p className="text-[11px] text-rose-400 mt-0.5">
+                      Past dates are not allowed. Please select today or a future date.
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-[#94a3b8] font-semibold mb-1">
@@ -607,6 +656,7 @@ export default function WorkOrdersPage() {
                   </label>
                   <input
                     type="date"
+                    min={newOrder.plannedStartDate || getTodayDateString()}
                     className="w-full bg-[#0a1020] border border-[#1e2a4a] rounded-lg px-3 py-2 text-xs text-[#f1f5f9]"
                     value={newOrder.plannedCompletionDate}
                     onChange={(e) =>
@@ -616,6 +666,11 @@ export default function WorkOrdersPage() {
                       })
                     }
                   />
+                  {newOrder.plannedCompletionDate && validatePastDate(newOrder.plannedCompletionDate) && (
+                    <p className="text-[11px] text-rose-400 mt-0.5">
+                      Past dates are not allowed. Please select today or a future date.
+                    </p>
+                  )}
                 </div>
               </div>
 

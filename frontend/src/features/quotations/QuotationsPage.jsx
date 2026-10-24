@@ -1,3 +1,4 @@
+import KpiSection from "../../components/common/KpiSection";
 import { useState, useEffect, useCallback } from "react";
 import { Eye, Trash2 } from "lucide-react";
 import FilterBar from "../components/FilterBar";
@@ -162,7 +163,8 @@ export default function QuotationsPage({ onNavigateToOrders }) {
   return (
     <div className="min-h-full">
       {/* 4 KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <KpiSection title="Quotations & Proforma Overview" className="mb-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             TOTAL QUOTATIONS ISSUED
@@ -230,7 +232,8 @@ export default function QuotationsPage({ onNavigateToOrders }) {
             <div className="text-xs text-amber-400/80 mt-1">Ready for Sales Order release</div>
           )}
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* Filter and Search Bar */}
       <FilterBar

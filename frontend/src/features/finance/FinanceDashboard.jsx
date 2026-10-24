@@ -1,3 +1,4 @@
+import KpiSection from "../../components/common/KpiSection";
 import React, { useState, useEffect } from 'react';
 import {
   FileText,
@@ -851,8 +852,9 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
         </div>
       )}
 
-      {/* 4 Live Operational KPI Cards (Clean White Basis with High Contrast Accents) */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      {/* 4 Live Operational KPI Cards (Matching Module 1 / Module 3 Cyber Steel Theme) */}
+      <KpiSection title="Financial & Operational Performance">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* KPI 1: Revenue */}
         <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
@@ -930,7 +932,8 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
             <Percent className="w-5 h-5 text-emerald-700" />
           </div>
         </div>
-      </div>
+        </div>
+      </KpiSection>
 
       {/* Main Tab Controls (Clean High-Contrast Tabs) */}
       <div className="flex border-b border-slate-200 space-x-2 text-xs font-bold overflow-x-auto bg-white p-1 rounded-xl">

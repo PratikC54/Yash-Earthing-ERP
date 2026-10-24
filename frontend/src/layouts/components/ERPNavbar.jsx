@@ -7,6 +7,7 @@ import {
   ChevronRight,
   Layers,
   LogOut,
+  X,
 } from "lucide-react";
 import { findNavItemByPath } from "../../config/navigationConfig";
 import authService from "../../services/authService";
@@ -14,6 +15,7 @@ import authService from "../../services/authService";
 export default function ERPNavbar({
   onToggleMobileSidebar = () => {},
   onOpenQuickAction = () => {},
+  onClose = null,
   user = null,
   userError = "",
 }) {
@@ -212,6 +214,20 @@ export default function ERPNavbar({
             </div>
           )}
         </div>
+
+        {/* Close Button moved to suitable place in top header */}
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-[#1e2a4a] bg-[#10182f] text-xs font-semibold text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-slate-800/60 hover:border-slate-600 transition cursor-pointer"
+            title="Close and return to the previous or parent page"
+            aria-label="Close and return to the previous or parent page"
+          >
+            <X className="w-3.5 h-3.5 text-[#94a3b8]" />
+            <span className="hidden sm:inline">Close</span>
+          </button>
+        )}
       </div>
     </header>
   );

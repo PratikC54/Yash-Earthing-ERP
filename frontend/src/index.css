@@ -615,19 +615,25 @@ html body aside .sidebar-section-title span {
 
 /* Inactive Sidebar Buttons - 100% Crisp Pure White Title, Bright Slate Subtitle */
 aside button[data-sidebar-active="false"],
-html body aside button[data-sidebar-active="false"] {
+aside a[data-sidebar-active="false"],
+html body aside button[data-sidebar-active="false"],
+html body aside a[data-sidebar-active="false"] {
   background-color: transparent !important;
   color: #ffffff !important;
 }
 
 aside button[data-sidebar-active="false"]:hover,
-html body aside button[data-sidebar-active="false"]:hover {
+aside a[data-sidebar-active="false"]:hover,
+html body aside button[data-sidebar-active="false"]:hover,
+html body aside a[data-sidebar-active="false"]:hover {
   background-color: #18253d !important;
 }
 
 aside button[data-sidebar-active="false"] .sidebar-item-name,
+aside a[data-sidebar-active="false"] .sidebar-item-name,
 aside button[data-sidebar-active="false"] span.sidebar-item-name,
 html body aside button[data-sidebar-active="false"] .sidebar-item-name,
+html body aside a[data-sidebar-active="false"] .sidebar-item-name,
 html body aside button[data-sidebar-active="false"] span.sidebar-item-name {
   color: #ffffff !important;
   font-weight: 800 !important;
@@ -677,15 +683,19 @@ html body aside button[data-sidebar-active="false"] span[data-sidebar-badge="tru
 
 /* ACTIVE SIDEBAR ITEM: Electric Acid Lime Background */
 aside button[data-sidebar-active="true"],
-html body aside button[data-sidebar-active="true"] {
+aside a[data-sidebar-active="true"],
+html body aside button[data-sidebar-active="true"],
+html body aside a[data-sidebar-active="true"] {
   background-color: #d4ff00 !important;
   border: 1px solid #d4ff00 !important;
   box-shadow: 0 2px 8px rgba(212, 255, 0, 0.35) !important;
 }
 
 aside button[data-sidebar-active="true"] .sidebar-item-name,
+aside a[data-sidebar-active="true"] .sidebar-item-name,
 aside button[data-sidebar-active="true"] span.sidebar-item-name,
 html body aside button[data-sidebar-active="true"] .sidebar-item-name,
+html body aside a[data-sidebar-active="true"] .sidebar-item-name,
 html body aside button[data-sidebar-active="true"] span.sidebar-item-name {
   color: #000000 !important;
   font-weight: 900 !important;
@@ -803,4 +813,14 @@ html body aside input::placeholder {
     padding-left: 0.75rem !important;
     padding-right: 0.75rem !important;
   }
+}
+
+/* Active Module Tabs (Electric Acid Lime Bottom Border) */
+main nav a.border-\[\#3b82f6\],
+main nav a.border-b-2.border-\[\#3b82f6\],
+main .border-b-2.border-cyan-400 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-bottom-color: #d4ff00 !important;
+  font-weight: 800 !important;
 }

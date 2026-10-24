@@ -1,6 +1,7 @@
 import React from "react";
 import { ShieldCheck, CheckCircle2, AlertOctagon, RotateCcw } from "lucide-react";
 import Card from "../../../../components/common/Card";
+import KpiSection from "../../../../components/common/KpiSection";
 
 export default function QualityStats({ metrics = {}, loading = false }) {
   const stats = [
@@ -35,36 +36,30 @@ export default function QualityStats({ metrics = {}, loading = false }) {
   ];
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-      {stats.map((s) => {
-        const Icon = s.icon;
-        return (
-          <Card key={s.label} className="p-0">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-[#94a3b8]">{s.label}</p>
-                {loading ? (
-                  <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
-                ) : (
+    <KpiSection title="Quality Performance Indicators">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((s) => {
+          const Icon = s.icon;
+          return (
+            <Card key={s.label} className="p-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-[#94a3b8]">{s.label}</p>
                   <p className="text-2xl font-bold text-[#f1f5f9] mt-1 tracking-tight">
                     {s.value}
                   </p>
-                )}
-                {loading ? (
-                  <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
-                ) : (
                   <p className="text-[11px] text-[#64748b] mt-0.5">{s.subtext}</p>
-                )}
+                </div>
+                <div
+                  className={`w-11 h-11 rounded-xl flex items-center justify-center border ${s.color}`}
+                >
+                  <Icon className="w-5 h-5" />
+                </div>
               </div>
-              <div
-                className={`w-11 h-11 rounded-xl flex items-center justify-center border ${s.color}`}
-              >
-                <Icon className="w-5 h-5" />
-              </div>
-            </div>
-          </Card>
-        );
-      })}
-    </div>
+            </Card>
+          );
+        })}
+      </div>
+    </KpiSection>
   );
 }

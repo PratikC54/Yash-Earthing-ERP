@@ -352,17 +352,17 @@ test("POST /manufacturing/production-entries records shift production output", a
     headers: authHeaders("PRODUCTION_MANAGER", testUser.id),
     body: JSON.stringify({
       workOrderId: testWorkOrder.id,
-      quantityProduced: 25,
+      quantityProduced: 50,
       shift: "SHIFT_A",
       workCenter: "WC-ELECTRODE-ASSEMBLY-01",
-      notes: "First half shift completed",
+      notes: "Full batch completed",
     }),
   });
   const body = await res.json();
 
   assert.equal(res.status, 201);
   assert.equal(body.success, true);
-  assert.equal(body.data.goodQuantity, 25);
+  assert.equal(body.data.goodQuantity, 50);
 });
 
 test("POST /manufacturing/downtime and delays log operational events", async (t) => {
@@ -405,7 +405,7 @@ test("POST /manufacturing/outputs/:id/transfer-to-quality transfers output to QC
     method: "POST",
     headers: authHeaders("PRODUCTION_MANAGER", testUser.id),
     body: JSON.stringify({
-      quantity: 20,
+      quantity: 50,
       batchNumber: "BATCH-TEST-001",
       notes: "Transferring for dimensional and coating inspection",
     }),
@@ -417,7 +417,7 @@ test("POST /manufacturing/outputs/:id/transfer-to-quality transfers output to QC
   assert.ok(body.data.inspectionNo.startsWith("QI-"));
   assert.equal(body.data.status, "PENDING_ASSIGNMENT");
   assert.equal(body.data.assignedInspectorId, null);
-  assert.equal(Number(body.data.inspectedQuantity), 20);
+  assert.equal(Number(body.data.inspectedQuantity), 50);
 
   testInspection = body.data;
 });
@@ -517,7 +517,7 @@ test("POST /quality/inspections/:id/results records inspection measurements afte
     method: "POST",
     headers: authHeaders("QUALITY_INSPECTOR", testUser.id),
     body: JSON.stringify({
-      acceptedQuantity: 20,
+      acceptedQuantity: 50,
       rejectedQuantity: 0,
       measurements: {
         dimensional: [
@@ -536,7 +536,7 @@ test("POST /quality/inspections/:id/results records inspection measurements afte
   assert.equal(res.status, 200);
   assert.equal(body.success, true);
   assert.equal(body.data.status, "PASS");
-  assert.equal(Number(body.data.acceptedQuantity), 20);
+  assert.equal(Number(body.data.acceptedQuantity), 50);
 });
 
 test("POST /quality/finished-goods-releases releases accepted output to FG inventory", async (t) => {
@@ -560,7 +560,7 @@ test("POST /quality/finished-goods-releases releases accepted output to FG inven
   assert.equal(res.status, 201);
   assert.equal(body.success, true);
   assert.equal(body.data.inspection.status, "RELEASED");
-  assert.equal(body.data.releaseQuantity, 20);
+  assert.equal(body.data.releaseQuantity, 50);
   assert.ok(body.data.inventoryMovement);
 });
 

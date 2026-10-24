@@ -6,6 +6,7 @@ import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
 import Modal from "../../../components/common/Modal";
 import qualityService from "../services/qualityService";
+import { validateQuantityInput, validateRequiredField, validateMinLength } from "../utils/formValidation";
 
 export default function NonConformancePage() {
   const [ncrs, setNcrs] = useState([]);
@@ -64,8 +65,36 @@ export default function NonConformancePage() {
 
   const handleNcrSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setActionError("");
+
+    if (!ncrFormData.inspectionId) {
+      setActionError("Please select an inspection.");
+      return;
+    }
+    if (!ncrFormData.severity) {
+      setActionError("Please select defect severity.");
+      return;
+    }
+    if (!ncrFormData.defectType) {
+      setActionError("Please select a defect type.");
+      return;
+    }
+    const descErr = validateMinLength(ncrFormData.description, 5, "Defect description");
+    if (descErr) {
+      setActionError(descErr);
+      return;
+    }
+    const causeErr = validateMinLength(ncrFormData.rootCause, 5, "Root cause");
+    if (causeErr) {
+      setActionError(causeErr);
+      return;
+    }
+    if (!ncrFormData.proposedAction) {
+      setActionError("Please select a proposed disposition/action.");
+      return;
+    }
+
+    setSubmitting(true);
     try {
       await qualityService.recordNonConformance({
         ...ncrFormData,
@@ -90,14 +119,44 @@ export default function NonConformancePage() {
 
   const handleScrapSubmit = async (e) => {
     e.preventDefault();
-    setSubmitting(true);
     setActionError("");
+
+    if (!scrapFormData.inspectionId) {
+      setActionError("Please select an inspection.");
+      return;
+    }
+    const qtyErr = validateQuantityInput(scrapFormData.quantity, {
+      uom: "NOS",
+      allowZero: false,
+      fieldName: "Scrap quantity",
+    });
+    if (qtyErr) {
+      setActionError(qtyErr);
+      return;
+    }
+    const reasonErr = validateMinLength(scrapFormData.reason, 3, "Scrap reason");
+    if (reasonErr) {
+      setActionError(reasonErr);
+      return;
+    }
+    if (scrapFormData.scrapCost !== undefined && scrapFormData.scrapCost !== "" && scrapFormData.scrapCost !== null) {
+      const costErr = validateQuantityInput(scrapFormData.scrapCost, {
+        allowZero: true,
+        fieldName: "Estimated scrap cost",
+      });
+      if (costErr) {
+        setActionError(costErr);
+        return;
+      }
+    }
+
+    setSubmitting(true);
     try {
       await qualityService.approveScrap({
         ...scrapFormData,
         inspectionId: Number(scrapFormData.inspectionId),
         quantity: Number(scrapFormData.quantity),
-        scrapCost: Number(scrapFormData.scrapCost),
+        scrapCost: Number(scrapFormData.scrapCost || 0),
       });
       setIsScrapModalOpen(false);
       await loadNcrs();

@@ -2,6 +2,7 @@ import { AuditService } from "../../../services/audit.service.js";
 import { sendCreated, sendSuccess } from "../../../utils/apiResponse.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
 import PlanningService from "./planning.service.js";
+import ManufacturingService from "../manufacturing/manufacturing.service.js";
 
 export const getDashboard = asyncHandler(async (_req, res) => {
   const data = await PlanningService.getDashboard();
@@ -135,5 +136,19 @@ export const getReferenceData = asyncHandler(async (_req, res) => {
   return sendSuccess(res, {
     message: "Reference data retrieved successfully",
     data,
+  });
+});
+
+export const recordWorkOrderCompletion = asyncHandler(async (req, res) => {
+  const result = await ManufacturingService.recordProductionEntry(
+    {
+      ...req.body,
+      workOrderId: req.params.id,
+    },
+    req.user
+  );
+  return sendSuccess(res, {
+    message: "Production completion recorded successfully",
+    data: result,
   });
 });
