@@ -47,17 +47,17 @@ export default function EmployeeDirectory({
   return (
     <div className="space-y-6">
       {/* Top Header & Action */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-[#141d30] p-6 rounded-2xl border border-slate-800 shadow-xl">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-xs">
         <div>
           <div className="flex items-center space-x-3">
-            <div className="p-2.5 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30">
+            <div className="p-2.5 rounded-xl bg-lime-100 text-lime-800 border border-lime-300">
               <Users className="w-6 h-6" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-white tracking-tight">
+              <h2 className="text-xl font-black text-slate-900 tracking-tight">
                 7.1 Workforce & Employee Directory
               </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
+              <p className="text-xs text-slate-600 font-semibold mt-0.5">
                 Manage full-time staff, factory workers, supervisors, and contract labour rosters
               </p>
             </div>
@@ -66,7 +66,7 @@ export default function EmployeeDirectory({
 
         <button
           onClick={onOpenCreateModal}
-          className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-semibold px-4 py-2.5 rounded-xl shadow-lg shadow-blue-600/30 transition active:scale-95 cursor-pointer"
+          className="flex items-center space-x-2 bg-[#d4ff00] hover:bg-[#c2ed00] text-black text-xs font-black px-4 py-2.5 rounded-xl border border-lime-400 shadow-xs transition active:scale-95 cursor-pointer"
         >
           <UserPlus className="w-4 h-4" />
           <span>Add Worker / Employee</span>
@@ -75,71 +75,87 @@ export default function EmployeeDirectory({
 
       {/* High-level KPI Matrix Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 flex items-center space-x-3 shadow-lg">
-          <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center space-x-3 shadow-xs">
+          <div className="p-2.5 rounded-xl bg-blue-50 text-blue-700 border border-blue-200">
             <Users className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">
               Total Workforce
             </div>
-            <div className="text-xl font-extrabold text-white mt-0.5">
-              {pagination.total || employees.length}
-            </div>
+            {isLoading ? (
+              <div className="h-6 w-12 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-xl font-black text-slate-900 mt-0.5">
+                {pagination.total || employees.length}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 flex items-center space-x-3 shadow-lg">
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center space-x-3 shadow-xs">
+          <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">
             <UserCheck className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">
               Active Members
             </div>
-            <div className="text-xl font-extrabold text-emerald-400 mt-0.5">
-              {activeCount}
-            </div>
+            {isLoading ? (
+              <div className="h-6 w-12 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-xl font-black text-emerald-700 mt-0.5">
+                {activeCount}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 flex items-center space-x-3 shadow-lg">
-          <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center space-x-3 shadow-xs">
+          <div className="p-2.5 rounded-xl bg-indigo-50 text-indigo-700 border border-indigo-200">
             <BriefcaseBusiness className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">
               Full-Time Staff
             </div>
-            <div className="text-xl font-extrabold text-indigo-300 mt-0.5">
-              {staffCount}
-            </div>
+            {isLoading ? (
+              <div className="h-6 w-12 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-xl font-black text-indigo-700 mt-0.5">
+                {staffCount}
+              </div>
+            )}
           </div>
         </div>
 
-        <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 flex items-center space-x-3 shadow-lg">
-          <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+        <div className="bg-white p-4 rounded-xl border border-slate-200 flex items-center space-x-3 shadow-xs">
+          <div className="p-2.5 rounded-xl bg-amber-50 text-amber-700 border border-amber-200">
             <HardHat className="w-5 h-5" />
           </div>
           <div>
-            <div className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+            <div className="text-[11px] font-extrabold text-slate-600 uppercase tracking-wider">
               Factory Labour
             </div>
-            <div className="text-xl font-extrabold text-amber-300 mt-0.5">
-              {labourCount}
-            </div>
+            {isLoading ? (
+              <div className="h-6 w-12 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-xl font-black text-amber-700 mt-0.5">
+                {labourCount}
+              </div>
+            )}
           </div>
         </div>
       </div>
 
       {/* Department Filter Tabs */}
-      <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-slate-700">
+      <div className="flex items-center space-x-2 overflow-x-auto pb-2 scrollbar-thin">
         <button
           onClick={() => onSelectDepartment('ALL')}
-          className={`px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 cursor-pointer ${
+          className={`px-4 py-2 rounded-xl text-xs font-black transition shrink-0 cursor-pointer ${
             selectedDepartment === 'ALL'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-              : 'bg-[#141d30] text-slate-400 hover:text-slate-200 border border-slate-800'
+              ? 'bg-[#d4ff00] text-black border border-lime-400 shadow-xs'
+              : 'bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50 border border-slate-300'
           }`}
         >
           All Departments ({pagination.total || employees.length})
@@ -150,10 +166,10 @@ export default function EmployeeDirectory({
             <button
               key={dept}
               onClick={() => onSelectDepartment(dept)}
-              className={`px-4 py-2 rounded-xl text-xs font-semibold transition shrink-0 cursor-pointer ${
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition shrink-0 cursor-pointer ${
                 selectedDepartment === dept
-                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30'
-                  : 'bg-[#141d30] text-slate-400 hover:text-slate-200 border border-slate-800'
+                  ? 'bg-[#d4ff00] text-black border border-lime-400 shadow-xs'
+                  : 'bg-white text-slate-700 hover:text-slate-900 hover:bg-slate-50 border border-slate-300'
               }`}
             >
               {dept}
@@ -162,7 +178,7 @@ export default function EmployeeDirectory({
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-4">
+      <div className="bg-white p-4 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-4 shadow-xs">
         {/* Search */}
         <div className="relative flex-1 min-w-[240px]">
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -171,7 +187,7 @@ export default function EmployeeDirectory({
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search by code, name, designation, or department..."
-            className="w-full bg-[#0d1424] text-xs text-slate-200 placeholder-slate-500 pl-9 pr-4 py-2.5 rounded-lg border border-slate-750 focus:outline-none focus:border-blue-500 transition"
+            className="w-full bg-slate-50 text-xs text-slate-900 placeholder-slate-400 pl-9 pr-4 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:bg-white focus:ring-2 focus:ring-lime-400 focus:border-slate-900 transition"
           />
         </div>
 
@@ -181,7 +197,7 @@ export default function EmployeeDirectory({
           <select
             value={employmentTypeFilter}
             onChange={(e) => onEmploymentTypeChange(e.target.value)}
-            className="bg-[#0d1424] text-xs text-slate-300 border border-slate-750 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 cursor-pointer"
+            className="bg-white text-xs text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-lime-400 cursor-pointer"
           >
             <option value="ALL">All Employment Types</option>
             <option value="Full-Time">Full-Time (Office/Staff)</option>
@@ -194,7 +210,7 @@ export default function EmployeeDirectory({
           <select
             value={activeStatusFilter}
             onChange={(e) => onActiveStatusChange(e.target.value)}
-            className="bg-[#0d1424] text-xs text-slate-300 border border-slate-750 rounded-lg px-3 py-2 focus:outline-none focus:border-blue-500 cursor-pointer"
+            className="bg-white text-xs text-slate-900 font-bold border border-slate-300 rounded-xl px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-lime-400 cursor-pointer"
           >
             <option value="">All Statuses</option>
             <option value="true">Active Only</option>
@@ -204,10 +220,10 @@ export default function EmployeeDirectory({
       </div>
 
       {/* Employee Table */}
-      <div className="bg-[#141d30] rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+      <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-slate-300">
-            <thead className="bg-[#0d1424] text-slate-400 uppercase text-[10px] tracking-wider border-b border-slate-800 font-semibold whitespace-nowrap">
+          <table className="w-full text-left text-xs text-slate-800">
+            <thead className="bg-slate-100 text-slate-900 uppercase text-[10px] tracking-wider border-b-2 border-slate-200 font-black whitespace-nowrap">
               <tr>
                 <th className="py-3 px-4">Code</th>
                 <th className="py-3 px-4">Employee Name</th>
@@ -222,14 +238,19 @@ export default function EmployeeDirectory({
             </thead>
             <tbody className="divide-y divide-slate-800/60 font-normal">
               {isLoading ? (
-                <tr>
-                  <td colSpan="9" className="py-12 text-center text-slate-400">
-                    <div className="flex justify-center items-center space-x-2">
-                      <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin" />
-                      <span>Loading workforce directory...</span>
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-32 bg-slate-200/80 rounded" /><div className="h-2.5 w-16 bg-slate-200/50 rounded mt-1" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-28 bg-slate-200/80 rounded" /><div className="h-2.5 w-20 bg-slate-200/50 rounded mt-1" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/70 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-24 bg-slate-200/70 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-5 w-16 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-3 px-4"><div className="h-5 w-16 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-3 px-4 text-center"><div className="h-6 w-16 bg-slate-200/60 rounded-lg mx-auto" /></td>
+                  </tr>
+                ))
               ) : employees.length > 0 ? (
                 employees.map((emp) => (
                   <tr key={emp.id} className="hover:bg-slate-800/40 transition">

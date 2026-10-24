@@ -1,4 +1,4 @@
-export default function Module1KpiCards({ stats }) {
+export default function Module1KpiCards({ stats, loading = false }) {
   const {
     totalPipelineValue = 7074,
     totalLeads = 49,
@@ -23,10 +23,18 @@ export default function Module1KpiCards({ stats }) {
           TOTAL INBOUND PIPELINE
         </div>
         <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          {formatCurrency(totalPipelineValue)}
+          {loading ? (
+            <div className="h-8 w-28 bg-slate-200/80 rounded animate-pulse my-0.5" />
+          ) : (
+            formatCurrency(totalPipelineValue)
+          )}
         </div>
         <div className="text-xs text-blue-400 font-medium mt-1">
-          {totalLeads} Total Customer Enquiries
+          {loading ? (
+            <div className="h-3 w-36 bg-slate-200/60 rounded animate-pulse" />
+          ) : (
+            `${totalLeads} Total Customer Enquiries`
+          )}
         </div>
         <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/5 rounded-bl-full pointer-events-none" />
       </div>
@@ -37,10 +45,18 @@ export default function Module1KpiCards({ stats }) {
           IN ACTIVE DISCUSSION
         </div>
         <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          {inDiscussion}
+          {loading ? (
+            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-0.5" />
+          ) : (
+            inDiscussion
+          )}
         </div>
         <div className="text-xs text-cyan-400 font-medium mt-1">
-          Contacted & qualified enquiries
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse" />
+          ) : (
+            "Contacted & qualified enquiries"
+          )}
         </div>
         <div className="absolute top-0 right-0 w-24 h-24 bg-cyan-500/5 rounded-bl-full pointer-events-none" />
       </div>
@@ -51,10 +67,18 @@ export default function Module1KpiCards({ stats }) {
           QUOTES REQUESTED
         </div>
         <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          {quotesRequested}
+          {loading ? (
+            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-0.5" />
+          ) : (
+            quotesRequested
+          )}
         </div>
         <div className="text-xs text-amber-400 font-medium mt-1">
-          Commercial sizing & proposal phase
+          {loading ? (
+            <div className="h-3 w-36 bg-slate-200/60 rounded animate-pulse" />
+          ) : (
+            "Commercial sizing & proposal phase"
+          )}
         </div>
         <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-bl-full pointer-events-none" />
       </div>
@@ -65,10 +89,18 @@ export default function Module1KpiCards({ stats }) {
           PO / CONFIRMED
         </div>
         <div className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-          {poConfirmed}
+          {loading ? (
+            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-0.5" />
+          ) : (
+            poConfirmed
+          )}
         </div>
         <div className="text-xs text-emerald-400 font-medium mt-1">
-          Converted to confirmed orders
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse" />
+          ) : (
+            "Converted to confirmed orders"
+          )}
         </div>
         <div className="absolute top-0 right-0 w-24 h-24 bg-emerald-500/5 rounded-bl-full pointer-events-none" />
       </div>

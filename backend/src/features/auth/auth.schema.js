@@ -7,6 +7,7 @@ export const registerSchema = z.object({
   phone: z.string().trim().optional().nullable(),
   department: z.string().trim().optional().default("Sales"),
   designation: z.string().trim().optional().default("Sales Consultant"),
+  role: z.string().trim().optional(),
   employeeCode: z.string().trim().optional().nullable(),
 });
 

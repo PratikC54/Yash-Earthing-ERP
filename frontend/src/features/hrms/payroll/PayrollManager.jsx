@@ -343,8 +343,16 @@ export default function PayrollManager() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Base Salary</span>
             <Wallet className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-xl font-bold text-white mt-2">₹{Number(basicSalary).toLocaleString('en-IN')}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Monthly Gross Rate</div>
+          {isLoading ? (
+            <div className="h-7 w-20 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-white mt-2">₹{Number(basicSalary).toLocaleString('en-IN')}</div>
+          )}
+          {isLoading ? (
+            <div className="h-3 w-28 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-[11px] text-slate-400 mt-1">Monthly Gross Rate</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 shadow-lg">
@@ -352,8 +360,16 @@ export default function PayrollManager() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Payable Days</span>
             <FileSpreadsheet className="w-4 h-4 text-blue-400" />
           </div>
-          <div className="text-xl font-bold text-blue-400 mt-2">{payableDays} / 30 Days</div>
-          <div className="text-[11px] text-slate-400 mt-1">Attendance Reconciled</div>
+          {isLoading ? (
+            <div className="h-7 w-20 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-blue-400 mt-2">{payableDays} / 30 Days</div>
+          )}
+          {isLoading ? (
+            <div className="h-3 w-28 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-[11px] text-slate-400 mt-1">Attendance Reconciled</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 shadow-lg">
@@ -361,8 +377,16 @@ export default function PayrollManager() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Total Deductions</span>
             <ArrowDownCircle className="w-4 h-4 text-rose-400" />
           </div>
-          <div className="text-xl font-bold text-rose-400 mt-2">₹{approvedDeductionsTotal}</div>
-          <div className="text-[11px] text-slate-400 mt-1">Deducted from Salary</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-rose-400 mt-2">₹{approvedDeductionsTotal}</div>
+          )}
+          {isLoading ? (
+            <div className="h-3 w-28 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-[11px] text-slate-400 mt-1">Deducted from Salary</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800 shadow-lg">
@@ -370,10 +394,18 @@ export default function PayrollManager() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Net Take-Home Pay</span>
             <ShieldCheck className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-xl font-bold text-emerald-400 mt-2">
-            ₹{Math.max(0, Number(basicSalary) - approvedDeductionsTotal).toLocaleString('en-IN')}
-          </div>
-          <div className="text-[11px] text-slate-400 mt-1">Post Fine Deductions</div>
+          {isLoading ? (
+            <div className="h-7 w-20 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-emerald-400 mt-2">
+              ₹{Math.max(0, Number(basicSalary) - approvedDeductionsTotal).toLocaleString('en-IN')}
+            </div>
+          )}
+          {isLoading ? (
+            <div className="h-3 w-28 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-[11px] text-slate-400 mt-1">Post Fine Deductions</div>
+          )}
         </div>
       </div>
 

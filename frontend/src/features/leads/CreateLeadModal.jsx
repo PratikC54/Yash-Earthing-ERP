@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
-import { X, UserPlus, ShieldCheck, Plus, Trash2, Package, ChevronDown, AlertCircle, CheckCircle2 } from "lucide-react";
-import module1Service from "../services/module1Service";
+import { X, UserPlus, ShieldCheck, Plus, Trash2, Package, ChevronDown, AlertCircle, CheckCircle2, Loader2 } from "lucide-react";
+import module1Service from "../module1/services/module1Service";
 
 export const COUNTRY_CODES = [
   { code: "+91", country: "India", flag: "🇮🇳", digits: 10, placeholder: "98230 44121" },
@@ -17,6 +17,7 @@ export const COUNTRY_CODES = [
 ];
 
 export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     customerName: "",
     contactName: "",
@@ -204,7 +205,7 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
 
   const isValidPhone = phoneNumber.length > 0 && !validatePhone(phoneNumber, selectedCountryCode);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!formData.customerName) {
       alert("Please provide customer company name.");
@@ -224,32 +225,39 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
 
     const fullPhone = `${selectedCountryCode} ${phoneNumber.trim()}`;
 
-    if (onSubmit) {
-      onSubmit({
-        ...formData,
-        phone: fullPhone,
-        items: selectedItems,
-        productName: selectedItems.map((i) => i.productName).join(", "),
-        productSku: selectedItems[0]?.productSku || "MULTIPLE",
-        variant: selectedItems[0]?.variant || "Standard",
-        quantity: totalQuantity,
-        expectedValue: totalCalculatedValue,
-      });
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      if (onSubmit) {
+        await onSubmit({
+          ...formData,
+          phone: fullPhone,
+          items: selectedItems,
+          productName: selectedItems.map((i) => i.productName).join(", "),
+          productSku: selectedItems[0]?.productSku || "MULTIPLE",
+          variant: selectedItems[0]?.variant || "Standard",
+          quantity: totalQuantity,
+          expectedValue: totalCalculatedValue,
+          createdAt: new Date().toISOString(),
+        });
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+      <div className="bg-white border border-slate-200 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden my-auto max-h-[92vh] flex flex-col text-slate-800 animate-in zoom-in-95 duration-150">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-[#0d1424] shrink-0">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90 shrink-0">
           <div className="flex items-center space-x-2.5">
-            <div className="w-8 h-8 rounded-lg bg-blue-600/20 text-cyan-400 flex items-center justify-center">
+            <div className="w-8 h-8 rounded-lg bg-[#0c1222] text-[#d4ff00] flex items-center justify-center shadow-xs">
               <UserPlus className="w-4 h-4" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">Capture Inbound Lead</h2>
-              <p className="text-[11px] text-slate-400">
+              <h2 className="text-base font-black text-[#0f172a]">Capture Inbound Lead</h2>
+              <p className="text-[11px] font-semibold text-slate-500">
                 Supports multiple product selection · Automatically assigned to Sales Consultant
               </p>
             </div>
@@ -257,16 +265,16 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
           <button
             type="button"
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Notice */}
-        <div className="mx-6 mt-4 p-3 rounded-xl bg-blue-950/40 border border-blue-600/30 flex items-center gap-2.5 text-xs text-blue-200 shrink-0">
-          <ShieldCheck className="w-4 h-4 text-cyan-400 shrink-0" />
-          <span>Automatic round-robin assignment to certified <b>SALES_CONSULTANT</b> enabled.</span>
+        <div className="mx-6 mt-4 p-3 rounded-xl bg-lime-50/90 border border-lime-300 flex items-center gap-2.5 text-xs text-lime-950 shrink-0 font-medium">
+          <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+          <span>Automatic round-robin assignment to certified <b className="font-bold text-black">SALES_CONSULTANT</b> enabled.</span>
         </div>
 
         {/* Form Body */}
@@ -274,7 +282,7 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
           {/* Customer / Company details */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Company / Customer Name *
               </label>
               <input
@@ -284,11 +292,12 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
                 value={formData.customerName}
                 onChange={handleChange}
                 placeholder="e.g. SuryaGrid Projects Pvt Ltd"
-                className="w-full bg-[#0a1020] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-white text-slate-900 text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#0c1222] font-semibold shadow-xs"
+                style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Contact Person
               </label>
               <input
@@ -297,7 +306,8 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
                 value={formData.contactName}
                 onChange={handleChange}
                 placeholder="e.g. Amit Kulkarni"
-                className="w-full bg-[#0a1020] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-white text-slate-900 text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#0c1222] font-semibold shadow-xs"
+                style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
               />
             </div>
           </div>
@@ -305,18 +315,18 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-semibold text-slate-300">
+                <label className="block text-xs font-bold text-slate-700">
                   Mobile Number *
                 </label>
                 <span
                   className={`text-[10px] font-mono ${
                     phoneNumber.length === selectedCountry.digits
                       ? isValidPhone
-                        ? "text-emerald-400 font-semibold"
-                        : "text-amber-400 font-semibold"
+                        ? "text-emerald-600 font-bold"
+                        : "text-amber-600 font-bold"
                       : phoneNumber.length > 0
-                      ? "text-slate-400"
-                      : "text-slate-500"
+                      ? "text-slate-600 font-semibold"
+                      : "text-slate-400"
                   }`}
                 >
                   {phoneNumber.length}/{selectedCountry.digits} digits
@@ -324,20 +334,26 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
               </div>
               <div className="flex items-stretch gap-1.5">
                 {/* Country Code Dropdown */}
-                <div className="relative shrink-0 w-[110px]">
+                <div className="relative shrink-0 w-[125px]">
                   <select
                     value={selectedCountryCode}
                     onChange={handleCountryChange}
-                    className="w-full h-full appearance-none bg-[#0a1020] text-slate-100 text-xs pl-2.5 pr-7 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500 cursor-pointer font-medium"
+                    className="w-full h-full appearance-none bg-white text-slate-900 text-xs pl-3 pr-7 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#0c1222] cursor-pointer font-bold shadow-xs"
                     title="Select Country Code"
+                    style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
                   >
                     {COUNTRY_CODES.map((item) => (
-                      <option key={item.code} value={item.code} className="bg-[#0f172a] text-slate-200">
-                        {item.flag} {item.code}
+                      <option
+                        key={item.code}
+                        value={item.code}
+                        className="bg-white text-slate-900 font-bold py-1.5"
+                        style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
+                      >
+                        {item.flag} {item.code} ({item.country})
                       </option>
                     ))}
                   </select>
-                  <ChevronDown className="w-3.5 h-3.5 text-slate-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>
 
                 {/* Phone Number Input */}
@@ -354,38 +370,39 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
                     }}
                     placeholder={selectedCountry.placeholder}
                     maxLength={selectedCountry.digits}
-                    className={`w-full bg-[#0a1020] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border font-mono tracking-wide focus:outline-none focus:ring-1 ${
+                    className={`w-full bg-white text-slate-900 text-xs px-3.5 py-2.5 rounded-xl border font-mono font-bold tracking-wide focus:outline-none shadow-xs ${
                       phoneTouched && phoneError
-                        ? "border-rose-500/80 focus:ring-rose-500 bg-rose-950/10 text-rose-100"
+                        ? "border-rose-400 focus:border-rose-500 bg-rose-50/50 text-rose-900"
                         : isValidPhone
-                        ? "border-emerald-500/60 focus:ring-emerald-500 bg-emerald-950/10"
-                        : "border-slate-800 focus:ring-blue-500"
+                        ? "border-emerald-500 focus:border-emerald-600 bg-emerald-50/30 text-slate-900"
+                        : "border-slate-300 focus:border-[#0c1222] text-slate-900"
                     }`}
+                    style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
                   />
                   {isValidPhone && (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   )}
                 </div>
               </div>
 
               {/* Validation helper / error text */}
               {phoneTouched && phoneError ? (
-                <p className="mt-1 flex items-center gap-1 text-[11px] text-rose-400 font-medium">
-                  <AlertCircle className="w-3 h-3 shrink-0" />
+                <p className="mt-1 flex items-center gap-1 text-[11px] text-rose-600 font-bold">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>{phoneError}</span>
                 </p>
               ) : selectedCountryCode === "+91" ? (
-                <p className="mt-1 text-[10px] text-slate-500">
+                <p className="mt-1 text-[10px] text-slate-500 font-medium">
                   Enter 10-digit Indian mobile number (starts with 6, 7, 8, or 9)
                 </p>
               ) : (
-                <p className="mt-1 text-[10px] text-slate-500">
+                <p className="mt-1 text-[10px] text-slate-500 font-medium">
                   {selectedCountry.country}: {selectedCountry.digits} digits required
                 </p>
               )}
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Corporate Email
               </label>
               <input
@@ -394,14 +411,15 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="contact@suryagrid.com"
-                className="w-full bg-[#0a1020] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-white text-slate-900 text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#0c1222] font-semibold shadow-xs"
+                style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 City & State
               </label>
               <input
@@ -410,28 +428,30 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
                 value={formData.city}
                 onChange={handleChange}
                 placeholder="Pune"
-                className="w-full bg-[#0a1020] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-white text-slate-900 text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#0c1222] font-semibold shadow-xs"
+                style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1">
+              <label className="block text-xs font-bold text-slate-700 mb-1">
                 Lead Source
               </label>
               <select
                 name="source"
                 value={formData.source}
                 onChange={handleChange}
-                className="w-full bg-[#0a1020] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                className="w-full bg-white text-slate-900 text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#0c1222] font-bold shadow-xs cursor-pointer"
+                style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
               >
-                <option value="INDIAN_MART">IndiaMART</option>
-                <option value="TRADE_INDIA">TradeIndia</option>
-                <option value="EXPORT_INDIA">ExportIndia</option>
-                <option value="JUSTDIAL">Justdial</option>
-                <option value="GOOGLE_ADS">Google Ads</option>
-                <option value="META_ADS">Meta Ads</option>
-                <option value="WEBSITE">Website</option>
-                <option value="MANUAL">Manual Inbound</option>
-                <option value="REFERRAL">Referral</option>
+                <option value="INDIAN_MART" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>IndiaMART</option>
+                <option value="TRADE_INDIA" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>TradeIndia</option>
+                <option value="EXPORT_INDIA" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>ExportIndia</option>
+                <option value="JUSTDIAL" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>Justdial</option>
+                <option value="GOOGLE_ADS" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>Google Ads</option>
+                <option value="META_ADS" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>Meta Ads</option>
+                <option value="WEBSITE" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>Website</option>
+                <option value="MANUAL" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>Manual Inbound</option>
+                <option value="REFERRAL" style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>Referral</option>
               </select>
             </div>
           </div>
@@ -439,14 +459,14 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
           {/* Multiple Products Requirement Builder */}
           <div className="pt-2">
             <div className="flex items-center justify-between mb-2">
-              <span className="font-bold text-white uppercase text-[11px] tracking-wider flex items-center gap-1.5">
-                <Package className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="font-bold text-slate-800 uppercase text-[11px] tracking-wider flex items-center gap-1.5">
+                <Package className="w-3.5 h-3.5 text-blue-600" />
                 <span>Product Requirements ({selectedItems.length} items)</span>
               </span>
               <button
                 type="button"
                 onClick={handleAddItem}
-                className="flex items-center gap-1 text-[11px] font-bold text-cyan-400 hover:text-cyan-300 transition cursor-pointer"
+                className="flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:text-blue-800 transition cursor-pointer px-2 py-0.5 rounded-md hover:bg-blue-50"
               >
                 <Plus className="w-3.5 h-3.5" />
                 <span>Add Product</span>
@@ -457,17 +477,18 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
               {selectedItems.map((item, idx) => (
                 <div
                   key={idx}
-                  className="p-3 bg-[#0a1020] border border-slate-800 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-3"
+                  className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex flex-col sm:flex-row items-start sm:items-center gap-3"
                 >
                   <div className="flex-1 w-full sm:w-auto">
-                    <label className="block text-[10px] text-slate-400 mb-0.5">Product from Catalog *</label>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Product from Catalog *</label>
                     <select
                       value={item.productId || ""}
                       onChange={(e) => handleProductSelect(idx, e.target.value)}
-                      className="w-full bg-[#10182f] text-slate-100 text-xs px-2.5 py-2 rounded-lg border border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="w-full bg-white text-slate-900 text-xs px-2.5 py-2 rounded-xl border border-slate-300 focus:outline-none focus:border-[#0c1222] font-semibold shadow-xs cursor-pointer"
+                      style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
                     >
                       {availableProducts.map((p) => (
-                        <option key={p.id} value={p.id}>
+                        <option key={p.id} value={p.id} style={{ backgroundColor: '#ffffff', color: '#0f172a' }}>
                           {p.name} ({p.sku}) {p.listPrice ? `· ₹${Number(p.listPrice).toFixed(0)}` : ""}
                         </option>
                       ))}
@@ -475,19 +496,20 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
                   </div>
 
                   <div className="w-24 sm:w-24">
-                    <label className="block text-[10px] text-slate-400 mb-0.5">Qty (Units)</label>
+                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Qty (Units)</label>
                     <input
                       type="number"
                       min="1"
                       value={item.quantity}
                       onChange={(e) => handleItemQuantityChange(idx, e.target.value)}
-                      className="w-full bg-[#10182f] text-slate-100 text-xs px-2.5 py-2 rounded-lg border border-slate-700 text-center font-mono font-bold"
+                      className="w-full bg-white text-slate-900 text-xs px-2.5 py-2 rounded-xl border border-slate-300 text-center font-mono font-bold shadow-xs focus:outline-none focus:border-[#0c1222]"
+                      style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
                     />
                   </div>
 
                   <div className="w-28 sm:w-28 text-right">
-                    <label className="block text-[10px] text-slate-400 mb-0.5">Estimated</label>
-                    <div className="text-xs font-mono font-bold text-cyan-300 py-1.5">
+                    <label className="block text-[10px] font-bold text-slate-600 mb-0.5">Estimated</label>
+                    <div className="text-xs font-mono font-black text-slate-900 py-1.5">
                       ₹ {(Number(item.unitPrice) * Number(item.quantity || 1)).toFixed(0)}
                     </div>
                   </div>
@@ -496,7 +518,7 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
                     <button
                       type="button"
                       onClick={() => handleRemoveItem(idx)}
-                      className="p-2 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition cursor-pointer shrink-0 mt-3 sm:mt-0"
+                      className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer shrink-0 mt-3 sm:mt-0"
                       title="Remove product"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -507,16 +529,16 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
             </div>
 
             {/* Total Summary */}
-            <div className="mt-3 p-3 bg-blue-950/20 border border-blue-500/30 rounded-xl flex items-center justify-between">
-              <span className="text-slate-300 font-semibold">Total Estimated Requirement Value:</span>
-              <span className="text-sm font-black text-cyan-400 font-mono">
+            <div className="mt-3 p-3 bg-lime-50/80 border border-lime-300 rounded-xl flex items-center justify-between">
+              <span className="text-slate-800 font-bold">Total Estimated Requirement Value:</span>
+              <span className="text-sm font-black text-slate-900 font-mono">
                 {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(totalCalculatedValue)}
               </span>
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-1">
+            <label className="block text-xs font-bold text-slate-700 mb-1">
               Requirement & Technical Notes
             </label>
             <textarea
@@ -525,23 +547,33 @@ export default function CreateLeadModal({ isOpen, onClose, onSubmit }) {
               value={formData.requirement}
               onChange={handleChange}
               placeholder="Enter site details, specifications, delivery expectations..."
-              className="w-full bg-[#0a1020] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-slate-800 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-white text-slate-900 text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-[#0c1222] font-medium shadow-xs"
+              style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-800 flex justify-end gap-2.5 shrink-0">
+          <div className="pt-3 border-t border-slate-200 flex justify-end gap-2.5 shrink-0">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-medium rounded-xl transition cursor-pointer"
+              disabled={isSubmitting}
+              className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 text-xs font-bold rounded-xl transition cursor-pointer disabled:opacity-50"
             >
               Cancel
             </button>
             <button
               type="submit"
-              className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-md transition cursor-pointer"
+              disabled={isSubmitting}
+              className="px-6 py-2.5 bg-[#d4ff00] hover:bg-[#bce600] text-black text-xs font-black rounded-xl shadow-md transition cursor-pointer flex items-center gap-1.5 disabled:opacity-60"
             >
-              Save & Auto-Assign Lead
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-black" />
+                  <span>Saving & Assigning...</span>
+                </>
+              ) : (
+                <span>Save & Auto-Assign Lead</span>
+              )}
             </button>
           </div>
         </form>

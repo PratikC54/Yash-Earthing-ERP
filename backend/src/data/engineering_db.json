@@ -189,6 +189,45 @@
   ],
   "products": [
     {
+      "id": 3,
+      "sku": "ABC-7",
+      "name": "ABC iron rods",
+      "categoryId": "2",
+      "categoryName": "Raw Metals",
+      "itemType": "RAW_MATERIAL",
+      "material": "99.99 % iron",
+      "size": "60 mm",
+      "length": "6.5 meter",
+      "finish": "no surface",
+      "uom": "METER",
+      "rate": 8502,
+      "gstPercent": 18,
+      "status": "ACTIVE",
+      "description": "This is pure rods by abc",
+      "referenceImage": "https://tse4.mm.bing.net/th/id/OIP.Ua_E5WF1Zpjyc_5g6dG-bwHaE8?r=0&rs=1&pid=ImgDetMain&o=7&rm=3",
+      "stockQuantity": 0,
+      "specifications": [
+        {
+          "attribute": "Standard Compliance",
+          "value": "IS 3043 / IEEE 80 / UL 467",
+          "unit": "",
+          "standard": "CPRI Tested"
+        },
+        {
+          "attribute": "Conductor Material",
+          "value": "99.99 % iron",
+          "unit": "",
+          "standard": "IEC 62561-2"
+        },
+        {
+          "attribute": "Dimensions",
+          "value": "60 mm x 6.5 meter",
+          "unit": "",
+          "standard": "Factory Standard"
+        }
+      ]
+    },
+    {
       "id": 11,
       "sku": "SKU-TATA",
       "name": "Test TATA",
@@ -1169,6 +1208,15 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": "audit_1792818627037_csuof",
+      "entity": "Product",
+      "entityId": "3",
+      "action": "CREATE",
+      "actor": "Product Engineer",
+      "details": "Created product ABC-7 in PostgreSQL",
+      "timestamp": "2026-10-24T05:10:27.037Z"
+    },
     {
       "id": "audit_1792750464287_vatum",
       "entity": "Product",

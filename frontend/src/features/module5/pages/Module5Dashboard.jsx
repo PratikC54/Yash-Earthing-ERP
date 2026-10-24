@@ -86,9 +86,13 @@ export default function Module5Dashboard({ onNavigate }) {
             <FolderKanban className="w-5 h-5 text-cyan-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-white">
-              {loading ? '...' : metrics?.totalProjects || 0}
-            </span>
+            {loading ? (
+              <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse" />
+            ) : (
+              <span className="text-2xl font-bold font-mono text-white">
+                {metrics?.totalProjects || 0}
+              </span>
+            )}
             <span className="text-xs text-cyan-400 font-mono">
               {metrics?.activeProjects || 0} active
             </span>
@@ -113,9 +117,13 @@ export default function Module5Dashboard({ onNavigate }) {
             <Clock className="w-5 h-5 text-amber-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-white">
-              {loading ? '...' : metrics?.scheduledInstallations || 0}
-            </span>
+            {loading ? (
+              <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse" />
+            ) : (
+              <span className="text-2xl font-bold font-mono text-white">
+                {metrics?.scheduledInstallations || 0}
+              </span>
+            )}
             <span className="text-xs text-amber-400 font-mono">
               {metrics?.testingInstallations || 0} testing
             </span>
@@ -140,9 +148,13 @@ export default function Module5Dashboard({ onNavigate }) {
             <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-white">
-              {loading ? '...' : metrics?.completedInstallations || 0}
-            </span>
+            {loading ? (
+              <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse" />
+            ) : (
+              <span className="text-2xl font-bold font-mono text-white">
+                {metrics?.completedInstallations || 0}
+              </span>
+            )}
             <span className="text-xs text-emerald-400 font-mono">Certified</span>
           </div>
           <div className="mt-4 pt-3 border-t border-[#1e2a4a] flex items-center justify-between text-xs text-slate-400">
@@ -160,9 +172,13 @@ export default function Module5Dashboard({ onNavigate }) {
             <Headset className="w-5 h-5 text-rose-400" />
           </div>
           <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl font-bold font-mono text-white">
-              {loading ? '...' : metrics?.openTickets || 0}
-            </span>
+            {loading ? (
+              <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse" />
+            ) : (
+              <span className="text-2xl font-bold font-mono text-white">
+                {metrics?.openTickets || 0}
+              </span>
+            )}
             <span className="text-xs text-rose-400 font-mono">
               {metrics?.inProgressTickets || 0} in progress
             </span>

@@ -168,27 +168,47 @@ export default function TaskManager() {
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs">Total Active Tasks</div>
-          <div className="text-2xl font-bold text-white mt-1">{metrics.total}</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-white mt-1">{metrics.total}</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs">Overdue Deadlines</div>
-          <div className="text-2xl font-bold text-rose-400 mt-1">{metrics.overdue}</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-rose-400 mt-1">{metrics.overdue}</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs">In Progress</div>
-          <div className="text-2xl font-bold text-blue-400 mt-1">{metrics.inProgress}</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-blue-400 mt-1">{metrics.inProgress}</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs">Blocked Operations</div>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.blocked}</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.blocked}</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs">Completed</div>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">{metrics.completed}</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-emerald-400 mt-1">{metrics.completed}</div>
+          )}
         </div>
       </div>
 

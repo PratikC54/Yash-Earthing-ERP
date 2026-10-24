@@ -51,11 +51,18 @@ export default function DataTable({
           </thead>
           <tbody className="divide-y divide-[#1e2a4a] text-[#f1f5f9]">
             {loading ? (
-              <tr>
-                <td colSpan={columns.length} className="py-12 text-center">
-                  <Loader label="Loading table records..." />
-                </td>
-              </tr>
+              Array.from({ length: 5 }).map((_, rIdx) => (
+                <tr key={`skel-row-${rIdx}`} className="animate-pulse">
+                  {columns.map((col, cIdx) => (
+                    <td key={`skel-col-${cIdx}`} className="px-4 py-3.5">
+                      <div
+                        className="h-4 bg-slate-200/80 rounded"
+                        style={{ width: `${Math.max(35, ((85 - (cIdx * 15) + (rIdx * 11)) % 85) + 15)}%` }}
+                      />
+                    </td>
+                  ))}
+                </tr>
+              ))
             ) : currentData.length === 0 ? (
               <tr>
                 <td

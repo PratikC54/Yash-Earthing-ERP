@@ -219,15 +219,23 @@ export const financeController = {
   getInvoices: (req, res) => {
     const db = financeDb.read();
     const today = new Date();
-
-    const enriched = db.invoices.map(inv => {
+    const enriched = (db.invoices || []).map(inv => {
       const due = new Date(inv.dueDate);
-      const isOverdue = due < today && inv.balanceAmount > 0;
-      let derivedStatus = inv.status;
-      if (inv.status === 'ISSUED') {
-        if (inv.balanceAmount <= 0) derivedStatus = 'PAID';
-        else if (inv.paidAmount > 0) derivedStatus = isOverdue ? 'PART_PAID_OVERDUE' : 'PART_PAID';
-        else derivedStatus = isOverdue ? 'OVERDUE' : 'ISSUED';
+      const numBalance = Number(inv.balanceAmount) || 0;
+      const numPaid = Number(inv.paidAmount) || 0;
+      const numTotal = Number(inv.grandTotal) || 0;
+      const isOverdue = due < today && numBalance > 0;
+      let derivedStatus = inv.status || 'ISSUED';
+      const upper = (inv.status || '').toUpperCase().replace(/\s+/g, '_');
+
+      if (upper === 'CANCELLED' || upper === 'VOID') {
+        derivedStatus = 'CANCELLED';
+      } else if (numBalance <= 0 && (numPaid > 0 || numTotal > 0 || upper === 'PAID')) {
+        derivedStatus = 'PAID';
+      } else if (numPaid > 0 || upper.includes('PART')) {
+        derivedStatus = isOverdue ? 'PART_PAID_OVERDUE' : 'PART_PAID';
+      } else {
+        derivedStatus = isOverdue ? 'OVERDUE' : 'ISSUED';
       }
 
       return {
@@ -467,6 +475,11 @@ export const financeController = {
             const actualAlloc = Math.min(allocAmount, inv.balanceAmount);
             inv.paidAmount = (Number(inv.paidAmount) || 0) + actualAlloc;
             inv.balanceAmount = Math.max(0, Number(inv.grandTotal) - inv.paidAmount);
+            if (inv.balanceAmount <= 0) {
+              inv.status = 'PAID';
+            } else if (inv.paidAmount > 0) {
+              inv.status = 'PART_PAID';
+            }
             unallocatedAmount -= actualAlloc;
 
             processedAllocations.push({

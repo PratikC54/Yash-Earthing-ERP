@@ -5,7 +5,9 @@ export async function listProjects(filters = {}) {
   const { status, customerId, search, page = 1, limit = 20 } = filters;
   const where = {};
 
-  if (status) where.status = status;
+  if (status && status !== "ALL" && status.trim() !== "") {
+    where.status = status.toUpperCase();
+  }
   if (customerId) where.customerId = Number(customerId);
   if (search) {
     where.OR = [

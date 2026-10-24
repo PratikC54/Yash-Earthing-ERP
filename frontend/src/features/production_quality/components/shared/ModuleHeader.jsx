@@ -15,33 +15,33 @@ export default function ModuleHeader({
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
       <div>
         {breadcrumbs.length > 0 && (
-          <nav className="flex items-center gap-1.5 text-xs text-[#94a3b8] mb-1.5">
+          <nav className="flex items-center gap-1.5 text-xs text-slate-500 mb-1.5">
             {breadcrumbs.map((crumb, idx) => (
               <React.Fragment key={crumb.label || idx}>
                 {crumb.to ? (
                   <Link
                     to={crumb.to}
-                    className="hover:text-[#3b82f6] transition font-medium"
+                    className="hover:text-black transition font-semibold"
                   >
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className="text-[#f1f5f9] font-semibold">
+                  <span className="text-slate-800 font-bold">
                     {crumb.label}
                   </span>
                 )}
                 {idx < breadcrumbs.length - 1 && (
-                  <ChevronRight className="w-3.5 h-3.5 text-[#64748b]" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                 )}
               </React.Fragment>
             ))}
           </nav>
         )}
-        <h1 className="text-xl sm:text-2xl font-extrabold text-[#f1f5f9] tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
           {title}
         </h1>
         {subtitle && (
-          <p className="text-xs sm:text-sm text-[#94a3b8] mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-700 font-medium mt-0.5">
             {subtitle}
           </p>
         )}

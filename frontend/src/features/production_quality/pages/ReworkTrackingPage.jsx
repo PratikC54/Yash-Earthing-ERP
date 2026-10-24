@@ -179,27 +179,35 @@ export default function ReworkTrackingPage() {
 
       {/* Rework Batches Table */}
       <Card title="Active Rework Queue" subtitle="Maintain parent-child traceability to original job orders">
-        {loading ? (
-          <div className="py-12 text-center">
-            <Loader label="Loading active rework batches from database..." size="md" />
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-xs text-left">
-              <thead className="bg-[#0b1329] text-[#94a3b8] uppercase font-semibold border-b border-[#1e2a4a]">
-                <tr>
-                  <th className="py-2.5 px-3">Rework ID</th>
-                  <th className="py-2.5 px-3">Parent Work Order</th>
-                  <th className="py-2.5 px-3">Product</th>
-                  <th className="py-2.5 px-3 text-right">Quantity</th>
-                  <th className="py-2.5 px-3">Station & Assigned Tech</th>
-                  <th className="py-2.5 px-3">Defect Reason</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#1e2a4a]">
-                {filtered.length === 0 ? (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs text-left">
+            <thead className="bg-[#0b1329] text-[#94a3b8] uppercase font-semibold border-b border-[#1e2a4a]">
+              <tr>
+                <th className="py-2.5 px-3">Rework ID</th>
+                <th className="py-2.5 px-3">Parent Work Order</th>
+                <th className="py-2.5 px-3">Product</th>
+                <th className="py-2.5 px-3 text-right">Quantity</th>
+                <th className="py-2.5 px-3">Station & Assigned Tech</th>
+                <th className="py-2.5 px-3">Defect Reason</th>
+                <th className="py-2.5 px-3">Status</th>
+                <th className="py-2.5 px-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#1e2a4a]">
+              {loading ? (
+                Array.from({ length: 5 }).map((_, rIdx) => (
+                  <tr key={`skel-rw-${rIdx}`} className="animate-pulse">
+                    <td className="py-2.5 px-3"><div className="h-4 w-16 bg-slate-200/80 rounded" /></td>
+                    <td className="py-2.5 px-3"><div className="h-4 w-20 bg-slate-200/70 rounded" /></td>
+                    <td className="py-2.5 px-3"><div className="h-4 w-32 bg-slate-200/80 rounded" /></td>
+                    <td className="py-2.5 px-3 text-right"><div className="h-4 w-12 bg-slate-200/80 rounded ml-auto" /></td>
+                    <td className="py-2.5 px-3"><div className="h-4 w-28 bg-slate-200/60 rounded" /></td>
+                    <td className="py-2.5 px-3"><div className="h-4 w-24 bg-slate-200/60 rounded" /></td>
+                    <td className="py-2.5 px-3"><div className="h-4 w-16 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-2.5 px-3 text-right"><div className="h-4 w-12 bg-slate-200/60 rounded ml-auto" /></td>
+                  </tr>
+                ))
+              ) : filtered.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-8 text-center text-[#94a3b8]">
                       No rework records found in the database.
@@ -239,7 +247,6 @@ export default function ReworkTrackingPage() {
               </tbody>
             </table>
           </div>
-        )}
       </Card>
     </div>
   );

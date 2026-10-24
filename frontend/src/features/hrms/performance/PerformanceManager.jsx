@@ -153,11 +153,15 @@ export default function PerformanceManager() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Attendance</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">30% Weight</span>
           </div>
-          <div className="text-xl font-bold text-white mt-2">
-            {performanceData?.evaluation?.breakdown?.attendance?.score !== null && performanceData?.evaluation?.breakdown?.attendance?.score !== undefined
-              ? `${performanceData.evaluation.breakdown.attendance.score}%`
-              : '93%'}
-          </div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-white mt-2">
+              {performanceData?.evaluation?.breakdown?.attendance?.score !== null && performanceData?.evaluation?.breakdown?.attendance?.score !== undefined
+                ? `${performanceData.evaluation.breakdown.attendance.score}%`
+                : '93%'}
+            </div>
+          )}
           <div className="text-[11px] text-slate-400 mt-1">Punctuality & Presence</div>
         </div>
 
@@ -166,11 +170,15 @@ export default function PerformanceManager() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Task Delivery</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/10 text-blue-400 border border-blue-500/20">40% Weight</span>
           </div>
-          <div className="text-xl font-bold text-white mt-2">
-            {performanceData?.evaluation?.breakdown?.tasks?.score !== null && performanceData?.evaluation?.breakdown?.tasks?.score !== undefined
-              ? `${performanceData.evaluation.breakdown.tasks.score}%`
-              : '90%'}
-          </div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-white mt-2">
+              {performanceData?.evaluation?.breakdown?.tasks?.score !== null && performanceData?.evaluation?.breakdown?.tasks?.score !== undefined
+                ? `${performanceData.evaluation.breakdown.tasks.score}%`
+                : '90%'}
+            </div>
+          )}
           <div className="text-[11px] text-slate-400 mt-1">On-time Completion Ratio</div>
         </div>
 
@@ -179,11 +187,15 @@ export default function PerformanceManager() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Targets</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20">20% Weight</span>
           </div>
-          <div className="text-xl font-bold text-white mt-2">
-            {performanceData?.evaluation?.breakdown?.targets?.score !== null && performanceData?.evaluation?.breakdown?.targets?.score !== undefined
-              ? `${performanceData.evaluation.breakdown.targets.score}%`
-              : '88%'}
-          </div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-white mt-2">
+              {performanceData?.evaluation?.breakdown?.targets?.score !== null && performanceData?.evaluation?.breakdown?.targets?.score !== undefined
+                ? `${performanceData.evaluation.breakdown.targets.score}%`
+                : '88%'}
+            </div>
+          )}
           <div className="text-[11px] text-slate-400 mt-1">Production Milestones</div>
         </div>
 
@@ -192,11 +204,15 @@ export default function PerformanceManager() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Quality</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">10% Weight</span>
           </div>
-          <div className="text-xl font-bold text-white mt-2">
-            {performanceData?.evaluation?.breakdown?.quality?.score !== null && performanceData?.evaluation?.breakdown?.quality?.score !== undefined
-              ? `${performanceData.evaluation.breakdown.quality.score}%`
-              : '98%'}
-          </div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-white mt-2">
+              {performanceData?.evaluation?.breakdown?.quality?.score !== null && performanceData?.evaluation?.breakdown?.quality?.score !== undefined
+                ? `${performanceData.evaluation.breakdown.quality.score}%`
+                : '98%'}
+            </div>
+          )}
           <div className="text-[11px] text-slate-400 mt-1">Zero-Defect Audit Pass</div>
         </div>
       </div>
@@ -373,11 +389,18 @@ export default function PerformanceManager() {
                 </tr>
               ))}
               {leaderboard.length === 0 && (
-                <tr>
-                  <td colSpan="8" className="text-center py-8 text-slate-500 text-xs">
-                    Loading performance leaderboard...
-                  </td>
-                </tr>
+                Array.from({ length: 4 }).map((_, rIdx) => (
+                  <tr key={`skel-pm-${rIdx}`} className="animate-pulse">
+                    <td className="px-5 py-3.5"><div className="h-4 w-6 bg-slate-200/80 rounded" /></td>
+                    <td className="px-4 py-3.5"><div className="h-4 w-32 bg-slate-200/80 rounded" /></td>
+                    <td className="px-4 py-3.5"><div className="h-4 w-20 bg-slate-200/60 rounded" /></td>
+                    <td className="px-4 py-3.5"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                    <td className="px-4 py-3.5"><div className="h-4 w-12 bg-slate-200/60 rounded" /></td>
+                    <td className="px-4 py-3.5"><div className="h-4 w-12 bg-slate-200/60 rounded" /></td>
+                    <td className="px-4 py-3.5"><div className="h-5 w-20 bg-slate-200/70 rounded-full" /></td>
+                    <td className="px-5 py-3.5 text-right"><div className="h-5 w-12 bg-slate-200/80 rounded ml-auto" /></td>
+                  </tr>
+                ))
               )}
             </tbody>
           </table>

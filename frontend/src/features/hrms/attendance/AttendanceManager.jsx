@@ -261,26 +261,58 @@ export default function AttendanceManager() {
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs font-medium">Total Registered</div>
-          <div className="text-2xl font-bold text-white mt-1">{metrics.totalWorkforce}</div>
-          <div className="text-[11px] text-slate-500 mt-1">Active workforce members</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-white mt-1">{metrics.totalWorkforce}</div>
+          )}
+          {isLoading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-[11px] text-slate-500 mt-1">Active workforce members</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs font-medium">Present / OnTime</div>
-          <div className="text-2xl font-bold text-emerald-400 mt-1">{metrics.present}</div>
-          <div className="text-[11px] text-emerald-500/80 mt-1">Verified present today</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-emerald-400 mt-1">{metrics.present}</div>
+          )}
+          {isLoading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-[11px] text-emerald-500/80 mt-1">Verified present today</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs font-medium">Confirmed Absent</div>
-          <div className="text-2xl font-bold text-rose-400 mt-1">{metrics.absent}</div>
-          <div className="text-[11px] text-rose-500/80 mt-1">Marked absent</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-rose-400 mt-1">{metrics.absent}</div>
+          )}
+          {isLoading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-[11px] text-rose-500/80 mt-1">Marked absent</div>
+          )}
         </div>
 
         <div className="bg-[#141d30] p-4 rounded-xl border border-slate-800">
           <div className="text-slate-400 text-xs font-medium">Unreported (Pending)</div>
-          <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.unreported}</div>
-          <div className="text-[11px] text-amber-500/80 mt-1">Pending check-in or roster</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-2xl font-bold text-amber-400 mt-1">{metrics.unreported}</div>
+          )}
+          {isLoading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-[11px] text-amber-500/80 mt-1">Pending check-in or roster</div>
+          )}
         </div>
       </div>
 
@@ -510,11 +542,17 @@ export default function AttendanceManager() {
               </thead>
               <tbody className="divide-y divide-slate-800/80">
                 {isLoading ? (
-                  <tr>
-                    <td colSpan="7" className="text-center py-12 text-slate-400">
-                      Loading attendance records...
-                    </td>
-                  </tr>
+                  Array.from({ length: 5 }).map((_, rIdx) => (
+                    <tr key={`skel-att-${rIdx}`} className="animate-pulse">
+                      <td className="px-5 py-3.5"><div className="h-4 w-28 bg-slate-200/80 rounded mb-1" /><div className="h-3 w-16 bg-slate-200/60 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-24 bg-slate-200/60 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-4 w-12 bg-slate-200/60 rounded" /></td>
+                      <td className="px-4 py-3.5"><div className="h-5 w-16 bg-slate-200/70 rounded-full" /></td>
+                      <td className="px-5 py-3.5 text-right"><div className="h-4 w-14 bg-slate-200/60 rounded ml-auto" /></td>
+                    </tr>
+                  ))
                 ) : attendanceRecords.length === 0 ? (
                   <tr>
                     <td colSpan="7" className="text-center py-12 text-slate-500">

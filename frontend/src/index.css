@@ -1,32 +1,806 @@
 @import "tailwindcss";
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: acid --default;
+}
 
 @layer base {
   * {
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
   }
+
+  html {
+    font-family: "Plus Jakarta Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    background-color: #fafaf9;
+    color: #0f172a;
+  }
+
   body {
     margin: 0;
     padding: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    min-height: 100vh;
+    min-height: 100dvh;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    background-color: #0d1527;
+    overflow-x: hidden;
+    background-color: #fafaf9;
+    color: #0f172a;
   }
 }
 
-/* Custom subtle scrollbar */
+/* ==========================================================================
+   PREMIUM ACID THEME (Clean White Basis with Electric Acid Accents)
+   Color Architecture:
+   - Primary Workspace & Card Backgrounds: Clean White (#FFFFFF) & Soft Stone (#FAFAF9)
+   - Primary Headings & Critical Values: Deep Slate Ink (#0F172A / #000000)
+   - Subtitles, Labels & Descriptions: Focused Dark Slate (#334155 / #1E293B)
+   - Vibrant Highlight: Electric Acid Lime (#D4FF00 / #CCFF00)
+   - Statuses: High-Contrast Light Tints with Dark Saturated Text
+   - Sidebar: Protected Executive Navy (#0C1222) with Neon Lime Active States
+   ========================================================================== */
+
+/* Workspace & Layout Backgrounds */
+main,
+.bg-\[\#070e1e\],
+.bg-\[\#0d1527\] {
+  background-color: #fafaf9 !important;
+}
+
+/* All Surfaces (Cards, Modals, Panels & Containers inside main/modals) */
+main .bg-\[\#0e172e\],
+main .bg-\[\#10182f\],
+main .bg-\[\#141d30\],
+main .bg-\[\#141d30\]\/60,
+main .bg-\[\#141d30\]\/70,
+main .bg-\[\#141d30\]\/80,
+main .bg-\[\#0d1424\],
+main .bg-\[\#0a1428\],
+main .bg-\[\#0a1020\],
+main .bg-\[\#0b172d\],
+main .bg-\[\#0e1b34\],
+main .bg-\[\#081022\],
+main .bg-\[\#071325\],
+main .bg-\[\#112344\],
+main .bg-\[\#0b1b36\],
+main .bg-\[\#14234b\],
+main .bg-\[\#211640\],
+main .bg-\[\#112d2b\],
+main .bg-\[\#1b1915\],
+main .bg-\[\#0d162b\],
+main .bg-\[\#0b1329\],
+main .bg-slate-900,
+main .bg-slate-950,
+.modal-box,
+[role="dialog"] .bg-\[\#10182f\],
+[role="dialog"] .bg-\[\#0e172e\],
+[role="dialog"] .bg-\[\#0d1424\],
+[role="dialog"] .bg-\[\#0a1020\] {
+  background-color: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px -1px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Inner Nested Items & Small Containers */
+main .p-2\.5.bg-\[\#081022\],
+main .p-3.bg-\[\#081022\],
+main .p-3.bg-\[\#0a1020\],
+main .p-4.bg-\[\#0a1020\],
+main .p-3.rounded-xl.bg-\[\#081022\],
+main .bg-\[\#0d1424\]\/60 {
+  background-color: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+main .p-3.rounded-xl.bg-\[\#081022\]:hover,
+main .p-2\.5.bg-\[\#081022\]:hover {
+  background-color: #f7fee7 !important;
+  border-color: #bef264 !important;
+}
+
+/* Top Hero Command Banners */
+main .bg-gradient-to-r.from-\[\#0d1833\],
+main .bg-gradient-to-r.from-\[\#07162c\],
+main .bg-gradient-to-r.from-\[\#061126\],
+main .bg-gradient-to-r.from-slate-900 {
+  background: linear-gradient(135deg, #ffffff 0%, #fefce8 60%, #f7fee7 100%) !important;
+  border-color: #e2e8f0 !important;
+  box-shadow: 0 4px 15px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* Card Borders */
+main .border-\[\#1b2f56\],
+main .border-\[\#1e2f55\],
+main .border-\[\#1b2a4e\],
+main .border-\[\#1e2a4a\],
+main .border-\[\#1a2c4e\],
+main .border-\[\#1b2d50\],
+main .border-\[\#15233e\],
+main .border-\[\#22304e\],
+main .border-slate-800,
+main .border-slate-750,
+main .border-slate-700,
+[role="dialog"] .border-slate-800 {
+  border-color: #e2e8f0 !important;
+}
+
+/* ==========================================================================
+   TYPOGRAPHY & READABILITY (100% Client Focused, Zero Washed-out Text)
+   Strictly scoped to main & modals so Sidebar remains protected
+   ========================================================================== */
+
+/* Primary Bold Headings & Values */
+main .text-white,
+main .text-slate-100,
+main .text-slate-200,
+main .text-\[\#f1f5f9\],
+main .text-\[\#e2e8f0\],
+main .text-\[\#cbd5e1\],
+[role="dialog"] .text-white,
+[role="dialog"] .text-slate-100,
+[role="dialog"] .text-slate-200,
+[role="dialog"] .text-\[\#f1f5f9\],
+.modal-box .text-white {
+  color: #0f172a !important;
+}
+
+/* Subtitles, Meta Labels, Breadcrumbs & Secondary Text (Dark Focused) */
+main .text-slate-300,
+main .text-slate-400,
+main .text-\[\#94a3b8\],
+main .text-\[\#64748b\],
+[role="dialog"] .text-slate-300,
+[role="dialog"] .text-slate-400,
+[role="dialog"] .text-\[\#94a3b8\],
+.modal-box .text-slate-400 {
+  color: #334155 !important;
+  font-weight: 600 !important;
+}
+
+main .text-slate-500,
+[role="dialog"] .text-slate-500 {
+  color: #475569 !important;
+  font-weight: 600 !important;
+}
+
+/* Darken Light Faded Subtitles (e.g. on KPI cards) so they are strongly focused */
+main .text-amber-300\/80,
+main .text-amber-400\/80,
+main .text-emerald-300\/80,
+main .text-emerald-400\/80,
+main .text-cyan-300\/80,
+main .text-cyan-400\/80,
+main .text-blue-300\/80,
+main .text-blue-400\/80 {
+  color: #1e293b !important;
+  font-weight: 800 !important;
+}
+
+/* High-Contrast Saturated Color Metrics */
+main .text-cyan-400,
+main .text-cyan-300,
+main .text-blue-400,
+main .text-blue-300 {
+  color: #0369a1 !important;
+  font-weight: 800 !important;
+}
+
+main .text-emerald-400,
+main .text-emerald-300 {
+  color: #15803d !important;
+  font-weight: 800 !important;
+}
+
+main .text-amber-400,
+main .text-amber-300 {
+  color: #b45309 !important;
+  font-weight: 800 !important;
+}
+
+main .text-rose-400,
+main .text-rose-300 {
+  color: #be123c !important;
+  font-weight: 800 !important;
+}
+
+main .text-indigo-400,
+main .text-indigo-300 {
+  color: #4338ca !important;
+  font-weight: 800 !important;
+}
+
+main .text-purple-400,
+main .text-purple-300,
+main .text-purple-500 {
+  color: #581c87 !important;
+  font-weight: 800 !important;
+}
+
+/* Callout Banners */
+main .bg-blue-950\/40,
+main .bg-blue-950\/20 {
+  background-color: #f7fee7 !important;
+  border-color: #bef264 !important;
+  color: #365314 !important;
+}
+
+main .text-blue-200 {
+  color: #365314 !important;
+}
+
+/* ==========================================================================
+   BUTTONS & ICON HOVER HARMONY (Universal Premium Light UX)
+   Every button synchronizes its icon color with its text color on hover
+   ========================================================================== */
+
+button svg {
+  transition: color 0.15s ease, stroke 0.15s ease, transform 0.15s ease;
+  stroke: currentColor;
+}
+
+/* Synchronize icon stroke to match button text color on hover */
+button:hover svg {
+  color: currentColor !important;
+  stroke: currentColor !important;
+}
+
+/* Primary CTA Buttons (Acid Lime) */
+main button.bg-gradient-to-r.from-blue-600,
+main button.bg-gradient-to-r,
+main button.bg-blue-600,
+[role="dialog"] button.bg-blue-600,
+button.bg-\[\#d4ff00\] {
+  background: #d4ff00 !important;
+  color: #000000 !important;
+  font-weight: 900 !important;
+  border: 1px solid #bef264 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+main button.bg-gradient-to-r.from-blue-600 *,
+main button.bg-gradient-to-r *,
+main button.bg-blue-600 *,
+[role="dialog"] button.bg-blue-600 *,
+button.bg-\[\#d4ff00\] * {
+  color: #000000 !important;
+  font-weight: 900 !important;
+}
+
+main button.bg-gradient-to-r.from-blue-600:hover,
+main button.bg-gradient-to-r:hover,
+main button.bg-blue-600:hover,
+button.bg-\[\#d4ff00\]:hover {
+  background: #c3f000 !important;
+  border-color: #a3e635 !important;
+  color: #000000 !important;
+  box-shadow: 0 2px 6px rgba(212, 255, 0, 0.35) !important;
+}
+
+main button.bg-\[\#d4ff00\]:hover *,
+button.bg-\[\#d4ff00\]:hover * {
+  color: #000000 !important;
+}
+
+main button.bg-\[\#d4ff00\]:hover svg,
+button.bg-\[\#d4ff00\]:hover svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
+  transform: scale(1.08);
+}
+
+/* Secondary Buttons (Filter, Import, Export, Trace, Refresh, Clear) */
+main button.bg-slate-800\/90,
+main button.bg-slate-800\/80,
+main button.bg-slate-800:not(table button),
+main button.bg-slate-700:not(table button),
+[role="dialog"] button.bg-slate-800 {
+  background-color: #ffffff !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 800 !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+  transition: all 0.15s ease-in-out !important;
+}
+
+main button.bg-slate-800\/90 *,
+main button.bg-slate-800\/80 *,
+main button.bg-slate-800:not(table button) *,
+main button.bg-slate-700:not(table button) *,
+[role="dialog"] button.bg-slate-800 * {
+  color: #1e293b !important;
+}
+
+main button.bg-slate-800\/90:hover,
+main button.bg-slate-800\/80:hover,
+main button.bg-slate-800:not(table button):hover,
+main button.bg-slate-700:not(table button):hover,
+[role="dialog"] button.bg-slate-800:hover {
+  background-color: #f7fee7 !important;
+  border-color: #bef264 !important;
+  color: #000000 !important;
+  box-shadow: 0 2px 6px -1px rgba(0, 0, 0, 0.08) !important;
+}
+
+main button.bg-slate-800\/90:hover *,
+main button.bg-slate-800\/80:hover *,
+main button.bg-slate-800:not(table button):hover *,
+main button.bg-slate-700:not(table button):hover *,
+[role="dialog"] button.bg-slate-800:hover * {
+  color: #000000 !important;
+}
+
+main button.bg-slate-800:hover svg,
+main button.bg-slate-700:hover svg,
+[role="dialog"] button.bg-slate-800:hover svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
+  transform: scale(1.08);
+}
+
+/* Table View & Action Buttons */
+table button.bg-slate-800,
+table button.bg-slate-700 {
+  background-color: #0f172a !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  border: 1px solid #0f172a !important;
+}
+
+table button.bg-slate-800:hover,
+table button.bg-slate-700:hover {
+  background-color: #000000 !important;
+  color: #d4ff00 !important;
+}
+
+table button.bg-slate-800:hover svg,
+table button.bg-slate-700:hover svg {
+  color: #d4ff00 !important;
+  stroke: #d4ff00 !important;
+  transform: scale(1.1);
+}
+
+/* Table Quick Pay Action Button */
+table button.bg-emerald-600,
+table button.bg-emerald-700 {
+  background-color: #16a34a !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+table button.bg-emerald-600:hover,
+table button.bg-emerald-700:hover {
+  background-color: #15803d !important;
+  color: #ffffff !important;
+}
+
+table button.bg-emerald-600:hover svg,
+table button.bg-emerald-700:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  transform: scale(1.1);
+}
+
+/* Table Quick Approve Action Button */
+table button.bg-blue-600,
+table button.bg-blue-700 {
+  background-color: #0284c7 !important;
+  color: #ffffff !important;
+  font-weight: 800 !important;
+}
+
+table button.bg-blue-600:hover,
+table button.bg-blue-700:hover {
+  background-color: #0369a1 !important;
+  color: #ffffff !important;
+}
+
+table button.bg-blue-600:hover svg,
+table button.bg-blue-700:hover svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  transform: scale(1.1);
+}
+
+/* Table Delete / Trash Action Buttons */
+table button:has(svg.lucide-trash),
+table button:has(svg.lucide-trash-2),
+table button.text-rose-400,
+table button.hover\:text-rose-400 {
+  color: #e11d48 !important;
+  background-color: transparent !important;
+}
+
+table button:has(svg.lucide-trash):hover,
+table button:has(svg.lucide-trash-2):hover,
+table button.text-rose-400:hover {
+  background-color: #fee2e2 !important;
+  color: #be123c !important;
+}
+
+table button:has(svg.lucide-trash):hover svg,
+table button:has(svg.lucide-trash-2):hover svg,
+table button.text-rose-400:hover svg {
+  color: #be123c !important;
+  stroke: #be123c !important;
+  transform: scale(1.15);
+}
+
+/* Quick Call Action Button */
+table button.bg-emerald-600\/20 {
+  background-color: #ecfdf5 !important;
+  color: #065f46 !important;
+  border: 1px solid #a7f3d0 !important;
+  font-weight: 800 !important;
+}
+
+table button.bg-emerald-600\/20:hover {
+  background-color: #d1fae5 !important;
+  color: #064e3b !important;
+}
+
+table button.bg-emerald-600\/20:hover svg {
+  color: #064e3b !important;
+  stroke: #064e3b !important;
+  transform: scale(1.1);
+}
+
+/* ==========================================================================
+   TABLES & BADGES (Clean, Ultra-High Contrast)
+   ========================================================================== */
+
+table {
+  background-color: #ffffff !important;
+}
+
+thead tr,
+table thead tr,
+table thead tr.bg-\[\#081022\],
+table thead tr.bg-\[\#0b1329\],
+table thead tr.bg-slate-900 {
+  background-color: #f1f5f9 !important;
+  border-bottom: 2px solid #cbd5e1 !important;
+}
+
+table thead th {
+  color: #0f172a !important;
+  font-weight: 900 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.05em !important;
+}
+
+table thead tr * {
+  color: #0f172a !important;
+  font-weight: 900 !important;
+}
+
+tbody tr {
+  border-bottom: 1px solid #f1f5f9 !important;
+}
+
+tbody tr:hover {
+  background-color: #f8fafc !important;
+}
+
+tbody td {
+  color: #0f172a !important;
+}
+
+/* Source Badges (MANUAL, INDIAN MART, TRADE INDIA) */
+table td span.bg-slate-800,
+table td span.bg-slate-700,
+table td span.bg-slate-900 {
+  background-color: #f1f5f9 !important;
+  color: #1e293b !important;
+  border: 1px solid #cbd5e1 !important;
+  font-weight: 800 !important;
+}
+
+/* Status Badges */
+table td .bg-emerald-500\/10,
+table td .bg-emerald-500\/20 {
+  background-color: #dcfce7 !important;
+  color: #15803d !important;
+  border: 1px solid #86efac !important;
+  font-weight: 800 !important;
+}
+table td .bg-emerald-500\/10 *,
+table td .bg-emerald-500\/20 * {
+  color: #15803d !important;
+}
+
+table td .bg-amber-500\/10,
+table td .bg-amber-500\/20 {
+  background-color: #fef3c7 !important;
+  color: #b45309 !important;
+  border: 1px solid #fcd34d !important;
+  font-weight: 800 !important;
+}
+table td .bg-amber-500\/10 *,
+table td .bg-amber-500\/20 * {
+  color: #b45309 !important;
+}
+
+table td .bg-blue-500\/10,
+table td .bg-blue-500\/20 {
+  background-color: #e0f2fe !important;
+  color: #0369a1 !important;
+  border: 1px solid #7dd3fc !important;
+  font-weight: 800 !important;
+}
+table td .bg-blue-500\/10 *,
+table td .bg-blue-500\/20 * {
+  color: #0369a1 !important;
+}
+
+/* ==========================================================================
+   FORM INPUTS, SELECTS & TEXTAREAS
+   ========================================================================== */
+
+main input,
+main select,
+main textarea,
+[role="dialog"] input,
+[role="dialog"] select,
+[role="dialog"] textarea {
+  background-color: #ffffff !important;
+  border: 1px solid #cbd5e1 !important;
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+main input::placeholder,
+main textarea::placeholder,
+[role="dialog"] input::placeholder,
+[role="dialog"] textarea::placeholder {
+  color: #64748b !important;
+  font-weight: 500 !important;
+}
+
+main input:focus,
+main select:focus,
+main textarea:focus,
+[role="dialog"] input:focus,
+[role="dialog"] select:focus,
+[role="dialog"] textarea:focus {
+  border-color: #0f172a !important;
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(212, 255, 0, 0.7) !important;
+}
+
+/* Universal Select Dropdown Options - 100% Crisp White with High-Contrast Dark Slate Text */
+select option,
+option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  font-weight: 600 !important;
+}
+
+select option:checked,
+option:checked {
+  background-color: #f7fee7 !important;
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+/* ==========================================================================
+   SIDEBAR TEXT MUST ALWAYS BE 100% CRISP, BRIGHT & HIGH CONTRAST
+   - Deep Executive Dark Navy (#0C1222) background
+   - Inactive items have PURE WHITE titles (#ffffff) and bright slate subtitles (#cbd5e1)
+   - Active item has electric acid lime (#d4ff00), visible black icon, black subtitle
+   - Badge ("Live", "M7") has deep black background with glowing acid text
+   ========================================================================== */
+
+html body aside,
+aside {
+  background-color: #0c1222 !important;
+  border-right: 1px solid #1a233a !important;
+  color: #ffffff !important;
+}
+
+/* Sidebar Section Headers (CONTROL TOWER, MODULE 1 - SALES & CRM, etc.) */
+aside .sidebar-section-title,
+aside .sidebar-section-title span,
+html body aside .sidebar-section-title,
+html body aside .sidebar-section-title span {
+  color: #94a3b8 !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+}
+
+/* Inactive Sidebar Buttons - 100% Crisp Pure White Title, Bright Slate Subtitle */
+aside button[data-sidebar-active="false"],
+html body aside button[data-sidebar-active="false"] {
+  background-color: transparent !important;
+  color: #ffffff !important;
+}
+
+aside button[data-sidebar-active="false"]:hover,
+html body aside button[data-sidebar-active="false"]:hover {
+  background-color: #18253d !important;
+}
+
+aside button[data-sidebar-active="false"] .sidebar-item-name,
+aside button[data-sidebar-active="false"] span.sidebar-item-name,
+html body aside button[data-sidebar-active="false"] .sidebar-item-name,
+html body aside button[data-sidebar-active="false"] span.sidebar-item-name {
+  color: #ffffff !important;
+  font-weight: 800 !important;
+  font-size: 13px !important;
+}
+
+aside button[data-sidebar-active="false"] .sidebar-item-desc,
+aside button[data-sidebar-active="false"] p.sidebar-item-desc,
+html body aside button[data-sidebar-active="false"] .sidebar-item-desc,
+html body aside button[data-sidebar-active="false"] p.sidebar-item-desc {
+  color: #cbd5e1 !important;
+  font-weight: 600 !important;
+  font-size: 11px !important;
+}
+
+aside button[data-sidebar-active="false"]:hover .sidebar-item-desc,
+html body aside button[data-sidebar-active="false"]:hover .sidebar-item-desc {
+  color: #ffffff !important;
+}
+
+aside button[data-sidebar-active="false"] svg,
+html body aside button[data-sidebar-active="false"] svg {
+  color: #f1f5f9 !important;
+  stroke: #f1f5f9 !important;
+}
+
+aside button[data-sidebar-active="false"] .sidebar-icon-wrap,
+html body aside button[data-sidebar-active="false"] .sidebar-icon-wrap {
+  background-color: #18253d !important;
+  border: 1px solid rgba(148, 163, 184, 0.25) !important;
+}
+
+aside button[data-sidebar-active="false"]:hover .sidebar-icon-wrap,
+html body aside button[data-sidebar-active="false"]:hover .sidebar-icon-wrap {
+  background-color: #202f4e !important;
+  border-color: rgba(212, 255, 0, 0.4) !important;
+}
+
+/* Inactive Sidebar Badge ("Live", "M7", etc.) */
+aside button[data-sidebar-active="false"] span[data-sidebar-badge="true"],
+html body aside button[data-sidebar-active="false"] span[data-sidebar-badge="true"] {
+  background-color: #182942 !important;
+  color: #d4ff00 !important;
+  border: 1px solid rgba(212, 255, 0, 0.4) !important;
+  font-weight: 900 !important;
+}
+
+/* ACTIVE SIDEBAR ITEM: Electric Acid Lime Background */
+aside button[data-sidebar-active="true"],
+html body aside button[data-sidebar-active="true"] {
+  background-color: #d4ff00 !important;
+  border: 1px solid #d4ff00 !important;
+  box-shadow: 0 2px 8px rgba(212, 255, 0, 0.35) !important;
+}
+
+aside button[data-sidebar-active="true"] .sidebar-item-name,
+aside button[data-sidebar-active="true"] span.sidebar-item-name,
+html body aside button[data-sidebar-active="true"] .sidebar-item-name,
+html body aside button[data-sidebar-active="true"] span.sidebar-item-name {
+  color: #000000 !important;
+  font-weight: 900 !important;
+  font-size: 13px !important;
+}
+
+aside button[data-sidebar-active="true"] .sidebar-item-desc,
+aside button[data-sidebar-active="true"] p.sidebar-item-desc,
+html body aside button[data-sidebar-active="true"] .sidebar-item-desc,
+html body aside button[data-sidebar-active="true"] p.sidebar-item-desc {
+  color: #111827 !important;
+  font-weight: 800 !important;
+  font-size: 11px !important;
+}
+
+aside button[data-sidebar-active="true"] svg,
+html body aside button[data-sidebar-active="true"] svg {
+  color: #000000 !important;
+  stroke: #000000 !important;
+}
+
+aside button[data-sidebar-active="true"] .sidebar-icon-wrap,
+html body aside button[data-sidebar-active="true"] .sidebar-icon-wrap {
+  background-color: rgba(0, 0, 0, 0.12) !important;
+  border: 1px solid rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Active Badge inside Lime Button ("Live", "M7") */
+aside button[data-sidebar-active="true"] span[data-sidebar-badge="true"],
+html body aside button[data-sidebar-active="true"] span[data-sidebar-badge="true"] {
+  background-color: #000000 !important;
+  color: #d4ff00 !important;
+  border: 1px solid rgba(0, 0, 0, 0.5) !important;
+  font-weight: 900 !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Top Branding Title */
+aside .text-white,
+html body aside .text-white {
+  color: #ffffff !important;
+}
+
+/* Pipeline Subtext */
+aside .text-emerald-200\/90,
+aside .text-emerald-300,
+html body aside .text-emerald-200\/90,
+html body aside .text-emerald-300 {
+  color: #86efac !important;
+  font-weight: 600 !important;
+}
+
+/* Search Input inside Sidebar */
+aside input,
+html body aside input {
+  background-color: #131b2e !important;
+  color: #ffffff !important;
+  border-color: #22304e !important;
+}
+
+aside input::placeholder,
+html body aside input::placeholder {
+  color: #94a3b8 !important;
+}
+
+/* ==========================================================================
+   DEEP DEVICE RESPONSIVENESS (Samsung, iPhone, Vivo, Oppo, Android, Mac)
+   ========================================================================== */
+
+.overflow-x-auto {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+  scrollbar-width: thin;
+}
+
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
+
 ::-webkit-scrollbar-track {
   background: transparent;
 }
+
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.25);
-  border-radius: 4px;
+  background: rgba(100, 116, 139, 0.25);
+  border-radius: 9999px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.4);
+  background: rgba(100, 116, 139, 0.45);
+}
+
+@supports (padding: env(safe-area-inset-top)) {
+  body {
+    padding-top: env(safe-area-inset-top);
+    padding-bottom: env(safe-area-inset-bottom);
+    padding-left: env(safe-area-inset-left);
+    padding-right: env(safe-area-inset-right);
+  }
+}
+
+@media (max-width: 768px) {
+  button,
+  a,
+  input,
+  select,
+  textarea {
+    min-height: 42px;
+  }
+
+  table th,
+  table td {
+    white-space: nowrap;
+    padding-left: 0.75rem !important;
+    padding-right: 0.75rem !important;
+  }
 }

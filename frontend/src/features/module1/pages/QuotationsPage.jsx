@@ -167,36 +167,68 @@ export default function QuotationsPage({ onNavigateToOrders }) {
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             TOTAL QUOTATIONS ISSUED
           </div>
-          <div className="text-3xl font-black text-white">{quotations.length}</div>
-          <div className="text-xs text-blue-400 mt-1">Official commercial estimates</div>
+          {loading ? (
+            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-3xl font-black text-white">{quotations.length}</div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-xs text-blue-400 mt-1">Official commercial estimates</div>
+          )}
         </div>
 
         <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             TOTAL QUOTED VALUE
           </div>
-          <div className="text-3xl font-black text-cyan-400">
-            {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
-              totalValue
-            )}
-          </div>
-          <div className="text-xs text-cyan-400/80 mt-1">Active commercial pipeline</div>
+          {loading ? (
+            <div className="h-8 w-24 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-3xl font-black text-cyan-400">
+              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
+                totalValue
+              )}
+            </div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-xs text-cyan-400/80 mt-1">Active commercial pipeline</div>
+          )}
         </div>
 
         <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             PROFORMA INVOICES (PI)
           </div>
-          <div className="text-3xl font-black text-emerald-400">{piCount}</div>
-          <div className="text-xs text-emerald-400/80 mt-1">Accepted & finalized offers</div>
+          {loading ? (
+            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-3xl font-black text-emerald-400">{piCount}</div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-xs text-emerald-400/80 mt-1">Accepted & finalized offers</div>
+          )}
         </div>
 
         <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             CUSTOMER PO RECEIVED
           </div>
-          <div className="text-3xl font-black text-amber-400">{poCount}</div>
-          <div className="text-xs text-amber-400/80 mt-1">Ready for Sales Order release</div>
+          {loading ? (
+            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-3xl font-black text-amber-400">{poCount}</div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-xs text-amber-400/80 mt-1">Ready for Sales Order release</div>
+          )}
         </div>
       </div>
 
@@ -251,11 +283,19 @@ export default function QuotationsPage({ onNavigateToOrders }) {
             </thead>
             <tbody className="divide-y divide-slate-800/80">
               {loading && quotations.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-10 text-center text-slate-500">
-                    Loading commercial quotations...
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-12 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-36 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/70 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/70 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-5 w-20 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-24 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4 text-center"><div className="h-6 w-24 bg-slate-200/60 rounded-lg mx-auto" /></td>
+                  </tr>
+                ))
               ) : quotations.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-10 text-center text-slate-500">

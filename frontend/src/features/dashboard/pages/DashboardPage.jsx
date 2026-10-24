@@ -417,9 +417,72 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-3">
-        <Loader size="lg" label="Loading production and quality records..." />
-        <p className="text-xs text-[#94a3b8]">Querying plant work orders, inspection bays, and line yields</p>
+      <div className="space-y-6 pb-12 animate-fade-in">
+        {/* 1. Header Banner Skeleton */}
+        <div className="bg-white border border-slate-200 p-5 sm:p-6 rounded-2xl shadow-xs space-y-2.5 animate-pulse">
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-36 bg-slate-200/80 rounded-full" />
+            <div className="h-5 w-20 bg-slate-200/60 rounded" />
+          </div>
+          <div className="h-7 w-80 bg-slate-200/80 rounded-lg" />
+          <div className="h-4 w-96 max-w-full bg-slate-200/50 rounded" />
+        </div>
+
+        {/* 2. 8 KPI Cards Skeleton */}
+        <div>
+          <div className="flex items-center justify-between mb-3">
+            <div className="h-4 w-48 bg-slate-200/80 rounded animate-pulse" />
+            <div className="h-3 w-36 bg-slate-200/50 rounded animate-pulse" />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {Array.from({ length: 8 }).map((_, i) => (
+              <div
+                key={i}
+                className="bg-white border border-slate-200 rounded-xl p-4 flex flex-col justify-between shadow-xs animate-pulse space-y-3"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="h-3 w-28 bg-slate-200/80 rounded" />
+                  <div className="w-8 h-8 rounded-lg bg-slate-200/70 shrink-0" />
+                </div>
+                <div className="my-2">
+                  <div className="h-7 w-24 bg-slate-200/80 rounded-lg" />
+                </div>
+                <div className="h-3 w-36 bg-slate-200/50 rounded pt-1 border-t border-slate-100" />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. 6 Lifecycle Stages Stepper Skeleton */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          {Array.from({ length: 6 }).map((_, i) => (
+            <div
+              key={i}
+              className="p-3 bg-white border border-slate-200 rounded-xl space-y-2 animate-pulse"
+            >
+              <div className="h-3 w-8 bg-slate-200/80 rounded" />
+              <div className="h-4 w-24 bg-slate-200/80 rounded" />
+              <div className="h-3 w-16 bg-slate-200/50 rounded" />
+            </div>
+          ))}
+        </div>
+
+        {/* 4. Work Orders Table Skeleton */}
+        <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-xs p-4 space-y-3 animate-pulse">
+          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div className="h-5 w-44 bg-slate-200/80 rounded" />
+            <div className="h-8 w-60 bg-slate-200/60 rounded-xl" />
+          </div>
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="py-2.5 flex items-center justify-between gap-4 border-b border-slate-50 last:border-0">
+              <div className="h-4 w-28 bg-slate-200/80 rounded" />
+              <div className="h-4 w-40 bg-slate-200/80 rounded" />
+              <div className="h-4 w-20 bg-slate-200/60 rounded" />
+              <div className="h-5 w-20 bg-slate-200/70 rounded-full" />
+              <div className="h-6 w-16 bg-slate-200/60 rounded-lg" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

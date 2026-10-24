@@ -146,7 +146,7 @@ export default function WorkOrdersPage() {
 
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
-      if (statusFilter !== "ALL" && o.status !== statusFilter) return false;
+      if (statusFilter && statusFilter !== "ALL" && o.status?.toUpperCase() !== statusFilter.toUpperCase()) return false;
       if (searchTerm) {
         const q = searchTerm.toLowerCase();
         return (
@@ -308,14 +308,21 @@ export default function WorkOrdersPage() {
             </thead>
             <tbody className="divide-y divide-[#1e2a4a]">
               {loading ? (
-                <tr>
-                  <td colSpan={11} className="py-12 text-center text-[#94a3b8]">
-                    <div className="flex flex-col items-center justify-center gap-2">
-                      <RefreshCw className="w-5 h-5 animate-spin text-[#3b82f6]" />
-                      <span className="text-xs">Loading live work orders from database...</span>
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 5 }).map((_, rIdx) => (
+                  <tr key={`skel-wo-${rIdx}`} className="animate-pulse">
+                    <td className="py-3 px-3.5"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-3.5"><div className="h-4 w-36 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-3.5"><div className="h-4 w-14 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-3.5"><div className="h-4 w-12 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-3.5"><div className="h-4 w-20 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-3.5"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-3.5"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-3.5"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-3.5"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-3.5"><div className="h-4 w-16 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-3 px-3.5 text-right"><div className="h-4 w-10 bg-slate-200/60 rounded ml-auto" /></td>
+                  </tr>
+                ))
               ) : filteredOrders.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="py-8 text-center text-[#94a3b8]">

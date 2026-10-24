@@ -149,42 +149,74 @@ export default function InventoryPage() {
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
             Total Physical Stock
           </span>
-          <div className="text-2xl font-bold text-white mt-2 font-mono">
-            {totalPhysical.toLocaleString()}
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Warehouse storage count</span>
+          {loading ? (
+            <div className="h-7 w-20 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-2xl font-bold text-white mt-2 font-mono">
+              {totalPhysical.toLocaleString()}
+            </div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <span className="text-[11px] text-slate-400 mt-1 block">Warehouse storage count</span>
+          )}
         </div>
 
         <div className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
             Reserved for Work Orders
           </span>
-          <div className="text-2xl font-bold text-amber-400 mt-2 font-mono">
-            {totalReserved.toLocaleString()}
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Allocated to production</span>
+          {loading ? (
+            <div className="h-7 w-20 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-2xl font-bold text-amber-400 mt-2 font-mono">
+              {totalReserved.toLocaleString()}
+            </div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <span className="text-[11px] text-slate-400 mt-1 block">Allocated to production</span>
+          )}
         </div>
 
         <div className="bg-blue-950/40 rounded-2xl p-4 sm:p-5 border border-blue-500/30 shadow-lg">
           <span className="text-[11px] font-bold text-cyan-400 uppercase tracking-wider block">
             Free Available Stock
           </span>
-          <div className="text-2xl font-bold text-cyan-300 mt-2 font-mono">
-            {totalAvailable.toLocaleString()}
-          </div>
-          <span className="text-[11px] text-cyan-400 font-medium mt-1 block">
-            Derived: Physical − Reserved
-          </span>
+          {loading ? (
+            <div className="h-7 w-20 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-2xl font-bold text-cyan-300 mt-2 font-mono">
+              {totalAvailable.toLocaleString()}
+            </div>
+          )}
+          {loading ? (
+            <div className="h-3 w-36 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <span className="text-[11px] text-cyan-400 font-medium mt-1 block">
+              Derived: Physical − Reserved
+            </span>
+          )}
         </div>
 
         <div className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg">
           <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
             Low-Stock Alert Items
           </span>
-          <div className="text-2xl font-bold text-rose-400 mt-2 font-mono">
-            {lowStockCount}
-          </div>
-          <span className="text-[11px] text-slate-400 mt-1 block">Below configured reorder level</span>
+          {loading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-2xl font-bold text-rose-400 mt-2 font-mono">
+              {lowStockCount}
+            </div>
+          )}
+          {loading ? (
+            <div className="h-3 w-36 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <span className="text-[11px] text-slate-400 mt-1 block">Below configured reorder level</span>
+          )}
         </div>
       </div>
 

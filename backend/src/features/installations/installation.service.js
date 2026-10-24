@@ -5,7 +5,9 @@ export async function listInstallations(filters = {}) {
   const { status, projectId, search, page = 1, limit = 20 } = filters;
   const where = {};
 
-  if (status) where.status = status;
+  if (status && status !== "ALL" && status.trim() !== "") {
+    where.status = status.toUpperCase();
+  }
   if (projectId) where.projectId = Number(projectId);
   if (search) {
     where.OR = [
