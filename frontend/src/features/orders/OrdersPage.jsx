@@ -6,12 +6,18 @@ import InventoryCheckModal from "../components/InventoryCheckModal";
 import module1Service from "../services/module1Service";
 import { exportToExcel, importFromExcel } from "../utils/excelUtils";
 
-export default function OrdersPage({ onNavigate }) {
+export default function OrdersPage({ onNavigate, globalSearch = "" }) {
   const [orders, setOrders] = useState([]);
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(globalSearch || "");
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  useEffect(() => {
+    if (globalSearch !== undefined && globalSearch !== null) {
+      setSearchQuery(globalSearch);
+    }
+  }, [globalSearch]);
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);

@@ -31,7 +31,7 @@ import CostingPolicyModal from './CostingPolicyModal';
 import ShortageCalculatorModal from './ShortageCalculatorModal';
 import AddDrawingModal from './AddDrawingModal';
 
-export default function EngineeringDashboard({ initialTab = 'products', onNavigate }) {
+export default function EngineeringDashboard({ initialTab = 'products', onNavigate, globalSearch = '' }) {
   const [activeTab, setActiveTab] = useState(initialTab); // 'products', 'boms', 'drawings'
 
   useEffect(() => {
@@ -54,9 +54,15 @@ export default function EngineeringDashboard({ initialTab = 'products', onNaviga
   const [connectedWorkOrders, setConnectedWorkOrders] = useState([]);
 
   // Filters & Selected states
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState(globalSearch || '');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedProduct, setSelectedProduct] = useState(null);
+
+  useEffect(() => {
+    if (globalSearch !== undefined && globalSearch !== null) {
+      setSearchQuery(globalSearch);
+    }
+  }, [globalSearch]);
 
   // Modals state
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);

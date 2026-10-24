@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Boxes, CheckCircle2, AlertTriangle, ArrowRight, Trash2, Loader2, Clock, ShoppingCart } from "lucide-react";
 import FilterBar from "../components/FilterBar";
 import CreateSalesOrderModal from "../components/CreateSalesOrderModal";
@@ -6,12 +6,18 @@ import InventoryCheckModal from "../components/InventoryCheckModal";
 import module1Service from "../services/module1Service";
 import { exportToExcel, importFromExcel } from "../utils/excelUtils";
 
-export default function OrdersPage({ onNavigate }) {
+export default function OrdersPage({ onNavigate, globalSearch = "" }) {
   const [orders, setOrders] = useState([]);
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(globalSearch || "");
   const [statusFilter, setStatusFilter] = useState("ALL");
+
+  useEffect(() => {
+    if (globalSearch !== undefined && globalSearch !== null) {
+      setSearchQuery(globalSearch);
+    }
+  }, [globalSearch]);
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -23,30 +29,84 @@ export default function OrdersPage({ onNavigate }) {
   const [checkingOrderId, setCheckingOrderId] = useState(null);
   const [inventoryCheckResult, setInventoryCheckResult] = useState(null);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  const fetchOrders = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     try {
-      const [orderRes, quoteRes] = await Promise.allSettled([
-        module1Service.getOrders({ search: searchQuery, status: statusFilter }),
-        module1Service.getQuotations({ limit: 50 }),
-      ]);
-
-      if (orderRes.status === "fulfilled" && orderRes.value?.success && orderRes.value?.data?.orders) {
-        setOrders(orderRes.value.data.orders);
-      }
-      if (quoteRes.status === "fulfilled" && quoteRes.value?.success && quoteRes.value?.data?.quotations) {
-        setQuotations(quoteRes.value.data.quotations);
+      const orderRes = await module1Service.getOrders({ limit: 150 });
+      if (orderRes?.success && orderRes?.data?.orders) {
+        setOrders(orderRes.data.orders);
       }
     } catch (err) {
       console.error("Failed to fetch orders:", err);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
-  }, [searchQuery, statusFilter]);
+  }, []);
+
+  const fetchQuotations = useCallback(async () => {
+    try {
+      const quoteRes = await module1Service.getQuotations({ limit: 50 });
+      if (quoteRes?.success && quoteRes?.data?.quotations) {
+        setQuotations(quoteRes.data.quotations);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch quotations for SO creation:", err);
+    }
+  }, []);
+
+  const fetchData = useCallback(() => {
+    fetchOrders(false);
+    fetchQuotations();
+  }, [fetchOrders, fetchQuotations]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchOrders(true);
+    fetchQuotations();
+  }, [fetchOrders, fetchQuotations]);
+
+  // Debounced background sync for remote orders
+  useEffect(() => {
+    const term = searchQuery.trim();
+    if (!term || term.length < 2) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await module1Service.getOrders({ search: term });
+        if (res?.success && Array.isArray(res?.data?.orders)) {
+          setOrders((prev) => {
+            const existingIds = new Set(prev.map((o) => o.id));
+            const newRecords = res.data.orders.filter((o) => !existingIds.has(o.id));
+            return newRecords.length > 0 ? [...newRecords, ...prev] : prev;
+          });
+        }
+      } catch (err) {
+        console.warn("Background order search:", err);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Zero-latency instant in-memory filtering (0ms)
+  const displayedOrders = useMemo(() => {
+    let result = orders;
+
+    if (statusFilter && statusFilter !== "ALL") {
+      result = result.filter((o) => o.status === statusFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((o) =>
+        (o.orderNumber && o.orderNumber.toLowerCase().includes(q)) ||
+        (o.customerPONumber && o.customerPONumber.toLowerCase().includes(q)) ||
+        (o.customer?.name && o.customer.name.toLowerCase().includes(q)) ||
+        (o.items && o.items.some((i) => i.productName && i.productName.toLowerCase().includes(q)))
+      );
+    }
+
+    return result;
+  }, [orders, statusFilter, searchQuery]);
 
   // Create Sales Order (Sales Manager action)
   const handleCreateSalesOrder = async (orderData) => {
@@ -314,22 +374,22 @@ export default function OrdersPage({ onNavigate }) {
                     <td className="py-3 px-4 text-center"><div className="h-4 w-12 bg-slate-200/60 rounded mx-auto" /></td>
                   </tr>
                 ))
-              ) : orders.length === 0 ? (
+              ) : displayedOrders.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center">
                     <div className="flex flex-col items-center justify-center space-y-2">
                       <div className="w-10 h-10 rounded-xl bg-slate-100 text-slate-400 flex items-center justify-center">
                         <ShoppingCart className="w-5 h-5" />
                       </div>
-                      <div className="font-bold text-slate-800 text-sm">No sales orders recorded yet</div>
+                      <div className="font-bold text-slate-800 text-sm">No sales orders found</div>
                       <p className="text-xs text-slate-500 max-w-sm">
-                        Click "Issue Sales Order" above to release and authorize an approved quotation.
+                        No orders match your search or filter criteria. Click "Issue Sales Order" above to release and authorize an approved quotation.
                       </p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                orders.map((o) => (
+                displayedOrders.map((o) => (
                   <tr key={o.id} className="hover:bg-slate-50/80 transition text-slate-800">
                     <td className="py-3 px-4">
                       <div className="font-mono font-bold text-slate-900 text-xs">{o.orderNumber}</div>

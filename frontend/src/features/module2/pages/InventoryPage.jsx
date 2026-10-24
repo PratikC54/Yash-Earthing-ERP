@@ -18,15 +18,21 @@ import * as api from "../api/procurementApi";
 import StatusBadge from "../components/common/StatusBadge";
 import { LoadingSkeleton, EmptyState, ErrorAlert } from "../components/common/StateFeedback";
 
-export default function InventoryPage() {
+export default function InventoryPage({ globalSearch = "" }) {
   const [activeTab, setActiveTab] = useState("stock"); // "stock" | "movements"
   const [inventoryList, setInventoryList] = useState([]);
   const [movementsList, setMovementsList] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(globalSearch || "");
   const [lowStockFilter, setLowStockFilter] = useState(false);
   const [actionSuccess, setActionSuccess] = useState(null);
+
+  useEffect(() => {
+    if (globalSearch !== undefined && globalSearch !== null) {
+      setSearch(globalSearch);
+    }
+  }, [globalSearch]);
 
   // Reservation / Adjustment Modal
   const [adjustmentModal, setAdjustmentModal] = useState(null);

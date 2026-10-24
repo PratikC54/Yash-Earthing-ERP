@@ -246,16 +246,16 @@ export default function AppLayout() {
         return isSuperUser ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />
         ) : (
-          <LeadsPage onNavigateToQuotation={() => handleNavigate('quotations')} />
+          <LeadsPage onNavigateToQuotation={() => handleNavigate('quotations')} globalSearch={globalSearch} />
         )
       case 'leads':
-        return <LeadsPage onNavigateToQuotation={() => handleNavigate('quotations')} />
+        return <LeadsPage onNavigateToQuotation={() => handleNavigate('quotations')} globalSearch={globalSearch} />
       case 'followups':
         return <FollowupPage onNavigate={handleNavigate} />
       case 'quotations':
         return <QuotationsPage onNavigateToOrders={() => handleNavigate('orders')} />
       case 'orders':
-        return <OrdersPage onNavigate={handleNavigate} />
+        return <OrdersPage onNavigate={handleNavigate} globalSearch={globalSearch} />
       // Module 2 Pages
       case 'procurement-dashboard':
         return (
@@ -274,16 +274,16 @@ export default function AppLayout() {
       case 'goods-receipts':
         return <GoodsReceiptsPage />
       case 'inventory':
-        return <InventoryPage />
+        return <InventoryPage globalSearch={globalSearch} />
 
       // Module 3: Product & Engineering submodules
       case 'engineering':
       case 'm3-products':
-        return <EngineeringDashboard initialTab="products" onNavigate={handleNavigate} />
+        return <EngineeringDashboard initialTab="products" onNavigate={handleNavigate} globalSearch={globalSearch} />
       case 'm3-boms':
-        return <EngineeringDashboard initialTab="boms" onNavigate={handleNavigate} />
+        return <EngineeringDashboard initialTab="boms" onNavigate={handleNavigate} globalSearch={globalSearch} />
       case 'm3-drawings':
-        return <EngineeringDashboard initialTab="drawings" onNavigate={handleNavigate} />
+        return <EngineeringDashboard initialTab="drawings" onNavigate={handleNavigate} globalSearch={globalSearch} />
 
       // Module 4: Production & Quality
       case 'm4-dashboard':
@@ -411,6 +411,7 @@ export default function AppLayout() {
           onOpenTrace={() => setIsTraceOpen(true)}
           onQuickAdd={() => setIsQuickAddOpen(true)}
           onToggleSidebar={() => setIsMobileSidebarOpen((prev) => !prev)}
+          onNavigate={handleNavigate}
         />
 
         {/* Main Workspace (Scrollable with mobile touch momentum) */}

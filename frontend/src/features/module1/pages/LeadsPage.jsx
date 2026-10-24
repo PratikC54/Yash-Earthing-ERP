@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { PhoneCall, Trash2, UserPlus, Clock, X, FileText } from "lucide-react";
 import Module1KpiCards from "../components/Module1KpiCards";
 import FilterBar from "../components/FilterBar";
@@ -8,17 +8,23 @@ import module1Service from "../services/module1Service";
 import { useAuth } from "../../auth/useAuth";
 import { exportToExcel, importFromExcel } from "../utils/excelUtils";
 
-export default function LeadsPage({ onNavigateToQuotation }) {
+export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) {
   const { user } = useAuth();
   const canReassign = user?.role === "ADMIN" || user?.role === "SALES_MANAGER";
 
   const [leads, setLeads] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(globalSearch || "");
   const [selectedStage, setSelectedStage] = useState("ALL");
   const [selectedSource, setSelectedSource] = useState("ALL");
   const [selectedPriority, setSelectedPriority] = useState("ALL");
+
+  useEffect(() => {
+    if (globalSearch !== undefined && globalSearch !== null) {
+      setSearchQuery(globalSearch);
+    }
+  }, [globalSearch]);
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -28,37 +34,98 @@ export default function LeadsPage({ onNavigateToQuotation }) {
   const [selectedConsultantId, setSelectedConsultantId] = useState("");
   const [consultantsList, setConsultantsList] = useState([]);
 
-  // Fetch leads and pipeline stats from backend
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  // Fetch pipeline stats once (or on mutation), not on every search keystroke
+  const fetchStats = useCallback(async () => {
     try {
-      const [leadsRes, statsRes] = await Promise.allSettled([
-        module1Service.getLeads({
-          search: searchQuery,
-          stage: selectedStage,
-          source: selectedSource,
-          priority: selectedPriority,
-          limit: 100,
-        }),
-        module1Service.getPipelineStats(),
-      ]);
-
-      if (leadsRes.status === "fulfilled" && leadsRes.value?.success && leadsRes.value?.data?.leads) {
-        setLeads(leadsRes.value.data.leads);
+      const statsRes = await module1Service.getPipelineStats();
+      if (statsRes?.success && statsRes?.data) {
+        setStats(statsRes.data);
       }
-      if (statsRes.status === "fulfilled" && statsRes.value?.success && statsRes.value?.data) {
-        setStats(statsRes.value.data);
+    } catch (err) {
+      console.warn("Could not load pipeline stats:", err);
+    }
+  }, []);
+
+  // Fetch full leads batch
+  const fetchLeads = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    try {
+      const res = await module1Service.getLeads({ limit: 150 });
+      if (res?.success && res?.data?.leads) {
+        setLeads(res.data.leads);
       }
     } catch (err) {
       console.error("Failed to fetch leads data:", err);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
-  }, [searchQuery, selectedStage, selectedSource, selectedPriority]);
+  }, []);
+
+  const fetchData = useCallback(() => {
+    fetchLeads(false);
+    fetchStats();
+  }, [fetchLeads, fetchStats]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchLeads(true);
+    fetchStats();
+  }, [fetchLeads, fetchStats]);
+
+  // Optional background search sync when user searches remotely (debounced)
+  useEffect(() => {
+    const term = searchQuery.trim();
+    if (!term || term.length < 2) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await module1Service.getLeads({ search: term, limit: 100 });
+        if (res?.success && Array.isArray(res?.data?.leads)) {
+          setLeads((prev) => {
+            const existingIds = new Set(prev.map((l) => l.id));
+            const newRecords = res.data.leads.filter((l) => !existingIds.has(l.id));
+            return newRecords.length > 0 ? [...newRecords, ...prev] : prev;
+          });
+        }
+      } catch (err) {
+        console.warn("Background lead search:", err);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Zero-latency instant in-memory filtering (0ms)
+  const displayedLeads = useMemo(() => {
+    let result = leads;
+
+    if (selectedStage && selectedStage !== "ALL") {
+      result = result.filter((l) => l.stage === selectedStage);
+    }
+
+    if (selectedSource && selectedSource !== "ALL") {
+      result = result.filter((l) => l.source === selectedSource);
+    }
+
+    if (selectedPriority && selectedPriority !== "ALL") {
+      result = result.filter((l) => l.priority === selectedPriority);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((l) =>
+        (l.code && l.code.toLowerCase().includes(q)) ||
+        (l.customerName && l.customerName.toLowerCase().includes(q)) ||
+        (l.contactName && l.contactName.toLowerCase().includes(q)) ||
+        (l.phone && l.phone.toLowerCase().includes(q)) ||
+        (l.productName && l.productName.toLowerCase().includes(q)) ||
+        (l.productSku && l.productSku.toLowerCase().includes(q)) ||
+        (l.city && l.city.toLowerCase().includes(q)) ||
+        (l.requirement && l.requirement.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [leads, selectedStage, selectedSource, selectedPriority, searchQuery]);
 
   // Handle Create Lead
   const handleCreateLead = async (formData) => {
@@ -265,7 +332,9 @@ export default function LeadsPage({ onNavigateToQuotation }) {
             <h3 className="text-sm font-bold text-white tracking-wide uppercase">
               Sales & CRM Pipeline · Leads & Enquiries
             </h3>
-            <span className="text-xs text-slate-400">({leads.length} records)</span>
+            <span className="text-xs text-slate-400">
+              ({displayedLeads.length} {displayedLeads.length === 1 ? 'record' : 'records'})
+            </span>
           </div>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -302,14 +371,14 @@ export default function LeadsPage({ onNavigateToQuotation }) {
                     <td className="py-3 px-4 text-center"><div className="h-6 w-16 bg-slate-200/60 rounded-lg mx-auto" /></td>
                   </tr>
                 ))
-              ) : leads.length === 0 ? (
+              ) : displayedLeads.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-500">
                     No leads found matching your search and filter criteria.
                   </td>
                 </tr>
               ) : (
-                leads.map((l) => (
+                displayedLeads.map((l) => (
                   <tr key={l.id} className="hover:bg-slate-800/40 transition">
                     {/* 1. Lead Code & Date */}
                     <td className="py-3 px-4">
