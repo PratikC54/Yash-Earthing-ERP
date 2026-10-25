@@ -1,9 +1,10 @@
 import KpiSection from "../../../components/common/KpiSection";
-import { useState, useEffect, useCallback } from "react";
-import { Boxes, CheckCircle2, AlertTriangle, ArrowRight, Trash2 } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Boxes, CheckCircle2, AlertTriangle, ArrowRight, Trash2, Loader2, ShoppingCart, Clock } from "lucide-react";
 import FilterBar from "../components/FilterBar";
 import CreateSalesOrderModal from "../components/CreateSalesOrderModal";
 import InventoryCheckModal from "../components/InventoryCheckModal";
+import Module1TodoWidget from "../components/Module1TodoWidget";
 import module1Service from "../services/module1Service";
 import { exportToExcel, importFromExcel } from "../utils/excelUtils";
 
@@ -11,6 +12,7 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
   const [orders, setOrders] = useState([]);
   const [quotations, setQuotations] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [searchQuery, setSearchQuery] = useState(globalSearch || "");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
@@ -32,6 +34,7 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
 
   const fetchOrders = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
+    setError("");
     try {
       const orderRes = await module1Service.getOrders({ limit: 150 });
       if (orderRes?.success && orderRes?.data?.orders) {
@@ -39,6 +42,11 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
       }
     } catch (err) {
       console.error("Failed to fetch orders:", err);
+      setError(
+        err.response?.data?.message ||
+          err.message ||
+          "Failed to load sales orders. Check the server and database connection, then retry."
+      );
     } finally {
       if (isInitial) setLoading(false);
     }
@@ -57,13 +65,17 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
 
   const fetchData = useCallback(() => {
     fetchOrders(false);
-    fetchQuotations();
-  }, [fetchOrders, fetchQuotations]);
+  }, [fetchOrders]);
 
   useEffect(() => {
     fetchOrders(true);
-    fetchQuotations();
-  }, [fetchOrders, fetchQuotations]);
+  }, [fetchOrders]);
+
+  useEffect(() => {
+    if (isCreateModalOpen && quotations.length === 0) {
+      fetchQuotations();
+    }
+  }, [isCreateModalOpen, quotations.length, fetchQuotations]);
 
   // Debounced background sync for remote orders
   useEffect(() => {
@@ -196,7 +208,7 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
   const readyDispatchCount = orders.filter((o) => o.dispatchStatus === "READY_FOR_DISPATCH").length;
 
   return (
-    <div className="min-h-full">
+    <div className="flex flex-col min-h-full space-y-4">
       {/* Workflow Process Strip */}
       <div className="bg-white border border-slate-200 rounded-2xl p-4 mb-6 shadow-xs">
         <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
@@ -230,7 +242,27 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
         </div>
       </div>
 
+      {/* Mobile-first reordering: KPIs & FilterBar below table on mobile */}
+      <div className="order-2 md:order-1">
+      {error && (
+        <div
+          role="alert"
+          className="mb-6 flex items-center justify-between gap-3 rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 text-xs text-rose-700"
+        >
+          <span>{error}</span>
+          <button
+            type="button"
+            onClick={() => fetchOrders(true)}
+            disabled={loading}
+            className="shrink-0 rounded-lg border border-rose-500/30 px-3 py-1.5 font-semibold hover:bg-rose-500/10 disabled:opacity-50"
+          >
+            {loading ? "Retrying..." : "Retry"}
+          </button>
+        </div>
+      )}
+
       {/* 4 KPI Cards */}
+      <KpiSection>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -329,7 +361,11 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
           setIsCreateModalOpen(true);
         }}
       />
+      </div>
 
+      {/* Main Content Area: Data Table on Left & To-Do Widget on Right */}
+      <div className="order-1 md:order-2 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        <div className="lg:col-span-8 xl:col-span-9">
       {/* Table Card */}
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xs overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90">
@@ -397,16 +433,16 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
                       <div className="text-[10px] text-slate-500 font-mono mt-0.5 flex items-center gap-1">
                         <Clock className="w-3 h-3 text-slate-400 inline shrink-0" />
                         <span>
-                          {new Date(o.createdAt || Date.now()).toLocaleDateString("en-IN", {
+                          {o.createdAt ? new Date(o.createdAt).toLocaleDateString("en-IN", {
                             day: "2-digit",
                             month: "short",
                             year: "numeric",
-                          })}{" "}
+                          }) : "—"}{" "}
                           ·{" "}
-                          {new Date(o.createdAt || Date.now()).toLocaleTimeString("en-IN", {
+                          {o.createdAt ? new Date(o.createdAt).toLocaleTimeString("en-IN", {
                             hour: "2-digit",
                             minute: "2-digit",
-                          })}
+                          }) : "—"}
                         </span>
                       </div>
                     </td>
@@ -494,6 +530,12 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
             </tbody>
           </table>
         </div>
+        </div>
+        <div className="lg:col-span-4 xl:col-span-3">
+          <Module1TodoWidget title="Order & Dispatch Actions" pageType="orders" items={displayedOrders} />
+        </div>
+      </div>
+
       </div>
 
       {/* Create Sales Order Modal */}

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { PhoneCall, Trash2, UserPlus, Clock, X, FileText } from "lucide-react";
+import { PhoneCall, Trash2, UserPlus, Clock, X, FileText, Calendar, Filter } from "lucide-react";
 import Module1KpiCards from "../components/Module1KpiCards";
+import Module1TodoWidget from "../components/Module1TodoWidget";
 import FilterBar from "../components/FilterBar";
 import CreateLeadModal from "../components/CreateLeadModal";
 import LogCallModal from "../components/LogCallModal";
@@ -34,7 +35,7 @@ export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) 
   const [selectedConsultantId, setSelectedConsultantId] = useState("");
   const [consultantsList, setConsultantsList] = useState([]);
 
-  // Fetch pipeline stats once (or on mutation), not on every search keystroke
+  // Fetch pipeline stats
   const fetchStats = useCallback(async () => {
     try {
       const statsRes = await module1Service.getPipelineStats();
@@ -71,7 +72,7 @@ export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) 
     fetchStats();
   }, [fetchLeads, fetchStats]);
 
-  // Optional background search sync when user searches remotely (debounced)
+  // Debounced search sync
   useEffect(() => {
     const term = searchQuery.trim();
     if (!term || term.length < 2) return;
@@ -94,7 +95,7 @@ export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) 
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Zero-latency instant in-memory filtering (0ms)
+  // Zero-latency instant in-memory filtering
   const displayedLeads = useMemo(() => {
     let result = leads;
 
@@ -149,7 +150,6 @@ export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) 
         setCallModalLead(null);
         fetchData();
         if (res.data?.isSuccess && onNavigateToQuotation) {
-          // If finalized, offer to jump directly to Quotations page
           const jump = confirm(
             "Call succeeded! Enquiry has been finalized and handed over to Back Officer. Would you like to view Quotations & Estimates now?"
           );
@@ -172,7 +172,6 @@ export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) 
         setConsultantsList(res.data.users);
       }
     } catch {
-      // Fallback consultants list
       setConsultantsList([
         { id: 6, name: "Pratik Senapati", role: "SALES_CONSULTANT" },
         { id: 9, name: "Sales Consultant 2", role: "SALES_CONSULTANT" },
@@ -308,201 +307,220 @@ export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) 
   };
 
   return (
-    <div className="min-h-full">
-      {/* 4 Top KPI Cards */}
-      <Module1KpiCards stats={stats} loading={loading} />
+    <div className="flex flex-col min-h-full space-y-4">
+      {/* Mobile-first reordering: In mobile view (order-2 md:order-1), KPIs and FilterBar are below data table */}
+      <div className="order-2 md:order-1">
+        {/* Color-coded Top KPIs (Total Leads, Call Answered, Call Not Answered, Not Interested, Invalid Number) */}
+        <Module1KpiCards stats={stats} leads={leads} loading={loading} />
 
-      {/* Filter and Search Bar with Import/Export Excel */}
-      <FilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        placeholder="Search customer, code, phone, product..."
-        filters={filterConfigs}
-        onFilterChange={handleFilterChange}
-        onExportExcel={handleExportExcel}
-        onImportExcel={handleImportExcel}
-        primaryActionLabel="Add Lead"
-        onPrimaryAction={() => setIsCreateModalOpen(true)}
-      />
+        {/* Filter and Search Bar with Import/Export Excel */}
+        <FilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          placeholder="Search customer, code, phone, product..."
+          filters={filterConfigs}
+          onFilterChange={handleFilterChange}
+          onExportExcel={handleExportExcel}
+          onImportExcel={handleImportExcel}
+          primaryActionLabel="Add Lead"
+          onPrimaryAction={() => setIsCreateModalOpen(true)}
+        />
+      </div>
 
-      {/* Main Table Card */}
-      <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <div className="flex items-center space-x-2.5">
-            <h3 className="text-sm font-bold text-white tracking-wide uppercase">
-              Sales & CRM Pipeline · Leads & Enquiries
-            </h3>
-            <span className="text-xs text-slate-400">
-              ({displayedLeads.length} {displayedLeads.length === 1 ? 'record' : 'records'})
+      {/* Main Content Area: Data Table on Left (spans across to 2nd last KPI) & To-Do Widget on Right */}
+      <div className="order-1 md:order-2 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Data Table Column (Lg: 8 or 9 cols) */}
+        <div className="lg:col-span-8 xl:col-span-9 bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <h3 className="text-xs font-black text-slate-900 tracking-wider uppercase">
+                Customer Leads & Enquiries Register
+              </h3>
+              <span className="text-[11px] font-bold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-full">
+                {displayedLeads.length} {displayedLeads.length === 1 ? "record" : "records"}
+              </span>
+            </div>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Live Sync
             </span>
           </div>
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            Live Database Sync
-          </span>
-        </div>
 
-        {/* Table Container */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#0b1329] text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-800">
-                <th className="py-3 px-4">LEAD CODE</th>
-                <th className="py-3 px-4">CUSTOMER / COMPANY</th>
-                <th className="py-3 px-4">PRODUCT & QTY</th>
-                <th className="py-3 px-4">SOURCE</th>
-                <th className="py-3 px-4">STAGE</th>
-                <th className="py-3 px-4">EXPECTED VALUE</th>
-                <th className="py-3 px-4">ASSIGNED REP</th>
-                <th className="py-3 px-4 text-center">ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/80">
-              {loading && leads.length === 0 ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/80 rounded" /><div className="h-3 w-12 bg-slate-200/50 rounded mt-1" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-32 bg-slate-200/80 rounded" /><div className="h-3 w-24 bg-slate-200/50 rounded mt-1" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-28 bg-slate-200/80 rounded" /><div className="h-3 w-16 bg-slate-200/50 rounded mt-1" /></td>
-                    <td className="py-3 px-4"><div className="h-5 w-20 bg-slate-200/70 rounded-full" /></td>
-                    <td className="py-3 px-4"><div className="h-5 w-24 bg-slate-200/70 rounded-full" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-24 bg-slate-200/60 rounded" /></td>
-                    <td className="py-3 px-4 text-center"><div className="h-6 w-16 bg-slate-200/60 rounded-lg mx-auto" /></td>
-                  </tr>
-                ))
-              ) : displayedLeads.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500">
-                    No leads found matching your search and filter criteria.
-                  </td>
+          {/* Table Container */}
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                  <th className="py-3 px-3.5">LEAD CODE</th>
+                  <th className="py-3 px-3.5">CUSTOMER & PHONE</th>
+                  <th className="py-3 px-3.5">PRODUCT & QTY</th>
+                  <th className="py-3 px-3.5">SOURCE</th>
+                  <th className="py-3 px-3.5">STAGE</th>
+                  <th className="py-3 px-3.5">EXPECTED VALUE</th>
+                  <th className="py-3 px-3.5">ASSIGNED REP</th>
+                  <th className="py-3 px-3.5 text-center">ACTIONS</th>
                 </tr>
-              ) : (
-                displayedLeads.map((l) => (
-                  <tr key={l.id} className="hover:bg-slate-800/40 transition">
-                    {/* 1. Lead Code & Date */}
-                    <td className="py-3 px-4">
-                      <div className="font-mono font-bold text-cyan-300">{l.code}</div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">
-                        {new Date(l.createdAt).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                        })}
-                      </div>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading && leads.length === 0 ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="py-3 px-3.5"><div className="h-4 w-16 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-32 bg-slate-200 rounded" /><div className="h-3 w-24 bg-slate-100 rounded mt-1" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-28 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-3.5"><div className="h-5 w-20 bg-slate-200 rounded-full" /></td>
+                      <td className="py-3 px-3.5"><div className="h-5 w-24 bg-slate-200 rounded-full" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-20 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-24 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-3.5 text-center"><div className="h-6 w-16 bg-slate-200 rounded mx-auto" /></td>
+                    </tr>
+                  ))
+                ) : displayedLeads.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="py-12 text-center text-slate-400 font-medium">
+                      No leads found matching your search and filter criteria.
                     </td>
-
-                    {/* 2. Customer / Company */}
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-white text-xs">{l.customerName}</div>
-                      <div className="flex items-center gap-1.5 text-[11px] text-slate-400 mt-0.5">
-                        <span className="font-mono text-slate-300">{l.phone || "No phone"}</span>
-                      </div>
-                    </td>
-
-                    {/* 3. Product & Qty */}
-                    <td className="py-3 px-4">
-                      <div className="font-semibold text-slate-200">{l.productName || "Product"}</div>
-                      <div className="text-[10px] text-slate-400">Qty: {Number(l.quantity || 1).toFixed(2)}</div>
-                    </td>
-
-                    {/* 4. Source Badge */}
-                    <td className="py-3 px-4">
-                      <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold bg-slate-800 text-slate-300 border border-slate-700">
-                        {l.source?.replace(/_/g, " ")}
-                      </span>
-                    </td>
-
-                    {/* 5. Stage Badge */}
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                          l.stage === "PO_RECEIVED" || l.stage === "ORDER_CONFIRMED"
-                            ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                            : l.stage === "QUOTATION_REQUESTED" || l.stage === "QUOTATION_SENT"
-                            ? "bg-amber-500/10 text-amber-300 border-amber-500/30"
-                            : "bg-blue-500/10 text-blue-300 border-blue-500/30"
-                        }`}
-                      >
-                        {l.stage?.replace(/_/g, " ")}
-                      </span>
-                    </td>
-
-                    {/* 6. Expected Value */}
-                    <td className="py-3 px-4 font-mono font-bold text-slate-200">
-                      {Number(l.expectedValue || 0) > 0 ? (
-                        new Intl.NumberFormat("en-IN", {
-                          style: "currency",
-                          currency: "INR",
-                          maximumFractionDigits: 0,
-                        }).format(Number(l.expectedValue))
-                      ) : (
-                        <span className="text-amber-400 text-[11px]">To be quoted</span>
-                      )}
-                    </td>
-
-                    {/* 7. Assigned Rep */}
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-between gap-1">
-                        <div>
-                          <div className="text-xs text-white font-medium">
-                            {l.assignedTo?.name || l.assignedByName || "Sales Consultant"}
-                          </div>
-                          <div className="text-[10px] text-slate-400">
-                            {l.assignedTo?.role || "SALES_CONSULTANT"}
-                          </div>
+                  </tr>
+                ) : (
+                  displayedLeads.map((l) => (
+                    <tr key={l.id} className="hover:bg-slate-50/80 transition-colors">
+                      {/* 1. Lead Code & Date */}
+                      <td className="py-3 px-3.5">
+                        <div className="font-mono font-bold text-blue-700">{l.code}</div>
+                        <div className="text-[10px] text-slate-400 mt-0.5">
+                          {new Date(l.createdAt).toLocaleDateString("en-IN", {
+                            day: "2-digit",
+                            month: "short",
+                          })}
                         </div>
-                        {canReassign && (
+                      </td>
+
+                      {/* 2. Customer & Phone WITH DIRECT QUICK-CALL BUTTON */}
+                      <td className="py-3 px-3.5">
+                        <div className="font-bold text-slate-900 text-xs">{l.customerName}</div>
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-600 mt-0.5">
+                          <span className="font-mono font-semibold text-slate-700">{l.phone || "No phone"}</span>
+                          {/* QUICK CALL BUTTON DIRECTLY AT RIGHT OF PHONE NUMBER */}
+                          {l.phone && (
+                            <button
+                              type="button"
+                              onClick={() => setCallModalLead(l)}
+                              className="inline-flex items-center justify-center p-1 rounded-md bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 border border-emerald-200 transition cursor-pointer shadow-2xs"
+                              title={`Direct Call: ${l.phone}`}
+                            >
+                              <PhoneCall className="w-3 h-3" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* 3. Product & Qty */}
+                      <td className="py-3 px-3.5">
+                        <div className="font-semibold text-slate-800">{l.productName || "Product"}</div>
+                        <div className="text-[10px] text-slate-500">Qty: {Number(l.quantity || 1).toFixed(0)}</div>
+                      </td>
+
+                      {/* 4. Source Badge */}
+                      <td className="py-3 px-3.5">
+                        <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200">
+                          {l.source?.replace(/_/g, " ")}
+                        </span>
+                      </td>
+
+                      {/* 5. Stage Badge */}
+                      <td className="py-3 px-3.5">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                            l.stage === "PO_RECEIVED" || l.stage === "ORDER_CONFIRMED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                              : l.stage === "QUOTATION_REQUESTED" || l.stage === "QUOTATION_SENT"
+                              ? "bg-amber-50 text-amber-800 border-amber-300"
+                              : "bg-blue-50 text-blue-700 border-blue-200"
+                          }`}
+                        >
+                          {l.stage?.replace(/_/g, " ")}
+                        </span>
+                      </td>
+
+                      {/* 6. Expected Value */}
+                      <td className="py-3 px-3.5 font-mono font-bold text-slate-800">
+                        {Number(l.expectedValue || 0) > 0 ? (
+                          new Intl.NumberFormat("en-IN", {
+                            style: "currency",
+                            currency: "INR",
+                            maximumFractionDigits: 0,
+                          }).format(Number(l.expectedValue))
+                        ) : (
+                          <span className="text-amber-600 font-sans text-[11px] font-semibold">To be quoted</span>
+                        )}
+                      </td>
+
+                      {/* 7. Assigned Rep */}
+                      <td className="py-3 px-3.5">
+                        <div className="flex items-center justify-between gap-1">
+                          <div>
+                            <div className="text-xs text-slate-900 font-bold">
+                              {l.assignedTo?.name || l.assignedByName || "Sales Consultant"}
+                            </div>
+                            <div className="text-[10px] text-slate-500">
+                              {l.assignedTo?.role || "SALES_CONSULTANT"}
+                            </div>
+                          </div>
+                          {canReassign && (
+                            <button
+                              type="button"
+                              onClick={() => openReassignModal(l)}
+                              className="p-1 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded transition cursor-pointer"
+                              title="Reassign lead"
+                            >
+                              <UserPlus className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* 8. Actions */}
+                      <td className="py-3 px-3.5">
+                        <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => openReassignModal(l)}
-                            className="p-1 text-slate-400 hover:text-cyan-300 hover:bg-slate-800 rounded transition cursor-pointer"
-                            title="Manually reassign lead (Admin / Sales Manager only)"
+                            onClick={() => setCallModalLead(l)}
+                            className="flex items-center gap-1 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
+                            title="Call customer & finalize"
                           >
-                            <UserPlus className="w-3.5 h-3.5 text-cyan-400" />
+                            <PhoneCall className="w-3 h-3" />
+                            <span>Call</span>
                           </button>
-                        )}
-                      </div>
-                    </td>
 
-                    {/* 8. Actions (Call, View & Action, Delete) */}
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-center gap-1.5">
-                        {/* Quick Call Button */}
-                        <button
-                          type="button"
-                          onClick={() => setCallModalLead(l)}
-                          className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/40 rounded-lg text-xs font-bold transition cursor-pointer"
-                          title="Call customer and finalize enquiry"
-                        >
-                          <PhoneCall className="w-3.5 h-3.5" />
-                          <span>Call</span>
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLeadDetails(l)}
+                            className="px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold border border-slate-200 transition cursor-pointer"
+                          >
+                            View
+                          </button>
 
-                        {/* View & Action Button */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedLeadDetails(l)}
-                          className="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition cursor-pointer"
-                        >
-                          View & Action
-                        </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteLead(l.id, l.code)}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer"
+                            title="Delete Lead"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
 
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteLead(l.id, l.code)}
-                          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition cursor-pointer"
-                          title="Delete Lead"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+        {/* Right Column: Daily To-Do widget (below last 2 KPIs) */}
+        <div className="lg:col-span-4 xl:col-span-3">
+          <Module1TodoWidget title="Leads Actions" pageType="leads" items={displayedLeads} />
         </div>
       </div>
 
@@ -521,204 +539,98 @@ export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) 
         onSubmit={handleLogCallSubmit}
       />
 
-      {/* Lead Details Drawer / Modal */}
+      {/* View & Action Lead Details Modal */}
       {selectedLeadDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden my-auto text-slate-800 animate-in zoom-in-95 duration-150">
-            {/* Header */}
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#0c1222] text-[#d4ff00] flex items-center justify-center shadow-xs">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-[#0f172a]">Lead Details: {selectedLeadDetails.code}</h3>
-                  <p className="text-[11px] font-semibold text-slate-500">{selectedLeadDetails.customerName}</p>
-                </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="text-sm font-black text-slate-900 uppercase">
+                  Lead Details: {selectedLeadDetails.code}
+                </h3>
+                <p className="text-xs text-slate-500 font-medium">{selectedLeadDetails.customerName}</p>
               </div>
               <button
                 type="button"
                 onClick={() => setSelectedLeadDetails(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition cursor-pointer"
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="p-6 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+            <div className="p-6 space-y-4 text-xs text-slate-700">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Company</span>
-                  <span className="font-bold text-slate-900 text-xs">{selectedLeadDetails.customerName}</span>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase">Contact Person</span>
+                  <span className="font-bold text-slate-900">{selectedLeadDetails.contactName || "—"}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Contact</span>
-                  <span className="font-semibold text-slate-800 text-xs">{selectedLeadDetails.contactName}</span>
-                  <div className="font-mono font-bold text-slate-900 mt-0.5">{selectedLeadDetails.phone}</div>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase">Phone Number</span>
+                  <span className="font-mono font-bold text-slate-900">{selectedLeadDetails.phone || "—"}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Email</span>
-                  <span className="text-slate-700 font-medium">{selectedLeadDetails.email || "N/A"}</span>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase">Product Requested</span>
+                  <span className="font-semibold text-slate-900">{selectedLeadDetails.productName || "—"}</span>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Location</span>
-                  <span className="text-slate-800 font-medium">{selectedLeadDetails.city || "—"}, {selectedLeadDetails.state || "—"}</span>
+                  <span className="text-slate-400 block text-[10px] font-bold uppercase">Quantity</span>
+                  <span className="font-bold text-slate-900">{selectedLeadDetails.quantity || 1} Units</span>
                 </div>
               </div>
 
-              <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl">
-                <span className="text-[10px] uppercase font-bold text-blue-900 block mb-0.5">Primary Requirement</span>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="font-bold text-slate-900">{selectedLeadDetails.productName}</span>
-                  <span className="font-bold font-mono text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md">Total Qty: {selectedLeadDetails.quantity}</span>
-                </div>
-              </div>
-
-              {/* Items Breakdown if multiple */}
-              {selectedLeadDetails.items && selectedLeadDetails.items.length > 0 && (
-                <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-2 shadow-xs">
-                  <div className="font-bold text-slate-900 text-[11px] uppercase tracking-wider">Detailed Product Line Items:</div>
-                  <div className="space-y-1">
-                    {selectedLeadDetails.items.map((it, idx) => (
-                      <div key={it.id || idx} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-0 text-slate-800">
-                        <span className="font-medium">• {it.productName || it.product?.name} <span className="text-slate-500 text-[11px]">({it.productSku || it.product?.sku})</span></span>
-                        <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-[11px]">Qty: {it.quantity}</span>
-                      </div>
-                    ))}
-                  </div>
+              {selectedLeadDetails.requirement && (
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
+                  <span className="text-slate-500 block text-[10px] font-bold uppercase mb-1">Requirement Notes</span>
+                  <p className="text-slate-800 leading-relaxed font-medium">{selectedLeadDetails.requirement}</p>
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-3 text-xs">
-                <div>
-                  <span className="text-slate-500 font-medium">Assigned Consultant:</span>
-                  <div className="font-bold text-slate-900 mt-0.5">
-                    {selectedLeadDetails.assignedTo?.name || selectedLeadDetails.assignedByName}
-                  </div>
-                </div>
-                <div>
-                  <span className="text-slate-500 font-medium">Current Stage:</span>
-                  <div className="mt-0.5">
-                    <span className="px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-900 rounded font-bold text-[11px]">
-                      {selectedLeadDetails.stage}
-                    </span>
-                  </div>
-                </div>
+              <div className="flex justify-end gap-2 pt-3 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const lead = selectedLeadDetails;
+                    setSelectedLeadDetails(null);
+                    setCallModalLead(lead);
+                  }}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition flex items-center gap-1.5 shadow-xs"
+                >
+                  <PhoneCall className="w-3.5 h-3.5" />
+                  <span>Call & Log Outcome</span>
+                </button>
               </div>
-
-              {selectedLeadDetails.lastActivityNote && (
-                <div className="text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs font-medium">
-                  <span className="font-bold text-slate-900 block mb-0.5">Activity Notes:</span>
-                  {selectedLeadDetails.lastActivityNote}
-                </div>
-              )}
-
-              {/* Previous Call Logs in Detail View */}
-              <div className="pt-3 border-t border-slate-200">
-                <div className="font-bold text-slate-800 mb-2 flex items-center justify-between text-xs">
-                  <span className="flex items-center gap-1.5">
-                    <Clock className="w-3.5 h-3.5 text-slate-500" />
-                    <span>Previous Call Logs ({selectedLeadDetails.callLogs?.length || 0})</span>
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-normal">Call records</span>
-                </div>
-                {selectedLeadDetails.callLogs && selectedLeadDetails.callLogs.length > 0 ? (
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {selectedLeadDetails.callLogs.map((log) => (
-                      <div key={log.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
-                        <div className="flex justify-between items-center text-slate-900 font-bold">
-                          <span>
-                            Outcome:{" "}
-                            <span className={log.outcome === "ANSWERED" || log.quoteRequested ? "text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded text-[11px]" : "text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded text-[11px]"}>
-                              {log.outcome}
-                            </span>
-                          </span>
-                          <span className="text-[10px] text-slate-500 font-mono font-medium">
-                            {new Date(log.loggedAt || log.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                        {log.discussionHighlights && (
-                          <p className="text-slate-700 italic font-medium bg-white p-1.5 rounded border border-slate-200 mt-1">
-                            "{log.discussionHighlights}"
-                          </p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-slate-500 italic text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200">
-                    No calls logged yet for this lead.
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2.5">
-              <button
-                type="button"
-                onClick={() => setSelectedLeadDetails(null)}
-                className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition cursor-pointer text-xs"
-              >
-                Close
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  const target = selectedLeadDetails;
-                  setSelectedLeadDetails(null);
-                  setCallModalLead(target);
-                }}
-                className="px-5 py-2 bg-[#d4ff00] hover:bg-[#bce600] text-black font-black rounded-xl shadow-md transition cursor-pointer text-xs flex items-center gap-1.5"
-              >
-                <PhoneCall className="w-3.5 h-3.5" />
-                <span>Log Call Now</span>
-              </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Manual Reassign Modal */}
+      {/* Reassign Lead Modal */}
       {reassignModalLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
-          <div className="bg-white border border-slate-200 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden my-auto text-slate-800 animate-in zoom-in-95 duration-150">
-            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90">
-              <div className="flex items-center space-x-2.5">
-                <div className="w-8 h-8 rounded-lg bg-[#0c1222] text-[#d4ff00] flex items-center justify-center shadow-xs">
-                  <UserPlus className="w-4 h-4" />
-                </div>
-                <div>
-                  <h3 className="text-base font-black text-[#0f172a]">Manual Lead Reassignment</h3>
-                  <p className="text-[11px] font-semibold text-slate-500">{reassignModalLead.code}</p>
-                </div>
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white border border-slate-200 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-200 bg-slate-50 flex items-center justify-between">
+              <h3 className="text-xs font-black text-slate-900 uppercase">
+                Reassign Lead: {reassignModalLead.code}
+              </h3>
               <button
                 type="button"
                 onClick={() => setReassignModalLead(null)}
-                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleReassignSubmit} className="p-6 space-y-4 text-xs">
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                <div className="font-bold text-slate-900 text-xs">{reassignModalLead.code} · {reassignModalLead.customerName}</div>
-                <div className="text-[11px] text-slate-600 mt-1">
-                  Currently assigned to: <span className="font-bold text-slate-900">{reassignModalLead.assignedTo?.name || reassignModalLead.assignedByName}</span>
-                </div>
-              </div>
-
+            <form onSubmit={handleReassignSubmit} className="p-5 space-y-4 text-xs">
               <div>
-                <label className="block text-slate-700 font-bold mb-1.5 text-xs">Select New Consultant *</label>
+                <label className="block text-slate-700 font-bold mb-1">Select Sales Consultant</label>
                 <select
                   value={selectedConsultantId}
                   onChange={(e) => setSelectedConsultantId(e.target.value)}
-                  className="w-full bg-white text-slate-900 text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold focus:outline-none focus:border-[#0c1222] shadow-xs"
-                  style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
-                  required
+                  className="w-full bg-white text-slate-800 border border-slate-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-none focus:border-blue-500 shadow-2xs"
                 >
-                  <option value="">-- Choose User --</option>
+                  <option value="">Select consultant...</option>
                   {consultantsList.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} ({c.role})
@@ -727,19 +639,19 @@ export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) 
                 </select>
               </div>
 
-              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2.5">
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setReassignModalLead(null)}
-                  className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold transition cursor-pointer text-xs"
+                  className="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-lg"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-[#d4ff00] hover:bg-[#bce600] text-black font-black rounded-xl shadow-md transition cursor-pointer text-xs"
+                  className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-2xs"
                 >
-                  Reassign Lead
+                  Assign
                 </button>
               </div>
             </form>

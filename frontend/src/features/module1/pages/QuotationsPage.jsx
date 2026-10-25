@@ -1,10 +1,11 @@
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { Eye, Trash2, FileCheck, ShoppingCart, Plus } from "lucide-react";
 import KpiSection from "../../../components/common/KpiSection";
-import { useState, useEffect, useCallback } from "react";
-import { Eye, Trash2 } from "lucide-react";
 import FilterBar from "../components/FilterBar";
 import QuotationModal from "../components/QuotationModal";
 import CreateQuotationModal from "../components/CreateQuotationModal";
 import CustomerPOModal from "../components/CustomerPOModal";
+import Module1TodoWidget from "../components/Module1TodoWidget";
 import module1Service from "../services/module1Service";
 import { exportToExcel, importFromExcel } from "../utils/excelUtils";
 
@@ -15,27 +16,25 @@ export default function QuotationsPage({ onNavigateToOrders }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
-  // Modals state
+  // Modals
   const [selectedQuotation, setSelectedQuotation] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [poModalQuotation, setPoModalQuotation] = useState(null);
 
-  // Fetch quotations batch
   const fetchQuotations = useCallback(async (isInitial = false) => {
     if (isInitial) setLoading(true);
     try {
-      const quoteRes = await module1Service.getQuotations({ limit: 150 });
-      if (quoteRes?.success && quoteRes?.data?.quotations) {
-        setQuotations(quoteRes.data.quotations);
+      const res = await module1Service.getQuotations();
+      if (res?.success && res?.data?.quotations) {
+        setQuotations(res.data.quotations);
       }
     } catch (err) {
-      console.error("Failed to fetch quotations:", err);
+      console.error("Failed to load quotations:", err);
     } finally {
       if (isInitial) setLoading(false);
     }
   }, []);
 
-  // Fetch leads for modal dropdown (only needed on mount)
   const fetchLeads = useCallback(async () => {
     try {
       const leadsRes = await module1Service.getLeads({ limit: 100 });
@@ -43,21 +42,24 @@ export default function QuotationsPage({ onNavigateToOrders }) {
         setLeads(leadsRes.data.leads);
       }
     } catch (err) {
-      console.warn("Failed to fetch leads for modal:", err);
+      console.warn("Could not load leads for quotation create:", err);
     }
   }, []);
 
   const fetchData = useCallback(() => {
     fetchQuotations(false);
-    fetchLeads();
-  }, [fetchQuotations, fetchLeads]);
+  }, [fetchQuotations]);
 
   useEffect(() => {
     fetchQuotations(true);
-    fetchLeads();
-  }, [fetchQuotations, fetchLeads]);
+  }, [fetchQuotations]);
 
-  // Debounced background sync for remote search if needed
+  useEffect(() => {
+    if (isCreateModalOpen && leads.length === 0) {
+      fetchLeads();
+    }
+  }, [isCreateModalOpen, leads.length, fetchLeads]);
+
   useEffect(() => {
     const term = searchQuery.trim();
     if (!term || term.length < 2) return;
@@ -80,7 +82,6 @@ export default function QuotationsPage({ onNavigateToOrders }) {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  // Zero-latency instant in-memory filtering (0ms)
   const displayedQuotations = useMemo(() => {
     let result = quotations;
 
@@ -103,68 +104,54 @@ export default function QuotationsPage({ onNavigateToOrders }) {
     return result;
   }, [quotations, statusFilter, searchQuery]);
 
-  // Create Quotation (Back Officer action)
   const handleCreateQuotation = async (formData) => {
     try {
       const res = await module1Service.createQuotation(formData);
       if (res?.success) {
         setIsCreateModalOpen(false);
         fetchData();
-        // Automatically open the generated quotation in HTML viewer!
         setSelectedQuotation(res.data);
       }
     } catch (err) {
-      console.error("Create quotation failed:", err);
-      const friendlyMsg =
-        err.response?.data?.message ||
-        "Failed to prepare quotation. Please verify that this lead does not already have an active quotation.";
-      alert(friendlyMsg);
+      console.error("Create quotation error:", err);
+      alert(err.response?.data?.message || "Failed to create quotation.");
     }
   };
 
-  // Revise Quotation (Client Negotiation)
-  const handleReviseQuotation = async (id, negotiationData) => {
+  const handleReviseQuotation = async (id, payload) => {
     try {
-      const res = await module1Service.reviseQuotation(id, negotiationData);
+      const res = await module1Service.reviseQuotation(id, payload);
       if (res?.success) {
-        fetchData();
         setSelectedQuotation(res.data);
-        alert(res.message || "Quotation revised successfully with negotiated terms.");
+        fetchData();
       }
     } catch (err) {
-      console.error("Revise quotation failed:", err);
-      alert(err.response?.data?.message || "Failed to revise quotation. Please check the values entered.");
+      console.error("Revise quotation error:", err);
     }
   };
 
-  // Finalize as Proforma Invoice (PI)
   const handleFinalizePI = async (id) => {
     try {
-      const res = await module1Service.finalizeProformaInvoice(id);
+      const res = await module1Service.finalizePI(id);
       if (res?.success) {
-        fetchData();
         setSelectedQuotation(res.data);
-        alert(res.message || "Quotation confirmed and finalized as Proforma Invoice (PI).");
+        fetchData();
       }
     } catch (err) {
-      console.error("Finalize PI failed:", err);
-      alert(err.response?.data?.message || "Failed to finalize Proforma Invoice.");
+      console.error("Finalize PI error:", err);
     }
   };
 
-  // Issue Customer PO
   const handleIssueCustomerPOSubmit = async (quotationId, poData) => {
     try {
-      const res = await module1Service.issueCustomerPO(quotationId, poData);
+      const res = await module1Service.recordCustomerPO(quotationId, poData);
       if (res?.success) {
         setPoModalQuotation(null);
-        if (selectedQuotation?.id === quotationId) {
-          setSelectedQuotation(res.data);
-        }
+        setSelectedQuotation(null);
         fetchData();
         if (onNavigateToOrders) {
           const jump = confirm(
-            "Customer PO recorded successfully! Would you like to view Sales Orders & Invoicing now?"
+            "Customer PO recorded successfully! Would you like to view Sales Orders now?"
           );
           if (jump) onNavigateToOrders();
         }
@@ -175,19 +162,17 @@ export default function QuotationsPage({ onNavigateToOrders }) {
     }
   };
 
-  // Delete Quotation
   const handleDeleteQuotation = async (id) => {
     if (!confirm("Are you sure you want to delete this quotation?")) return;
     try {
       await module1Service.deleteQuotation(id);
       setSelectedQuotation(null);
-      fetchQuotationsAndLeads();
+      fetchData();
     } catch (err) {
       console.error("Delete quotation error:", err);
     }
   };
 
-  // Export Excel
   const handleExportExcel = () => {
     const exportData = quotations.map((q) => ({
       "Quote No": q.quotationNo,
@@ -213,262 +198,251 @@ export default function QuotationsPage({ onNavigateToOrders }) {
     });
   };
 
-  // Stats
   const totalValue = quotations.reduce((acc, q) => acc + Number(q.total || 0), 0);
   const piCount = quotations.filter((q) => Boolean(q.proformaInvoiceNumber)).length;
   const poCount = quotations.filter((q) => Boolean(q.customerPONumber)).length;
 
   return (
-    <div className="min-h-full">
-      {/* 4 KPI Cards */}
-      <KpiSection title="Quotations & Proforma Overview" className="mb-6">
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-            TOTAL QUOTATIONS ISSUED
-          </div>
-          {loading ? (
-            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
-          ) : (
-            <div className="text-3xl font-black text-white">{quotations.length}</div>
-          )}
-          {loading ? (
-            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
-          ) : (
-            <div className="text-xs text-blue-400 mt-1">Official commercial estimates</div>
-          )}
-        </div>
-
-        <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-            TOTAL QUOTED VALUE
-          </div>
-          {loading ? (
-            <div className="h-8 w-24 bg-slate-200/80 rounded animate-pulse my-1" />
-          ) : (
-            <div className="text-3xl font-black text-cyan-400">
-              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
-                totalValue
-              )}
-            </div>
-          )}
-          {loading ? (
-            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
-          ) : (
-            <div className="text-xs text-cyan-400/80 mt-1">Active commercial pipeline</div>
-          )}
-        </div>
-
-        <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-            PROFORMA INVOICES (PI)
-          </div>
-          {loading ? (
-            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
-          ) : (
-            <div className="text-3xl font-black text-emerald-400">{piCount}</div>
-          )}
-          {loading ? (
-            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
-          ) : (
-            <div className="text-xs text-emerald-400/80 mt-1">Accepted & finalized offers</div>
-          )}
-        </div>
-
-        <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
-          <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
-            CUSTOMER PO RECEIVED
-          </div>
-          {loading ? (
-            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
-          ) : (
-            <div className="text-3xl font-black text-amber-400">{poCount}</div>
-          )}
-          {loading ? (
-            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
-          ) : (
-            <div className="text-xs text-amber-400/80 mt-1">Ready for Sales Order release</div>
-          )}
-        </div>
-        </div>
-      </KpiSection>
-
-      {/* Filter and Search Bar */}
-      <FilterBar
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        placeholder="Search quotations by quote no, customer, PI..."
-        filters={[
-          {
-            id: "status",
-            value: statusFilter,
-            options: [
-              { value: "ALL", label: "All Statuses" },
-              { value: "DRAFT", label: "Draft" },
-              { value: "SENT", label: "Sent to Client" },
-              { value: "ACCEPTED", label: "Accepted / PI" },
-              { value: "REJECTED", label: "Rejected" },
-            ],
-          },
-        ]}
-        onFilterChange={(_, val) => setStatusFilter(val)}
-        onExportExcel={handleExportExcel}
-        onImportExcel={handleImportExcel}
-        primaryActionLabel="Issue Quotation"
-        onPrimaryAction={() => setIsCreateModalOpen(true)}
-      />
-
-      {/* Table Card */}
-      <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl shadow-xl overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
-          <h3 className="text-sm font-bold text-white tracking-wide uppercase">
-            Commercial Quotations & Estimates Register
-          </h3>
-          <span className="text-xs text-slate-400">Issued by Back Officer (BO)</span>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-[#0b1329] text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-800">
-                <th className="py-3 px-4">QUOTE NO</th>
-                <th className="py-3 px-4">REVISION</th>
-                <th className="py-3 px-4">CUSTOMER / CLIENT</th>
-                <th className="py-3 px-4">SUBTOTAL</th>
-                <th className="py-3 px-4">GST (18%)</th>
-                <th className="py-3 px-4">GRAND TOTAL</th>
-                <th className="py-3 px-4">STATUS</th>
-                <th className="py-3 px-4">PREPARED BY</th>
-                <th className="py-3 px-4 text-center">ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/80">
-              {loading && quotations.length === 0 ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <tr key={i} className="animate-pulse">
-                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-12 bg-slate-200/60 rounded" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-36 bg-slate-200/80 rounded" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/70 rounded" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/70 rounded" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
-                    <td className="py-3 px-4"><div className="h-5 w-20 bg-slate-200/70 rounded-full" /></td>
-                    <td className="py-3 px-4"><div className="h-4 w-24 bg-slate-200/60 rounded" /></td>
-                    <td className="py-3 px-4 text-center"><div className="h-6 w-24 bg-slate-200/60 rounded-lg mx-auto" /></td>
-                  </tr>
-                ))
-              ) : displayedQuotations.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-10 text-center text-slate-500">
-                    No quotations found matching your search and filter criteria.
-                  </td>
-                </tr>
+    <div className="flex flex-col min-h-full space-y-4">
+      {/* Mobile-first reordering: In mobile view (order-2 md:order-1), KPIs and FilterBar are below table */}
+      <div className="order-2 md:order-1">
+        {/* 4 Light-themed KPI Cards */}
+        <KpiSection title="Commercial Quotations & Estimates Overview" className="mb-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
+                TOTAL QUOTATIONS
+              </div>
+              {loading ? (
+                <div className="h-8 w-16 bg-slate-200 rounded animate-pulse my-1" />
               ) : (
-                displayedQuotations.map((q) => (
-                  <tr key={q.id} className="hover:bg-slate-800/40 transition">
-                    <td className="py-3 px-4 font-mono font-bold text-cyan-300">
-                      {q.quotationNo}
-                      {q.proformaInvoiceNumber && (
-                        <div className="text-[10px] text-emerald-400 font-semibold">
-                          PI: {q.proformaInvoiceNumber}
+                <div className="text-2xl sm:text-3xl font-black text-slate-900">{quotations.length}</div>
+              )}
+              <div className="text-[11px] text-blue-600 font-semibold mt-1">Official commercial estimates</div>
+            </div>
+
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
+                TOTAL QUOTED PIPELINE
+              </div>
+              {loading ? (
+                <div className="h-8 w-24 bg-slate-200 rounded animate-pulse my-1" />
+              ) : (
+                <div className="text-2xl sm:text-3xl font-black text-blue-700">
+                  {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
+                    totalValue
+                  )}
+                </div>
+              )}
+              <div className="text-[11px] text-slate-500 font-medium mt-1">Active commercial value</div>
+            </div>
+
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
+                PROFORMA INVOICES (PI)
+              </div>
+              {loading ? (
+                <div className="h-8 w-16 bg-slate-200 rounded animate-pulse my-1" />
+              ) : (
+                <div className="text-2xl sm:text-3xl font-black text-emerald-700">{piCount}</div>
+              )}
+              <div className="text-[11px] text-emerald-700 font-semibold mt-1">Accepted & finalized offers</div>
+            </div>
+
+            <div className="bg-white border border-slate-200/90 rounded-2xl p-4 shadow-xs">
+              <div className="text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-2">
+                CUSTOMER PO RECEIVED
+              </div>
+              {loading ? (
+                <div className="h-8 w-16 bg-slate-200 rounded animate-pulse my-1" />
+              ) : (
+                <div className="text-2xl sm:text-3xl font-black text-amber-600">{poCount}</div>
+              )}
+              <div className="text-[11px] text-amber-700 font-semibold mt-1">Ready for Sales Order</div>
+            </div>
+          </div>
+        </KpiSection>
+
+        {/* Filter and Search Bar */}
+        <FilterBar
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          placeholder="Search quotations by quote no, customer, PI..."
+          filters={[
+            {
+              id: "status",
+              value: statusFilter,
+              options: [
+                { value: "ALL", label: "All Statuses" },
+                { value: "DRAFT", label: "Draft" },
+                { value: "SENT", label: "Sent to Client" },
+                { value: "ACCEPTED", label: "Accepted / PI" },
+                { value: "REJECTED", label: "Rejected" },
+              ],
+            },
+          ]}
+          onFilterChange={(_, val) => setStatusFilter(val)}
+          onExportExcel={handleExportExcel}
+          onImportExcel={handleImportExcel}
+          primaryActionLabel="Issue Quotation"
+          onPrimaryAction={() => setIsCreateModalOpen(true)}
+        />
+      </div>
+
+      {/* Main Content Area: Data Table on Left & To-Do Widget on Right */}
+      <div className="order-1 md:order-2 grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+        {/* Table Column (Lg: 8 or 9 cols) */}
+        <div className="lg:col-span-8 xl:col-span-9 bg-white border border-slate-200/90 rounded-2xl shadow-xs overflow-hidden">
+          <div className="px-5 py-3.5 border-b border-slate-200 bg-slate-50/80 flex items-center justify-between">
+            <div className="flex items-center space-x-2.5">
+              <h3 className="text-xs font-black text-slate-900 tracking-wider uppercase">
+                Commercial Quotations & Estimates Register
+              </h3>
+              <span className="text-[11px] font-bold text-slate-500 bg-slate-200/70 px-2 py-0.5 rounded-full">
+                {displayedQuotations.length} {displayedQuotations.length === 1 ? "record" : "records"}
+              </span>
+            </div>
+            <span className="text-xs text-slate-500 font-medium hidden sm:inline">
+              Issued by Back Officer (BO)
+            </span>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="bg-slate-50 text-slate-600 font-extrabold uppercase text-[10px] tracking-wider border-b border-slate-200">
+                  <th className="py-3 px-3.5">QUOTE NO</th>
+                  <th className="py-3 px-3.5">REVISION</th>
+                  <th className="py-3 px-3.5">CUSTOMER / CLIENT</th>
+                  <th className="py-3 px-3.5">TAXABLE AMOUNT</th>
+                  <th className="py-3 px-3.5">GST (18%)</th>
+                  <th className="py-3 px-3.5">GRAND TOTAL</th>
+                  <th className="py-3 px-3.5">STATUS</th>
+                  <th className="py-3 px-3.5">PREPARED BY</th>
+                  <th className="py-3 px-3.5 text-center">ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {loading && quotations.length === 0 ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <tr key={i} className="animate-pulse">
+                      <td className="py-3 px-3.5"><div className="h-4 w-20 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-12 bg-slate-100 rounded" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-36 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-16 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-16 bg-slate-100 rounded" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-20 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-3.5"><div className="h-5 w-20 bg-slate-200 rounded-full" /></td>
+                      <td className="py-3 px-3.5"><div className="h-4 w-24 bg-slate-200 rounded" /></td>
+                      <td className="py-3 px-3.5 text-center"><div className="h-6 w-24 bg-slate-200 rounded mx-auto" /></td>
+                    </tr>
+                  ))
+                ) : displayedQuotations.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} className="py-12 text-center text-slate-400 font-medium">
+                      No quotations found matching your search and filter criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  displayedQuotations.map((q) => (
+                    <tr key={q.id} className="hover:bg-slate-50/80 transition-colors">
+                      <td className="py-3 px-3.5 font-mono font-bold text-blue-700">
+                        {q.quotationNo}
+                        {q.proformaInvoiceNumber && (
+                          <div className="text-[10px] text-emerald-700 font-semibold">
+                            PI: {q.proformaInvoiceNumber}
+                          </div>
+                        )}
+                      </td>
+
+                      <td className="py-3 px-3.5 font-mono text-slate-600 font-semibold">Rev-{q.revision || 0}</td>
+
+                      <td className="py-3 px-3.5">
+                        <div className="font-bold text-slate-900 text-xs">
+                          {q.customer?.name || q.lead?.customerName || "Customer"}
                         </div>
-                      )}
-                    </td>
+                        <div className="text-[10px] text-slate-500 font-medium">
+                          {q.customerPONumber ? `PO: ${q.customerPONumber}` : "No PO yet"}
+                        </div>
+                      </td>
 
-                    <td className="py-3 px-4 font-mono text-slate-300">Rev-{q.revision || 0}</td>
+                      <td className="py-3 px-3.5 font-mono text-slate-700">₹ {Number(q.taxableAmount || q.subtotal).toFixed(2)}</td>
 
-                    <td className="py-3 px-4">
-                      <div className="font-bold text-white text-xs">
-                        {q.customer?.name || q.lead?.customerName || "Customer"}
-                      </div>
-                      <div className="text-[10px] text-slate-400">
-                        {q.customerPONumber ? `PO: ${q.customerPONumber}` : "No PO yet"}
-                      </div>
-                    </td>
+                      <td className="py-3 px-3.5 font-mono text-slate-500">₹ {Number(q.gstAmount || 0).toFixed(2)}</td>
 
-                    <td className="py-3 px-4 font-mono">₹ {Number(q.taxableAmount || q.subtotal).toFixed(2)}</td>
+                      <td className="py-3 px-3.5 font-mono font-black text-slate-900 text-xs">
+                        ₹ {Number(q.total || 0).toFixed(2)}
+                      </td>
 
-                    <td className="py-3 px-4 font-mono text-slate-400">₹ {Number(q.gstAmount || 0).toFixed(2)}</td>
-
-                    <td className="py-3 px-4 font-mono font-bold text-white text-xs">
-                      ₹ {Number(q.total || 0).toFixed(2)}
-                    </td>
-
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2.5 py-1 rounded-full text-[10px] font-bold border ${
-                          q.status === "ACCEPTED"
-                            ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/30"
-                            : q.status === "SENT"
-                            ? "bg-blue-500/10 text-blue-300 border-blue-500/30"
-                            : "bg-slate-800 text-slate-300 border-slate-700"
-                        }`}
-                      >
-                        {q.proformaInvoiceNumber ? "PI FINALIZED" : q.status}
-                      </span>
-                    </td>
-
-                    <td className="py-3 px-4 text-slate-300">
-                      <div className="font-semibold text-white">{q.preparedBy?.split("(")[0]?.trim() || "Back Officer"}</div>
-                      <div className="text-[10px] text-cyan-400 font-mono">
-                        {q.preparedBy?.includes("(")
-                          ? q.preparedBy.split("(")[1]?.replace(")", "")
-                          : "BACK_OFFICER"}
-                      </div>
-                    </td>
-
-                    <td className="py-3 px-4">
-                      <div className="flex items-center justify-center gap-1.5">
-                        {/* HTML View / Estimate Button */}
-                        <button
-                          type="button"
-                          onClick={() => setSelectedQuotation(q)}
-                          className="flex items-center gap-1 px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-cyan-300 border border-blue-500/40 rounded-lg text-xs font-bold transition cursor-pointer"
+                      <td className="py-3 px-3.5">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${
+                            q.status === "ACCEPTED"
+                              ? "bg-emerald-50 text-emerald-700 border-emerald-300"
+                              : q.status === "SENT"
+                              ? "bg-blue-50 text-blue-700 border-blue-200"
+                              : "bg-slate-100 text-slate-700 border-slate-200"
+                          }`}
                         >
-                          <Eye className="w-3.5 h-3.5" />
-                          <span>View Estimate</span>
-                        </button>
+                          {q.proformaInvoiceNumber ? "PI FINALIZED" : q.status}
+                        </span>
+                      </td>
 
-                        {/* Customer PO Button */}
-                        {!q.customerPONumber && (
+                      <td className="py-3 px-3.5 text-slate-700">
+                        <div className="font-bold text-slate-900 text-xs">{q.preparedBy?.split("(")[0]?.trim() || "Back Officer"}</div>
+                        <div className="text-[10px] text-blue-600 font-mono font-medium">
+                          {q.preparedBy?.includes("(")
+                            ? q.preparedBy.split("(")[1]?.replace(")", "")
+                            : "BACK_OFFICER"}
+                        </div>
+                      </td>
+
+                      <td className="py-3 px-3.5">
+                        <div className="flex items-center justify-center gap-1.5">
                           <button
                             type="button"
-                            onClick={() => setPoModalQuotation(q)}
-                            className="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-300 border border-indigo-500/40 rounded-lg text-xs font-semibold transition cursor-pointer"
-                            title="Record Customer Purchase Order"
+                            onClick={() => setSelectedQuotation(q)}
+                            className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg text-xs font-bold transition shadow-2xs cursor-pointer"
+                            title="View official HTML estimate & PDF"
                           >
-                            + PO
+                            <Eye className="w-3 h-3" />
+                            <span>View</span>
                           </button>
-                        )}
 
-                        {/* Delete Button */}
-                        <button
-                          type="button"
-                          onClick={() => handleDeleteQuotation(q.id)}
-                          className="p-1.5 text-slate-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteQuotation(q.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition cursor-pointer"
+                            title="Delete quotation"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Right Column: Daily To-Do widget */}
+        <div className="lg:col-span-4 xl:col-span-3">
+          <Module1TodoWidget title="Quotation Actions" pageType="quotations" items={displayedQuotations} />
         </div>
       </div>
 
-      {/* Quotation HTML Viewer & Stepper Modal (Matching Image 2) */}
+      {/* Official HTML Quotation & PDF Modal */}
       <QuotationModal
         isOpen={Boolean(selectedQuotation)}
         onClose={() => setSelectedQuotation(null)}
         quotation={selectedQuotation}
         onRevise={handleReviseQuotation}
         onFinalizePI={handleFinalizePI}
-        onIssueCustomerPO={(quoteId) => {
-          const q = quotations.find((it) => it.id === quoteId) || selectedQuotation;
-          setPoModalQuotation(q);
+        onIssueCustomerPO={(qId) => {
+          const target = quotations.find((q) => q.id === qId) || selectedQuotation;
+          setPoModalQuotation(target);
         }}
         onDelete={handleDeleteQuotation}
       />
