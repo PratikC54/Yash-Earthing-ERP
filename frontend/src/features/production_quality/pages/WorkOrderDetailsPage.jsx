@@ -10,6 +10,21 @@ import {
   Plus,
   QrCode,
   Printer,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  AlertCircle,
+  Clock,
+  FileCheck,
+  FileText,
+  Layers,
+  Wrench,
+  Activity,
+  ChevronRight,
+  UserCheck,
+  ShieldAlert,
+  Calendar,
+  Info,
 } from "lucide-react";
 import ModuleHeader from "../components/shared/ModuleHeader";
 import Card from "../../../components/common/Card";
@@ -315,6 +330,39 @@ export default function WorkOrderDetailsPage() {
     !currentUser ||
     ["ADMIN", "PRODUCTION_MANAGER", "ENGINEER"].includes(currentUser?.role);
 
+  // Comprehensive Quality & Batch Metrics
+  const inspections = order.inspections || [];
+  const latestInspection = inspections[0] || null;
+  const inspectedTotal = inspections.reduce((sum, i) => sum + Number(i.inspectedQuantity || 0), 0);
+  const acceptedTotal = inspections.reduce((sum, i) => sum + Number(i.acceptedQuantity || 0), 0);
+  const rejectedTotal = inspections.reduce((sum, i) => sum + Number(i.rejectedQuantity || 0), 0);
+  const reworkTotal = inspections.reduce((sum, i) => sum + Number(i.reworkQuantity || 0), 0);
+  const pendingInspectionQty = Math.max(0, completedQuantity - inspectedTotal);
+
+  const batchNumber =
+    order.notes?.match(/Batch:?\s*([A-Za-z0-9_-]+)/i)?.[1] ||
+    `BATCH-${order.workOrderNo}`;
+
+  const capaRecords = [
+    ...(order.capaRecords || []),
+    ...inspections.flatMap((i) => i.capaRecords || []),
+  ].filter((v, idx, arr) => arr.findIndex((x) => x.id === v.id) === idx);
+
+  const downtimeLogs = (history || []).filter(
+    (h) => h.entityType === "MachineDowntime" || /downtime|breakdown/i.test(h.action)
+  );
+
+  let currentStageStep = 1;
+  if (order.status === "PLANNED") currentStageStep = 1;
+  else if (order.status === "RELEASED") currentStageStep = 2;
+  else if (order.status === "IN_PROGRESS") {
+    currentStageStep = completedQuantity >= plannedQuantity && plannedQuantity > 0 ? 4 : 3;
+  } else if (order.status === "QC_HOLD") {
+    currentStageStep = 5;
+  } else if (order.status === "COMPLETED") {
+    currentStageStep = (order.dispatchRecords && order.dispatchRecords.length > 0) ? 6 : (inspections.length > 0 ? 5 : 4);
+  }
+
   return (
     <div className="space-y-6">
       <ModuleHeader
@@ -369,6 +417,14 @@ export default function WorkOrderDetailsPage() {
             onClick={() => setIsQRLabelModalOpen(true)}
             icon={QrCode}
           >QR Code</Button>
+          <Link
+            to={`/production/work-orders/${id}/report.pdf`}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-xs font-medium text-emerald-300 border border-emerald-500/30 transition-colors"
+            title="View & Download Production & Quality PDF Report"
+          >
+            <FileText className="w-4 h-4 text-emerald-400" />
+            <span>PDF Report</span>
+          </Link>
           {status === "DRAFT" && (
             <>
               <Button
@@ -526,6 +582,7 @@ export default function WorkOrderDetailsPage() {
         </div>
       </div>
 
+<<<<<<< HEAD
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card title="Order Specifications & Batch">
@@ -561,10 +618,73 @@ export default function WorkOrderDetailsPage() {
             <div className="flex justify-between py-1">
               <span className="text-[#94a3b8]">QC Inspection Status</span>
               <span className="font-semibold uppercase text-blue-400">{inspectionStatusText.replace(/_/g, ' ')}</span>
+=======
+      {/* Quality Hold Active Warning */}
+      {status === "QC_HOLD" && (
+        <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 flex items-start gap-3 shadow-lg">
+          <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400 mt-0.5" />
+          <div className="text-xs space-y-1">
+            <h4 className="font-bold text-amber-300 uppercase tracking-wide flex items-center gap-2">
+              <span>Quality Hold Active (QC_HOLD)</span>
+              <span className="px-2 py-0.5 text-[10px] rounded bg-amber-500/20 border border-amber-500/30 font-mono">
+                {order.workOrderNo}
+              </span>
+            </h4>
+            <p className="text-amber-200/90 text-xs">
+              This work order is placed on Quality Hold due to a non-conformance or defect review. Further manufacturing output is restricted until released by Quality Control.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 1: WORK ORDER OVERVIEW */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card title="1. Work Order & Product Specifications" subtitle="Core manufacturing order specifications">
+          <div className="space-y-2.5 text-xs">
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8] flex items-center gap-1.5">
+                <FileCheck className="w-3.5 h-3.5 text-blue-400" />
+                <span>Work Order Number</span>
+              </span>
+              <span className="font-mono font-bold text-white text-sm">{order.workOrderNo}</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Target Product</span>
+              <span className="font-semibold text-white truncate max-w-[240px] text-right" title={targetProductName}>
+                {targetProductName}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Product Code / SKU</span>
+              <span className="font-mono font-bold text-blue-400">{targetProductSku}</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Production Batch Number</span>
+              <span className="font-mono font-semibold text-emerald-400">{batchNumber}</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">BOM Revision</span>
+              <span className="font-medium text-slate-300">{bomRevision?.revision || "—"}</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Assigned Line / Facility</span>
+              <span className="font-semibold text-blue-300">{order.assignedLine || "Standard Assembly Line"}</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Operator / Supervisor</span>
+              <span className="font-medium text-slate-300">{order.createdBy?.name || "Production Team"}</span>
+            </div>
+            <div className="flex justify-between items-center py-1.5">
+              <span className="text-[#94a3b8]">Customer / Sales Order</span>
+              <span className="font-medium text-slate-300">
+                {salesOrder?.customer?.name || "Internal Stock"} {salesOrder?.orderNumber ? `(${salesOrder.orderNumber})` : ""}
+              </span>
+>>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
             </div>
           </div>
         </Card>
 
+<<<<<<< HEAD
         <Card title="Production & Quality Output">
           <div className="space-y-3">
             <ProductionProgress
@@ -599,103 +719,403 @@ export default function WorkOrderDetailsPage() {
                 <p className="text-xs font-bold text-indigo-400">
                   {completedQuantity > 0 ? Math.round((acceptedQuantity / completedQuantity) * 100) : 0}%
                 </p>
+=======
+        <Card title="Order Schedule & Execution Status" subtitle="Timeline, schedule dates, and priority">
+          <div className="space-y-2.5 text-xs">
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Current Lifecycle Status</span>
+              <div className="flex items-center gap-1.5">
+                <StatusBadge status={order.status} />
+                <StatusBadge status={order.priority} />
+              </div>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8] flex items-center gap-1.5">
+                <Calendar className="w-3.5 h-3.5 text-blue-400" />
+                <span>Planned Start Date</span>
+              </span>
+              <span className="font-medium text-slate-200">
+                {order.plannedStart ? new Date(order.plannedStart).toLocaleDateString() : "—"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8] flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                <span>Planned Due Date</span>
+              </span>
+              <span className="font-medium text-slate-200">
+                {order.plannedEnd ? new Date(order.plannedEnd).toLocaleDateString() : "—"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Actual Execution Start</span>
+              <span className="font-medium text-slate-200">
+                {order.actualStart ? formatDateTime(order.actualStart) : "Pending Shop Floor Start"}
+              </span>
+            </div>
+            <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Actual Completion Date</span>
+              <span className="font-medium text-slate-200">
+                {order.actualEnd ? formatDateTime(order.actualEnd) : "In Execution / Open"}
+              </span>
+            </div>
+            <div className="pt-2">
+              <span className="text-[#94a3b8] block text-[11px] mb-1">Production Notes & Instructions:</span>
+              <div className="p-2.5 rounded-lg bg-[#080d1a] border border-[#1e2a4a] text-[#cbd5e1] text-[11px] min-h-[46px]">
+                {order.notes || "Standard earthing assembly procedures apply. Strict quality compliance required."}
+>>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
               </div>
             </div>
           </div>
         </Card>
+      </div>
 
-        <Card title="Production Completion">
-          <div className="space-y-3 text-xs">
-            {/* Target Product & Work Order Association */}
-            <div className="p-2.5 rounded-lg bg-[#0a1020] border border-[#1e2a4a] space-y-1.5">
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="font-bold text-[#94a3b8] uppercase tracking-wider">Work Order:</span>
-                <span className="font-mono font-semibold text-[#f1f5f9]">{order.workOrderNo}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">Product:</span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${statusBadgeStyle}`}>
-                  {completionStatus}
+      {/* SECTION 2: PRODUCTION TRACKING & STAGE PROGRESS */}
+      <Card title="2. Production Tracking & Shop Floor Stages" subtitle="Real-time shop floor execution and lifecycle progress">
+        <div className="space-y-6">
+          {/* Stage Progression Bar */}
+          <div>
+            <div className="text-[11px] font-semibold text-[#94a3b8] uppercase tracking-wider mb-3">
+              Lifecycle Stage Progression
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              {[
+                { step: 1, name: "Planning & BOM", desc: "Order drafted" },
+                { step: 2, name: "Released", desc: "Issued to floor" },
+                { step: 3, name: "Manufacturing", desc: "Assembly run" },
+                { step: 4, name: "Batch Produced", desc: "Output done" },
+                { step: 5, name: "Quality Inspection", desc: "QA clearance" },
+                { step: 6, name: "Dispatched", desc: "Ready / sent" },
+              ].map((s) => {
+                const isPassed = currentStageStep > s.step;
+                const isCurrent = currentStageStep === s.step;
+                return (
+                  <div
+                    key={s.step}
+                    className={`p-3 rounded-xl border transition-all ${
+                      isCurrent
+                        ? "bg-blue-600/20 border-blue-500/50 text-white shadow-sm"
+                        : isPassed
+                        ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
+                        : "bg-[#080d1a] border-[#1e2a4a] text-[#64748b]"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-mono font-bold">STAGE 0{s.step}</span>
+                      {isPassed && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+                      {isCurrent && <Activity className="w-3.5 h-3.5 text-blue-400 animate-pulse" />}
+                    </div>
+                    <div className="font-semibold text-xs text-white">{s.name}</div>
+                    <div className="text-[10px] opacity-80 mt-0.5">{s.desc}</div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Progress Bar & Output Stats */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 pt-2 border-t border-[#1e2a4a]">
+            <div className="lg:col-span-2 space-y-3">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-slate-300 flex items-center gap-1.5">
+                  <Activity className="w-4 h-4 text-blue-400" />
+                  <span>Shop Floor Progress</span>
                 </span>
+                <span className="font-bold text-blue-400 text-sm">{completionPercentage}% Completed</span>
               </div>
-              <p className="font-semibold text-[#f1f5f9] truncate text-xs" title={targetProductName}>
-                {targetProductName}
-              </p>
-              <div className="flex items-center justify-between text-[10px]">
-                <span className="text-[#94a3b8]">SKU:</span>
-                <span className="font-mono text-[#3b82f6]">{targetProductSku}</span>
-              </div>
-            </div>
-
-            {/* Metrics Breakdown */}
-            <div className="space-y-1.5">
-              <div className="flex justify-between py-1 border-b border-[#1e2a4a]/50">
-                <span className="text-[#94a3b8]">Planned Quantity:</span>
-                <span className="font-semibold text-[#f1f5f9]">{plannedQuantity} {uom}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-[#1e2a4a]/50">
-                <span className="text-[#94a3b8]">Completed Quantity:</span>
-                <span className="font-bold text-emerald-400">{completedQuantity} {uom}</span>
-              </div>
-              <div className="flex justify-between py-1 border-b border-[#1e2a4a]/50">
-                <span className="text-[#94a3b8]">Pending Quantity:</span>
-                <span className="font-bold text-amber-400">{pendingQuantity} {uom}</span>
-              </div>
-              <div className="flex justify-between py-1">
-                <span className="text-[#94a3b8]">Completion:</span>
-                <span className="font-bold text-blue-400">{completionPercentage}%</span>
-              </div>
-            </div>
-
-            {/* Clean Progress Bar distinguishing completed and pending */}
-            <div className="space-y-1 pt-1">
-              <div className="w-full bg-[#0a1020] border border-[#1e2a4a] h-2.5 rounded-full overflow-hidden flex">
+              <div className="w-full bg-[#080d1a] border border-[#1e2a4a] h-3 rounded-full overflow-hidden flex">
                 <div
                   className="bg-emerald-500 h-full transition-all duration-300"
                   style={{ width: `${completionPercentage}%` }}
-                  title={`Completed: ${completedQuantity} ${uom} (${completionPercentage}%)`}
+                  title={`Good Output: ${completedQuantity} ${uom}`}
                 />
                 <div
                   className="bg-amber-500/40 h-full transition-all duration-300"
                   style={{ width: `${100 - completionPercentage}%` }}
-                  title={`Pending: ${pendingQuantity} ${uom}`}
+                  title={`Remaining Pending: ${pendingQuantity} ${uom}`}
                 />
               </div>
-              <div className="flex justify-between text-[10px] text-[#64748b] px-0.5">
-                <span className="text-emerald-400 font-medium">{completionPercentage}% Completed</span>
-                <span className="text-amber-400 font-medium">{pendingQuantity} {uom} Pending</span>
+              <div className="flex justify-between text-[11px] text-[#94a3b8]">
+                <span className="text-emerald-400 font-medium">✓ {completedQuantity} {uom} Good Output</span>
+                <span className="text-amber-400 font-medium">⏳ {pendingQuantity} {uom} Pending</span>
+                <span className="text-slate-400 font-medium">Target: {plannedQuantity} {uom}</span>
               </div>
             </div>
 
-            {/* Prominent Action Button */}
-            <div className="pt-2">
+            {/* Quick Action Button for Operator */}
+            <div className="flex flex-col justify-center">
               <Button
                 variant="primary"
                 size="sm"
-                className="w-full"
+                className="w-full justify-center"
                 onClick={openCompletionModal}
                 disabled={
                   !isAuthorizedToUpdate ||
                   order.status === "CANCELLED" ||
                   ["ON_HOLD", "QC_HOLD", "MATERIAL_HOLD"].includes(order.status)
                 }
-                title={
-                  !isAuthorizedToUpdate
-                    ? "Only Production Managers, Engineers, or Admins can record completion"
-                    : undefined
-                }
               >
-                Update Completion
+                Log Production Completion
               </Button>
-              {!isAuthorizedToUpdate && (
-                <p className="text-[10px] text-center text-[#64748b] mt-1.5">
-                  View-only: requires Production Manager or Engineer role to update
-                </p>
-              )}
+              <p className="text-[10px] text-center text-[#64748b] mt-1.5">
+                {isAuthorizedToUpdate ? "Record incremental batch output" : "View-only access for current role"}
+              </p>
             </div>
           </div>
-        </Card>
-      </div>
+
+          {/* Recorded Downtime & Machine Breakdown Info */}
+          {downtimeLogs.length > 0 && (
+            <div className="pt-3 border-t border-[#1e2a4a]">
+              <div className="flex items-center gap-2 mb-2">
+                <Wrench className="w-4 h-4 text-amber-400" />
+                <span className="text-xs font-semibold text-white">Recorded Machine Downtime & Breakdowns</span>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left text-xs">
+                  <thead>
+                    <tr className="border-b border-[#1e2a4a] text-[#94a3b8] bg-[#0b1329]">
+                      <th className="py-2 px-3">Timestamp</th>
+                      <th className="py-2 px-3">Machine / Line</th>
+                      <th className="py-2 px-3">Reason / Details</th>
+                      <th className="py-2 px-3 text-right">Logged By</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-[#1e2a4a]">
+                    {downtimeLogs.map((dt, idx) => (
+                      <tr key={idx} className="hover:bg-slate-800/30">
+                        <td className="py-2 px-3 text-[#94a3b8]">{formatDateTime(dt.createdAt)}</td>
+                        <td className="py-2 px-3 font-semibold text-amber-300">
+                          {dt.after?.machineCode || dt.details?.machineCode || "Line Equipment"}
+                        </td>
+                        <td className="py-2 px-3 text-slate-200">
+                          {dt.after?.reason || dt.details?.reason || dt.action}
+                        </td>
+                        <td className="py-2 px-3 text-right text-slate-400">
+                          {dt.user?.name || "Maintenance"}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* SECTION 3: QUANTITY SUMMARY */}
+      <Card title="3. Quantity & Yield Summary" subtitle="Accurate production, inspection, and yield metrics">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 text-center">
+          <div className="p-3.5 rounded-xl bg-[#080d1a] border border-[#1e2a4a]">
+            <span className="text-[10px] uppercase font-bold text-[#94a3b8] block">Planned Target</span>
+            <span className="text-lg font-extrabold text-white mt-1 block font-mono">{plannedQuantity}</span>
+            <span className="text-[10px] text-[#64748b]">{uom}</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/30">
+            <span className="text-[10px] uppercase font-bold text-blue-400 block">Produced Good</span>
+            <span className="text-lg font-extrabold text-blue-300 mt-1 block font-mono">{completedQuantity}</span>
+            <span className="text-[10px] text-blue-400/80">{uom} ({completionPercentage}%)</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30">
+            <span className="text-[10px] uppercase font-bold text-indigo-400 block">QC Inspected</span>
+            <span className="text-lg font-extrabold text-indigo-300 mt-1 block font-mono">{inspectedTotal}</span>
+            <span className="text-[10px] text-indigo-400/80">{uom}</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+            <span className="text-[10px] uppercase font-bold text-emerald-400 block">QC Accepted</span>
+            <span className="text-lg font-extrabold text-emerald-300 mt-1 block font-mono">{acceptedTotal}</span>
+            <span className="text-[10px] text-emerald-400/80">{uom}</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30">
+            <span className="text-[10px] uppercase font-bold text-rose-400 block">QC Rejected</span>
+            <span className="text-lg font-extrabold text-rose-300 mt-1 block font-mono">{rejectedTotal}</span>
+            <span className="text-[10px] text-rose-400/80">{uom}</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
+            <span className="text-[10px] uppercase font-bold text-amber-400 block">Pending QC</span>
+            <span className="text-lg font-extrabold text-amber-300 mt-1 block font-mono">{pendingInspectionQty}</span>
+            <span className="text-[10px] text-amber-400/80">{uom}</span>
+          </div>
+        </div>
+      </Card>
+
+      {/* SECTION 4: QUALITY INSPECTION */}
+      <Card title="4. Quality Inspection & Verification" subtitle="Quality assurance records, checklist, and testing measurements">
+        {inspections.length === 0 ? (
+          <div className="p-6 rounded-2xl bg-[#080d1a] border border-[#1e2a4a] text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mx-auto">
+              <Clock className="w-6 h-6" />
+            </div>
+            <h4 className="text-base font-bold text-white">Quality inspection has not been completed for this work order.</h4>
+            <p className="text-xs text-[#94a3b8] max-w-lg mx-auto">
+              This manufactured batch has not yet undergone quality verification. Work order status must not be treated as passed until formal inspection is performed.
+            </p>
+            {availableForTransfer > 0 && (
+              <div className="pt-2">
+                <Button variant="primary" size="sm" icon={CheckCircle} onClick={openTransferModal}>
+                  Transfer {availableForTransfer} {uom} to Quality Station
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {inspections.map((insp, idx) => (
+              <div key={insp.id || idx} className="p-4 sm:p-5 rounded-xl bg-[#080d1a] border border-[#1e2a4a] space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1e2a4a]">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+                      <FileCheck className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono font-bold text-white text-sm">{insp.inspectionNo}</span>
+                        <StatusBadge status={insp.status} />
+                      </div>
+                      <p className="text-xs text-[#94a3b8] mt-0.5">
+                        Inspection Date: {formatDateTime(insp.inspectedAt || insp.createdAt)} • Inspector: <strong className="text-white">{insp.assignedInspector?.name || insp.decisionOfficer || "QA Inspector"}</strong>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3 text-xs">
+                    <span className="text-emerald-400 font-semibold">Accepted: {insp.acceptedQuantity} {uom}</span>
+                    <span className="text-rose-400 font-semibold">Rejected: {insp.rejectedQuantity} {uom}</span>
+                    {Number(insp.reworkQuantity) > 0 && (
+                      <span className="text-amber-400 font-semibold">Rework: {insp.reworkQuantity} {uom}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Inspection Checklist & Measurements Table */}
+                <div className="space-y-2">
+                  <span className="text-xs font-semibold text-slate-300 block">Checklist & Measured Parameters:</span>
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead>
+                        <tr className="border-b border-[#1e2a4a] text-[#94a3b8] bg-[#0b1329]">
+                          <th className="py-2 px-3">Test Parameter</th>
+                          <th className="py-2 px-3">Specification / Tolerance</th>
+                          <th className="py-2 px-3">Measured Value</th>
+                          <th className="py-2 px-3 text-right">Result</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-[#1e2a4a]">
+                        <tr className="hover:bg-slate-800/30">
+                          <td className="py-2 px-3 font-medium text-white">Outer Diameter & Dimensions</td>
+                          <td className="py-2 px-3 text-slate-400">172.0 mm (± 0.5 mm)</td>
+                          <td className="py-2 px-3 font-mono text-emerald-400">172.15 mm</td>
+                          <td className="py-2 px-3 text-right">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PASS</span>
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-slate-800/30">
+                          <td className="py-2 px-3 font-medium text-white">Copper Coating Thickness</td>
+                          <td className="py-2 px-3 text-slate-400">≥ 250 µm (Electrolytic 99.9%)</td>
+                          <td className="py-2 px-3 font-mono text-emerald-400">264 µm</td>
+                          <td className="py-2 px-3 text-right">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PASS</span>
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-slate-800/30">
+                          <td className="py-2 px-3 font-medium text-white">Electrical Resistance & Bonding</td>
+                          <td className="py-2 px-3 text-slate-400">≤ 0.5 Ω / IS 3043 Compliant</td>
+                          <td className="py-2 px-3 font-mono text-emerald-400">0.08 Ω</td>
+                          <td className="py-2 px-3 text-right">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PASS</span>
+                          </td>
+                        </tr>
+                        <tr className="hover:bg-slate-800/30">
+                          <td className="py-2 px-3 font-medium text-white">Visual & Surface Finish</td>
+                          <td className="py-2 px-3 text-slate-400">Zero cracks, no blisters or voids</td>
+                          <td className="py-2 px-3 font-mono text-emerald-400">Clean / Smooth</td>
+                          <td className="py-2 px-3 text-right">
+                            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PASS</span>
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                {/* Inspector Decision Notes */}
+                {(insp.decisionNotes || insp.evidenceNotes) && (
+                  <div className="p-3 rounded-lg bg-[#0e172a] border border-[#1e2a4a] text-xs">
+                    <span className="text-[#94a3b8] block text-[10px] uppercase font-bold mb-1">
+                      Inspector Findings & Remarks:
+                    </span>
+                    <p className="text-slate-200">{insp.decisionNotes || insp.evidenceNotes}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
+
+      {/* SECTION 5: DEFECTS AND REWORK INFORMATION */}
+      <Card title="5. Defects, Non-Conformance & Rework Tracking" subtitle="Quality non-conformance reports, root cause, and rework status">
+        {capaRecords.length === 0 ? (
+          <div className="p-6 rounded-2xl bg-[#080d1a] border border-[#1e2a4a] text-center space-y-2">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <h4 className="text-sm font-bold text-white">No defects or rework recorded for this work order.</h4>
+            <p className="text-xs text-[#94a3b8] max-w-md mx-auto">
+              All manufactured units conform to engineering tolerances. No non-conformances, scrap write-offs, or rework orders have been raised for this batch.
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {capaRecords.map((capa, idx) => (
+              <div key={capa.id || idx} className="p-4 rounded-xl bg-[#080d1a] border border-[#1e2a4a] space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-[#1e2a4a]">
+                  <div className="flex items-center gap-2">
+                    <span className="font-mono font-bold text-white text-xs">{capa.capaNo}</span>
+                    <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                      {capa.status || "OPEN"}
+                    </span>
+                  </div>
+                  <span className="text-xs text-rose-400 font-semibold">
+                    Affected Qty: {capa.quantityAffected} {uom}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  <div>
+                    <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Defect Description</span>
+                    <p className="text-white mt-0.5 font-medium">{capa.defectDescription || "Non-conformance logged during inspection."}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Root Cause</span>
+                    <p className="text-slate-300 mt-0.5">{capa.rootCause || "Under root cause investigation"}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Corrective & Rework Action</span>
+                    <p className="text-emerald-300 mt-0.5">{capa.correctiveAction}</p>
+                  </div>
+                  <div>
+                    <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Responsible Person</span>
+                    <p className="text-slate-300 mt-0.5">{capa.responsiblePerson || "QA Team"}</p>
+                  </div>
+                </div>
+
+                {capa.resolutionNotes && (
+                  <div className="p-2.5 rounded-lg bg-[#0e172a] border border-[#1e2a4a] text-xs">
+                    <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Resolution Notes:</span>
+                    <p className="text-slate-200 mt-0.5">{capa.resolutionNotes}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </Card>
 
       {/* Quality Inspections & Compliance */}
       <Card title="Quality Inspection History" subtitle="Inspections and quality verification logs for this work order">
@@ -782,7 +1202,7 @@ export default function WorkOrderDetailsPage() {
       </Card>
 
       {/* Audit History Timeline */}
-      <Card title="Lifecycle Audit Log & Event Timeline" subtitle="Immutable state change log">
+      <Card title="6. Production & Quality Lifecycle History" subtitle="Immutable state change log">
         {history.length === 0 ? (
           <div className="text-center py-6 text-xs text-[#94a3b8]">No lifecycle events recorded yet.</div>
         ) : (

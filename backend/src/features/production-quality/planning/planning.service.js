@@ -367,6 +367,7 @@ export class PlanningService {
   /**
    * Get single Work Order by ID with complete relations
    */
+<<<<<<< HEAD
   static async getWorkOrderById(idOrNo) {
     const clean = String(idOrNo || "").trim();
     const isNum = /^\d+$/.test(clean);
@@ -376,6 +377,55 @@ export class PlanningService {
         include: {
           customer: true,
           items: { include: { product: true } },
+=======
+  static async getWorkOrderById(id) {
+    const workOrder = await prisma.workOrder.findUnique({
+      where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
+      include: {
+        salesOrder: {
+          include: {
+            customer: true,
+            items: { include: { product: true } },
+          },
+        },
+        bomRevision: {
+          include: {
+            items: { include: { component: true } },
+            operations: { orderBy: { sequence: "asc" } },
+            product: {
+              include: {
+                productSpecifications: { orderBy: { id: "desc" }, take: 1 },
+              },
+            },
+          },
+        },
+        items: {
+          include: {
+            product: {
+              include: {
+                inventory: true,
+              },
+            },
+          },
+        },
+        inspections: {
+          include: {
+            assignedInspector: { select: { id: true, name: true, email: true, role: true } },
+            assignedBy: { select: { id: true, name: true, email: true, role: true } },
+            capaRecords: true,
+            dispatchRecords: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        capaRecords: {
+          orderBy: { createdAt: "desc" },
+        },
+        dispatchRecords: {
+          orderBy: { createdAt: "desc" },
+        },
+        createdBy: {
+          select: { id: true, name: true, email: true, role: true },
+>>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
         },
       },
       bomRevision: {
@@ -450,7 +500,7 @@ export class PlanningService {
 
     return await prisma.$transaction(async (tx) => {
       const updated = await tx.workOrder.update({
-        where: { id: Number(id) },
+        where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
         data: {
           plannedQuantity: data.plannedQuantity ?? workOrder.plannedQuantity,
           bomRevisionId: data.bomRevisionId ?? workOrder.bomRevisionId,
@@ -488,7 +538,7 @@ export class PlanningService {
 
     return await prisma.$transaction(async (tx) => {
       const updated = await tx.workOrder.update({
-        where: { id: Number(id) },
+        where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
         data: { status: WORK_ORDER_STATUS.PLANNED },
       });
 
@@ -520,7 +570,7 @@ export class PlanningService {
 
     return await prisma.$transaction(async (tx) => {
       const updated = await tx.workOrder.update({
-        where: { id: Number(id) },
+        where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
         data: { status: WORK_ORDER_STATUS.PLANNED },
       });
 
@@ -550,7 +600,7 @@ export class PlanningService {
 
     return await prisma.$transaction(async (tx) => {
       const updated = await tx.workOrder.update({
-        where: { id: Number(id) },
+        where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
         data: {
           status: WORK_ORDER_STATUS.CANCELLED,
           notes: workOrder.notes ? `${workOrder.notes}\nRejection Reason: ${reason}` : `Rejection Reason: ${reason}`,
@@ -642,7 +692,7 @@ export class PlanningService {
       // If shortage exists, place on MATERIAL_HOLD instead of RELEASED
       if (!availability.isSufficient) {
         await tx.workOrder.update({
-          where: { id: Number(id) },
+          where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
           data: { status: WORK_ORDER_STATUS.MATERIAL_HOLD },
         });
 
@@ -662,7 +712,7 @@ export class PlanningService {
       }
 
       const updated = await tx.workOrder.update({
-        where: { id: Number(id) },
+        where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
         data: { status: WORK_ORDER_STATUS.RELEASED },
       });
 
@@ -699,7 +749,7 @@ export class PlanningService {
 
     return await prisma.$transaction(async (tx) => {
       const updated = await tx.workOrder.update({
-        where: { id: Number(id) },
+        where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
         data: { status: targetStatus },
       });
 
@@ -735,7 +785,7 @@ export class PlanningService {
 
     return await prisma.$transaction(async (tx) => {
       const updated = await tx.workOrder.update({
-        where: { id: Number(id) },
+        where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
         data: { status: resumeStatus },
       });
 
@@ -768,7 +818,7 @@ export class PlanningService {
 
     return await prisma.$transaction(async (tx) => {
       const updated = await tx.workOrder.update({
-        where: { id: Number(id) },
+        where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
         data: {
           status: WORK_ORDER_STATUS.CANCELLED,
           notes: workOrder.notes ? `${workOrder.notes}\nCancellation Reason: ${reason}` : `Cancellation: ${reason}`,

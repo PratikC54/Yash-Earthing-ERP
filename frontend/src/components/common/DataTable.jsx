@@ -108,7 +108,7 @@ export default function DataTable({
       </div>
 
       {pagination && data.length > itemsPerPage && (
-        <div className="flex items-center justify-between px-4 py-3 bg-[#0a1020] border-t border-[#1e2a4a] text-xs text-[#94a3b8]">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-2 px-4 py-3 bg-[#0a1020] border-t border-[#1e2a4a] text-xs text-[#94a3b8]">
           <span>
             Showing {startIndex + 1} to{" "}
             {Math.min(startIndex + itemsPerPage, data.length)} of {data.length}{" "}

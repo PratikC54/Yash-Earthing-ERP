@@ -253,7 +253,7 @@ export default function NonConformancePage() {
               <span>{actionError}</span>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="block font-medium mb-1 text-[#94a3b8]">Select Inspection</label>
               <select
@@ -320,7 +320,7 @@ export default function NonConformancePage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="block font-medium mb-1 text-[#94a3b8]">Initial Root Cause Hypothesis</label>
               <select
@@ -378,7 +378,7 @@ export default function NonConformancePage() {
               <span>{actionError}</span>
             </div>
           )}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div>
               <label className="block font-medium mb-1 text-[#94a3b8]">Select Inspection</label>
               <select

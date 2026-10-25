@@ -446,7 +446,7 @@ export default function InspectionDetailsPage() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="secondary"
             size="md"
@@ -736,7 +736,7 @@ export default function InspectionDetailsPage() {
               />
               <span className="text-[#94a3b8] font-medium">Microns (µm)</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 type="checkbox"
                 id="coatPass"
@@ -768,7 +768,7 @@ export default function InspectionDetailsPage() {
               />
               <span className="text-[#94a3b8] font-medium">Ohms (Ω)</span>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 type="checkbox"
                 id="resPass"
@@ -789,7 +789,7 @@ export default function InspectionDetailsPage() {
               <span className="font-bold text-[#f1f5f9] text-sm">3. Outer Diameter & Length</span>
               <span className="text-[10px] font-semibold text-[#64748b]">Nominal: 14.2mm x 3000mm</span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="text-[11px] text-[#94a3b8] block mb-1">Measured Diameter (mm)</label>
                 <input
@@ -823,7 +823,7 @@ export default function InspectionDetailsPage() {
             <p className="text-[#94a3b8] text-xs">
               Bend test inspection: Bend rod through 180° around mandrel. No flaking or cracking of copper coating allowed.
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <input
                 type="checkbox"
                 id="visualPass"
@@ -1014,7 +1014,7 @@ export default function InspectionDetailsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#f1f5f9] font-medium mb-1">
                 Quality Officer <span className="text-rose-400">*</span>
@@ -1073,7 +1073,7 @@ export default function InspectionDetailsPage() {
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#f1f5f9] font-medium mb-1">Assigned Person / Department</label>
               <select
@@ -1162,7 +1162,7 @@ export default function InspectionDetailsPage() {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#f1f5f9] font-medium mb-1">
                 Quality Officer <span className="text-rose-400">*</span>

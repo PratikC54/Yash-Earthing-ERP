@@ -31,10 +31,14 @@ export default function LoginPage() {
 
     try {
       await authService.login(email.trim(), password);
+<<<<<<< HEAD
       const from =
         (location.state?.from?.pathname
           ? location.state.from.pathname + (location.state.from.search || "")
           : null) || "/pq/dashboard";
+=======
+      const from = location.state?.from?.pathname ? `${location.state.from.pathname}${location.state.from.search || ""}` : (typeof location.state?.from === "string" ? location.state.from : "/pq/dashboard");
+>>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
       navigate(from, { replace: true });
     } catch (err) {
       setError(

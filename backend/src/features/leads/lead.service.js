@@ -359,6 +359,7 @@ export async function logCall(leadId, callData, callerUser) {
       where: { id: lead.id },
       data: {
         stage: "REQUIREMENT_CAPTURED",
+        nextFollowUpAt: null,
         lastActivityNote: `Call succeeded by ${callerUser?.name || "Consultant"}. Handed over to Back Officer for Quotation. Notes: ${notes || ""}`,
         sentiment: "Positive",
       },
@@ -382,6 +383,15 @@ export async function logCall(leadId, callData, callerUser) {
 export async function getFollowups({ search }, user = null) {
   const where = {
     nextFollowUpAt: { not: null },
+    stage: {
+      notIn: [
+        "REQUIREMENT_CAPTURED",
+        "QUOTATION_DRAFT",
+        "QUOTATION_SENT",
+        "PO_RECEIVED",
+        "CONVERTED",
+      ],
+    },
   };
 
   // If logged-in user is SALES_CONSULTANT, strictly restrict to their assigned leads
@@ -411,7 +421,17 @@ export async function getFollowups({ search }, user = null) {
 }
 
 export async function getPipelineStats() {
-  const [totalLeads, inDiscussion, quotesRequested, poConfirmed, totalPipeline] = await Promise.all([
+  const [
+    totalLeads,
+    inDiscussion,
+    quotesRequested,
+    poConfirmed,
+    totalPipeline,
+    answeredCalls,
+    notAnsweredCalls,
+    notInterestedCalls,
+    invalidNumberCalls,
+  ] = await Promise.all([
     prisma.lead.count(),
     prisma.lead.count({
       where: { stage: { in: ["CONTACTED", "QUALIFIED", "REQUIREMENT_CAPTURED"] } },
@@ -425,6 +445,18 @@ export async function getPipelineStats() {
     prisma.lead.aggregate({
       _sum: { expectedValue: true },
     }),
+    prisma.callLog.count({
+      where: { outcome: { in: ["ANSWERED", "QUOTATION_REQUESTED"] } },
+    }),
+    prisma.callLog.count({
+      where: { outcome: { in: ["BUSY", "DID_NOT_CONNECT", "CUT_OFF", "FOLLOW_UP_SCHEDULED"] } },
+    }),
+    prisma.callLog.count({
+      where: { outcome: "NOT_INTERESTED" },
+    }),
+    prisma.callLog.count({
+      where: { outcome: "WRONG_NUMBER" },
+    }),
   ]);
 
   return {
@@ -433,6 +465,10 @@ export async function getPipelineStats() {
     quotesRequested,
     poConfirmed,
     totalPipelineValue: Number(totalPipeline._sum.expectedValue || 0),
+    callAnswered: answeredCalls,
+    callNotAnswered: notAnsweredCalls,
+    notInterested: notInterestedCalls,
+    invalidNumber: invalidNumberCalls,
   };
 }
 

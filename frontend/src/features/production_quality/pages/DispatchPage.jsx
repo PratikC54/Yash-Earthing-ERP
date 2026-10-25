@@ -99,7 +99,11 @@ export default function DispatchPage() {
       setReadyInspections(ready);
     } catch (err) {
       console.error("Failed to load dispatch records:", err);
-      setError(err?.message || "Failed to load dispatch records from server.");
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to load dispatch records from server."
+      );
     } finally {
       setLoading(false);
     }
@@ -369,7 +373,7 @@ export default function DispatchPage() {
             </div>
 
             <form onSubmit={handleCreateDispatch} className="space-y-3">
-              <div className="p-3 bg-[#0a1020] border border-[#1e2a4a] rounded-lg grid grid-cols-2 gap-2 text-[11px]">
+              <div className="p-3 bg-[#0a1020] border border-[#1e2a4a] rounded-lg grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px]">
                 <div>
                   <span className="text-[#94a3b8]">Work Order:</span>
                   <div className="font-mono text-[#f1f5f9] font-semibold">{selectedLot.workOrderNo}</div>
@@ -417,7 +421,7 @@ export default function DispatchPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[#94a3b8] font-medium mb-1">Transporter Name *</label>
                   <input
@@ -442,7 +446,7 @@ export default function DispatchPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[#94a3b8] font-medium mb-1">Delivery Challan No</label>
                   <input

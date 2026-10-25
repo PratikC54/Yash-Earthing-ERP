@@ -6,6 +6,7 @@ import ShopFloorPage from "../features/production_quality/pages/ShopFloorPage";
 import QualityDashboard from "../features/production_quality/pages/QualityDashboard";
 import WorkOrdersPage from "../features/production_quality/pages/WorkOrdersPage";
 import WorkOrderDetailsPage from "../features/production_quality/pages/WorkOrderDetailsPage";
+import WorkOrderReportPage from "../features/production_quality/pages/WorkOrderReportPage";
 import InspectionPage from "../features/production_quality/pages/InspectionPage";
 import InspectionDetailsPage from "../features/production_quality/pages/InspectionDetailsPage";
 import NonConformancePage from "../features/production_quality/pages/NonConformancePage";
@@ -43,6 +44,8 @@ export const moduleRoutes = [
   { path: "pq/work-orders", element: comp(WorkOrdersPage) },
   { path: "pq/work-orders/:id", element: comp(WorkOrderDetailsPage) },
   { path: "pq/work-orders/:id/qr", element: comp(QRWorkOrderPage) },
+  { path: "pq/work-orders/:id/report.pdf", element: comp(WorkOrderReportPage) },
+  { path: "pq/work-orders/:id/report", element: comp(WorkOrderReportPage) },
   { path: "pq/material-issuance", element: comp(MaterialIssuancePage) },
   { path: "pq/completion", element: comp(ProductionCompletionPage) },
   { path: "pq/quality", element: comp(QualityDashboard) },
@@ -81,12 +84,34 @@ export const moduleRoutes = [
   // Additional Submodule flows (Work Orders, Inspections, NCR, CAPA, Material Issuance)
   { path: "production/work-orders", element: comp(WorkOrdersPage) },
   { path: "production/work-orders/:id", element: comp(WorkOrderDetailsPage) },
+<<<<<<< HEAD
   { path: "erp/production/work-orders", element: redirect("/production-quality/work-orders") },
   { path: "erp/production/work-orders/:id", element: comp(WorkOrderDetailsPage) },
   { path: "work-orders", element: comp(WorkOrdersPage) },
   { path: "work-orders/:id", element: comp(WorkOrderDetailsPage) },
   { path: "production-quality/work-orders", element: comp(WorkOrdersPage) },
   { path: "production-quality/work-orders/:id", element: comp(WorkOrderDetailsPage) },
+=======
+  { path: "production/work-orders/:id/report.pdf", element: comp(WorkOrderReportPage) },
+  { path: "production/work-orders/:id/report", element: comp(WorkOrderReportPage) },
+  { path: "erp/production/work-orders", element: comp(WorkOrdersPage) },
+  { path: "erp/production/work-orders/:id", element: comp(WorkOrderDetailsPage) },
+  { path: "erp/production/work-orders/:id/report.pdf", element: comp(WorkOrderReportPage) },
+
+  // Generic / Typo Aliases (ensuring /pg/work-orders/:id, /work-orders/:id, and /production-quality/... all resolve seamlessly)
+  { path: "pg/work-orders", element: comp(WorkOrdersPage) },
+  { path: "pg/work-orders/:id", element: comp(WorkOrderDetailsPage) },
+  { path: "pg/work-orders/:id/report.pdf", element: comp(WorkOrderReportPage) },
+  { path: "pg/work-orders/:id/report", element: comp(WorkOrderReportPage) },
+  { path: "work-orders", element: comp(WorkOrdersPage) },
+  { path: "work-orders/:id", element: comp(WorkOrderDetailsPage) },
+  { path: "work-orders/:id/report.pdf", element: comp(WorkOrderReportPage) },
+  { path: "work-orders/:id/report", element: comp(WorkOrderReportPage) },
+  { path: "production-quality/work-orders", element: comp(WorkOrdersPage) },
+  { path: "production-quality/work-orders/:id", element: comp(WorkOrderDetailsPage) },
+  { path: "production-quality/work-orders/:id/report.pdf", element: comp(WorkOrderReportPage) },
+  { path: "production-quality/work-orders/:id/report", element: comp(WorkOrderReportPage) },
+>>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
 
   { path: "production/material-issuance", element: comp(MaterialIssuancePage) },
   { path: "erp/production/material-issuance", element: redirect("/production-quality/material-issuance") },
