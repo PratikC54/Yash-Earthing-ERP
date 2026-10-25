@@ -4,7 +4,7 @@ import { ApiError } from "../../../utils/apiResponse.js";
 import { formatPaginatedResult, getPaginationParams } from "../../../utils/pagination.js";
 import { PRIORITY, WORK_ORDER_STATUS } from "../shared/productionQuality.constants.js";
 import { generateWorkOrderNo, validateFutureOrTodayDate, validateQuantityValue } from "../shared/productionQuality.utils.js";
-import { MasterDataService } from "../master-data/masterData.service.js";
+import { MasterDataService, DEFAULT_MASTER_DROPDOWNS } from "../master-data/masterData.service.js";
 
 export class PlanningService {
   /**
@@ -65,97 +65,120 @@ export class PlanningService {
    * Get common reference data for forms (Sales Orders, Products, BOMs, Users, Lines, Locations)
    */
   static async getReferenceData() {
-    const [salesOrders, products, users] = await Promise.all([
-      prisma.salesOrder.findMany({
-        select: {
-          id: true,
-          orderNumber: true,
-          status: true,
-          customer: { select: { id: true, name: true } },
-          items: {
-            select: {
-              id: true,
-              productId: true,
-              quantity: true,
-              product: { select: { id: true, name: true, sku: true } },
+    try {
+      const [salesOrders, products, users, allDropdowns] = await Promise.all([
+        prisma.salesOrder.findMany({
+          select: {
+            id: true,
+            orderNumber: true,
+            status: true,
+            customer: { select: { id: true, name: true } },
+            items: {
+              select: {
+                id: true,
+                productId: true,
+                quantity: true,
+                product: { select: { id: true, name: true, sku: true } },
+              },
             },
           },
-        },
-        orderBy: { id: "desc" },
-        take: 100,
-      }),
-      prisma.product.findMany({
-        select: {
-          id: true,
-          name: true,
-          sku: true,
-          unitOfMeasure: true,
-          bomRevisions: {
-            select: { id: true, revision: true, status: true },
+          orderBy: { id: "desc" },
+          take: 100,
+        }).catch((err) => {
+          console.warn("Could not fetch sales orders in getReferenceData:", err.message);
+          return [];
+        }),
+        prisma.product.findMany({
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            unitOfMeasure: true,
+            bomRevisions: {
+              select: { id: true, revision: true, status: true },
+            },
           },
-        },
-        orderBy: { name: "asc" },
-        take: 100,
-      }),
-      prisma.user.findMany({
-        where: { isActive: true },
-        select: { id: true, name: true, email: true, role: true, department: true },
-        orderBy: { name: "asc" },
-      }),
-    ]);
+          orderBy: { name: "asc" },
+          take: 100,
+        }).catch((err) => {
+          console.warn("Could not fetch products in getReferenceData:", err.message);
+          return [];
+        }),
+        prisma.user.findMany({
+          where: { isActive: true },
+          select: { id: true, name: true, email: true, role: true, department: true },
+          orderBy: { name: "asc" },
+        }).catch((err) => {
+          console.warn("Could not fetch users in getReferenceData:", err.message);
+          return [];
+        }),
+        MasterDataService.getDropdownOptions().catch((err) => {
+          console.warn("Could not load dropdown options in getReferenceData:", err.message);
+          return {};
+        }),
+      ]);
 
-    return {
-      salesOrders: salesOrders.map((so) => ({
-        id: so.id,
-        orderNumber: so.orderNumber,
-        customerName: so.customer?.name || "Unknown Customer",
-        status: so.status,
-        items: so.items.map((i) => ({
-          id: i.id,
-          productId: i.productId,
-          productName: i.product?.name || "",
-          sku: i.product?.sku || "",
-          quantity: Number(i.quantity),
+      const safeDropdownList = (cat) => {
+        const raw = allDropdowns?.[cat] || (typeof DEFAULT_MASTER_DROPDOWNS !== "undefined" ? DEFAULT_MASTER_DROPDOWNS[cat] : null) || [];
+        return raw.map((o) => (typeof o === "string" ? o : o.value || o.label || String(o)));
+      };
+
+      return {
+        salesOrders: (salesOrders || []).map((so) => ({
+          id: so.id,
+          orderNumber: so.orderNumber,
+          customerName: so.customer?.name || "Unknown Customer",
+          status: so.status,
+          items: (so.items || []).map((i) => ({
+            id: i.id,
+            productId: i.productId,
+            productName: i.product?.name || "",
+            sku: i.product?.sku || "",
+            quantity: Number(i.quantity || 0),
+          })),
         })),
-      })),
-      products: products.map((p) => ({
-        id: p.id,
-        name: p.name,
-        sku: p.sku,
-        unit: p.unitOfMeasure || "NOS",
-        bomRevisions: p.bomRevisions.map((b) => ({ id: b.id, revision: b.revision })),
-      })),
-      users: users.map((u) => ({
-        id: u.id,
-        name: u.name,
-        email: u.email,
-        role: u.role,
-        department: u.department,
-      })),
-      productionLines: (await MasterDataService.getDropdownOptions("productionLine")).map((o) => o.value),
-      machines: (await MasterDataService.getDropdownOptions("machine")).map((o) => o.value),
-      workCenters: (await MasterDataService.getDropdownOptions("workCenter")).map((o) => o.value),
-      downtimeReasons: (await MasterDataService.getDropdownOptions("downtimeReason")).map((o) => o.value),
-      scrapReasons: (await MasterDataService.getDropdownOptions("scrapReason")).map((o) => o.value),
-      defectTypes: (await MasterDataService.getDropdownOptions("defectType")).map((o) => o.value),
-      rejectionReasons: (await MasterDataService.getDropdownOptions("rejectionReason")).map((o) => o.value),
-      correctiveActions: (await MasterDataService.getDropdownOptions("correctiveAction")).map((o) => o.value),
-      warehouseLocations: [
-        "FG-WH-BAY-01 · Finished Goods Main",
-        "FG-WH-BAY-02 · Export Buffer",
-        "FG-WH-BAY-03 · Local Dispatch",
-        "QC-HOLD-BAY · Quarantine Inspection Zone",
-        "Raw Material Warehouse A",
-        "Copper Strip Storage · Bay 2",
-        "Chemical Bulk Store",
-        "Shop Floor Holding Area",
-      ],
-      shifts: [
-        { value: "SHIFT_A", label: "Shift A (06:00 - 14:00)" },
-        { value: "SHIFT_B", label: "Shift B (14:00 - 22:00)" },
-        { value: "SHIFT_C", label: "Shift C (Night)" },
-      ],
-    };
+        products: (products || []).map((p) => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          unit: p.unitOfMeasure || "NOS",
+          bomRevisions: (p.bomRevisions || []).map((b) => ({ id: b.id, revision: b.revision })),
+        })),
+        users: (users || []).map((u) => ({
+          id: u.id,
+          name: u.name,
+          email: u.email,
+          role: u.role,
+          department: u.department,
+        })),
+        productionLines: safeDropdownList("productionLine"),
+        machines: safeDropdownList("machine"),
+        workCenters: safeDropdownList("workCenter"),
+        downtimeReasons: safeDropdownList("downtimeReason"),
+        scrapReasons: safeDropdownList("scrapReason"),
+        defectTypes: safeDropdownList("defectType"),
+        rejectionReasons: safeDropdownList("rejectionReason"),
+        correctiveActions: safeDropdownList("correctiveAction"),
+        warehouseLocations: [
+          "FG-WH-BAY-01 · Finished Goods Main",
+          "FG-WH-BAY-02 · Export Buffer",
+          "FG-WH-BAY-03 · Local Dispatch",
+          "QC-HOLD-BAY · Quarantine Inspection Zone",
+          "Raw Material Warehouse A",
+          "Copper Strip Storage · Bay 2",
+          "Chemical Bulk Store",
+          "Shop Floor Holding Area",
+        ],
+        shifts: [
+          { value: "SHIFT_A", label: "Shift A (06:00 - 14:00)" },
+          { value: "SHIFT_B", label: "Shift B (14:00 - 22:00)" },
+          { value: "SHIFT_C", label: "Shift C (Night)" },
+        ],
+      };
+    } catch (err) {
+      console.error("Critical error in getReferenceData:", err);
+      throw ApiError.internal("Failed to retrieve planning reference data: " + err.message);
+    }
   }
 
   static async createWorkOrder(data, user) {

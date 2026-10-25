@@ -16,6 +16,173 @@ import {
 
 export class QualityService {
   /**
+   * Helper: Resolve Finished Product ID from WorkOrder
+   */
+  static async resolveWorkOrderProductId(workOrder, tx = prisma) {
+    if (!workOrder) return null;
+    let productId = workOrder.bomRevision?.productId;
+    if (productId) return Number(productId);
+
+    if (workOrder.bomRevisionId) {
+      const bom = await tx.bOMRevision.findUnique({
+        where: { id: workOrder.bomRevisionId },
+        select: { productId: true },
+      });
+      if (bom?.productId) return Number(bom.productId);
+    }
+
+    if (workOrder.salesOrderId) {
+      const soItem = await tx.salesOrderItem.findFirst({
+        where: { salesOrderId: workOrder.salesOrderId },
+        select: { productId: true },
+      });
+      if (soItem?.productId) return Number(soItem.productId);
+    }
+
+    if (workOrder.id) {
+      const woItem = await tx.workOrderItem.findFirst({
+        where: { workOrderId: workOrder.id },
+        select: { productId: true },
+      });
+      if (woItem?.productId) return Number(woItem.productId);
+    }
+
+    return null;
+  }
+
+  /**
+   * Helper: Idempotently post quality-approved stock to Finished Goods Inventory
+   */
+  static async postApprovedStockToInventory(tx, {
+    inspection,
+    targetTotalAccepted,
+    deltaQuantity,
+    user,
+    warehouseLocation,
+    notes,
+    batchNumber,
+  }) {
+    if (!inspection) return { postedQuantity: 0, alreadyPosted: true };
+
+    const workOrder = inspection.workOrder || (inspection.workOrderId
+      ? await tx.workOrder.findUnique({
+          where: { id: inspection.workOrderId },
+          include: {
+            bomRevision: { select: { productId: true } },
+          },
+        })
+      : null);
+
+    if (!workOrder) {
+      throw ApiError.badRequest('Cannot associate inspection with a valid Work Order.');
+    }
+
+    const finishedProductId = await QualityService.resolveWorkOrderProductId(workOrder, tx);
+    if (!finishedProductId) {
+      throw ApiError.badRequest(
+        'Could not determine finished product ID for inventory update. Check Work Order / BOM configuration.'
+      );
+    }
+
+    // Check existing inventory movements for this specific inspection lot
+    const existingMovements = await tx.inventoryMovement.findMany({
+      where: {
+        productId: finishedProductId,
+        referenceType: INVENTORY_REFERENCE_TYPE.WORK_ORDER,
+        referenceId: workOrder.id,
+        movementType: INVENTORY_MOVEMENT_TYPE.STOCK_IN,
+        notes: { contains: `[INSP:${inspection.id}]` },
+      },
+    });
+
+    const alreadyPostedQty = existingMovements.reduce(
+      (sum, m) => sum + Number(m.quantity || 0),
+      0
+    );
+
+    let netQtyToPost = 0;
+    if (targetTotalAccepted !== undefined && targetTotalAccepted !== null) {
+      netQtyToPost = Math.max(0, Number(targetTotalAccepted) - alreadyPostedQty);
+    } else if (deltaQuantity !== undefined && deltaQuantity !== null) {
+      netQtyToPost = Math.max(0, Number(deltaQuantity));
+    }
+
+    if (netQtyToPost <= 0) {
+      return {
+        finishedProductId,
+        postedQuantity: 0,
+        alreadyPosted: true,
+        alreadyPostedQty,
+      };
+    }
+
+    const defaultLocation = warehouseLocation || 'FG-WH-BAY-01 · Finished Goods Main';
+
+    // Row lock on inventory
+    let inv;
+    try {
+      const lockedInventories = await tx.$queryRawUnsafe(
+        'SELECT id, "productId", "physicalQuantity", "reservedQuantity", "warehouseLocation" FROM "Inventory" WHERE "productId" = $1 FOR UPDATE',
+        Number(finishedProductId)
+      );
+      if (lockedInventories && lockedInventories[0]) {
+        inv = lockedInventories[0];
+      }
+    } catch {
+      inv = await tx.inventory.findUnique({ where: { productId: finishedProductId } });
+    }
+
+    if (!inv) {
+      inv = await tx.inventory.findUnique({ where: { productId: finishedProductId } });
+    }
+
+    if (inv) {
+      inv = await tx.inventory.update({
+        where: { productId: finishedProductId },
+        data: {
+          physicalQuantity: { increment: netQtyToPost },
+          warehouseLocation: inv.warehouseLocation && inv.warehouseLocation !== 'RM Store' ? inv.warehouseLocation : defaultLocation,
+        },
+      });
+    } else {
+      inv = await tx.inventory.create({
+        data: {
+          productId: finishedProductId,
+          physicalQuantity: netQtyToPost,
+          reservedQuantity: 0,
+          reorderLevel: 10,
+          unitCost: 0,
+          warehouseLocation: defaultLocation,
+        },
+      });
+    }
+
+    const movementBatch = batchNumber || (workOrder.workOrderNo ? `BTH-${workOrder.workOrderNo}` : `BTH-${inspection.inspectionNo}`);
+    const movement = await tx.inventoryMovement.create({
+      data: {
+        productId: finishedProductId,
+        movementType: INVENTORY_MOVEMENT_TYPE.STOCK_IN,
+        referenceType: INVENTORY_REFERENCE_TYPE.WORK_ORDER,
+        referenceId: workOrder.id,
+        quantity: netQtyToPost,
+        batchNumber: movementBatch,
+        locationCode: inv.warehouseLocation || defaultLocation,
+        notes: `[INSP:${inspection.id}] Quality Inspection ${inspection.inspectionNo} approved. Added ${netQtyToPost} units to Finished Goods Inventory. ${notes || ''}`.trim(),
+        createdById: user?.id || null,
+      },
+    });
+
+    return {
+      finishedProductId,
+      postedQuantity: netQtyToPost,
+      alreadyPosted: false,
+      totalPostedQty: alreadyPostedQty + netQtyToPost,
+      inventoryMovement: movement,
+      inventory: inv,
+    };
+  }
+
+  /**
    * Quality Control Dashboard metrics
    */
   static async getDashboard() {
@@ -129,8 +296,13 @@ export class QualityService {
    * Single inspection details with full context
    */
   static async getInspectionById(id) {
+    const numId = Number(id);
+    if (!Number.isInteger(numId) || numId <= 0) {
+      throw ApiError.badRequest(`Invalid inspection ID '${id}'. Must be a positive integer.`);
+    }
+
     const inspection = await prisma.qualityInspection.findUnique({
-      where: { id: Number(id) },
+      where: { id: numId },
       include: {
         assignedInspector: {
           select: { id: true, name: true, email: true, role: true, department: true },
@@ -384,6 +556,15 @@ export class QualityService {
         },
       });
 
+      if (calculatedStatus === QUALITY_STATUS.PASS && accepted > 0) {
+        await QualityService.postApprovedStockToInventory(tx, {
+          inspection,
+          targetTotalAccepted: accepted,
+          user,
+          notes: data.evidenceNotes,
+        });
+      }
+
       await AuditService.record({
         userId: user?.id,
         action: "INSPECTION_RESULTS_RECORDED",
@@ -440,6 +621,13 @@ export class QualityService {
         include: {
           assignedInspector: { select: { id: true, name: true, email: true, role: true } },
         },
+      });
+
+      await QualityService.postApprovedStockToInventory(tx, {
+        inspection,
+        targetTotalAccepted: accepted,
+        user,
+        notes,
       });
 
       await AuditService.record({
@@ -816,23 +1004,7 @@ export class QualityService {
       );
     }
 
-    // 3. Resolve Finished Product ID from WorkOrder
     const workOrder = inspection.workOrder;
-    let finishedProductId = workOrder.bomRevision?.productId;
-
-    if (!finishedProductId) {
-      const so = await prisma.salesOrder.findUnique({
-        where: { id: workOrder.salesOrderId },
-        include: { items: true },
-      });
-      finishedProductId = so?.items[0]?.productId;
-    }
-
-    if (!finishedProductId) {
-      throw ApiError.badRequest(
-        "Could not determine finished product ID for work order release. Check BOM or Sales Order configuration."
-      );
-    }
 
     return await prisma.$transaction(async (tx) => {
       // Step A: Mark Inspection as RELEASED
@@ -846,46 +1018,18 @@ export class QualityService {
         },
       });
 
-      // Step B: Update Inventory stock for finished product
-      const existingInventory = await tx.inventory.findUnique({
-        where: { productId: finishedProductId },
+      // Step B: Idempotently ensure stock is in Finished Goods Inventory
+      const postResult = await QualityService.postApprovedStockToInventory(tx, {
+        inspection,
+        targetTotalAccepted: releaseQuantity,
+        user,
+        warehouseLocation,
+        notes,
+        batchNumber,
       });
 
-      if (existingInventory) {
-        await tx.inventory.update({
-          where: { productId: finishedProductId },
-          data: {
-            physicalQuantity: Number(existingInventory.physicalQuantity) + releaseQuantity,
-            warehouseLocation,
-          },
-        });
-      } else {
-        await tx.inventory.create({
-          data: {
-            productId: finishedProductId,
-            physicalQuantity: releaseQuantity,
-            reservedQuantity: 0,
-            reorderLevel: 10,
-            unitCost: 0,
-            warehouseLocation,
-          },
-        });
-      }
-
-      // Step C: Create InventoryMovement audit record (STOCK_IN for WORK_ORDER)
-      const movement = await tx.inventoryMovement.create({
-        data: {
-          productId: finishedProductId,
-          movementType: INVENTORY_MOVEMENT_TYPE.STOCK_IN,
-          referenceType: INVENTORY_REFERENCE_TYPE.WORK_ORDER,
-          referenceId: workOrder.id,
-          quantity: releaseQuantity,
-          batchNumber: batchNumber || null,
-          locationCode: warehouseLocation,
-          notes: notes || `FG Release from QC Inspection ${inspection.inspectionNo}`,
-          createdById: user?.id || null,
-        },
-      });
+      const finishedProductId = postResult.finishedProductId;
+      const movement = postResult.inventoryMovement || null;
 
       // Step D: Check if Work Order is completely finished
       const allInspections = await tx.qualityInspection.findMany({
@@ -921,7 +1065,7 @@ export class QualityService {
           workOrderId: workOrder.id,
           finishedProductId,
           releaseQuantity,
-          inventoryMovementId: movement.id,
+          inventoryMovementId: movement?.id || null,
           isWorkOrderCompleted,
         },
         client: tx,
@@ -1056,6 +1200,13 @@ export class QualityService {
           },
         });
 
+        await QualityService.postApprovedStockToInventory(tx, {
+          inspection: { ...inspection, id: Number(id) },
+          targetTotalAccepted: newPassed,
+          user,
+          notes: notes || reason || null,
+        });
+
         await AuditService.record({
           userId: user?.id,
           action: "INSPECTION_DECISION_PASS",
@@ -1139,12 +1290,13 @@ export class QualityService {
         }
 
         const newRejected = txRejected + decideQty;
+        const remainingDecidedStatus = txPassed > 0 ? QUALITY_STATUS.PASS : QUALITY_STATUS.FAIL;
 
         updatedInspection = await tx.qualityInspection.update({
           where: { id: Number(id) },
           data: {
             rejectedQuantity: newRejected,
-            status: QUALITY_STATUS.FAIL,
+            status: remainingDecidedStatus,
             decisionOfficer,
             decisionNotes: reason || notes,
             decisionAt: decisionTime,

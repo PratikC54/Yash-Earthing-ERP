@@ -60,6 +60,7 @@ export default function DispatchPage() {
         deliveryChallanNo: formData.deliveryChallanNo,
         lrNumber: formData.lrNumber,
         deliveryNotes: formData.deliveryNotes,
+        batchNumber: selectedLot.batchNumber || undefined,
       });
       setIsModalOpen(false);
       await loadDispatches();

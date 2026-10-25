@@ -13,6 +13,7 @@ import {
   UserPlus,
   ShieldAlert,
   Clock,
+  AlertCircle,
 } from "lucide-react";
 import AssignInspectorModal from "../components/quality/AssignInspectorModal";
 import Card from "../../../components/common/Card";
@@ -45,6 +46,7 @@ export default function InspectionDetailsPage() {
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
   const [isReworkModalOpen, setIsReworkModalOpen] = useState(false);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   // Common Decision State
   const [decisionOfficer, setDecisionOfficer] = useState("");
@@ -57,11 +59,12 @@ export default function InspectionDetailsPage() {
   });
 
   useEffect(() => {
+    let isMounted = true;
     async function fetchRef() {
       try {
         const res = await productionService.getReferenceData();
         const data = res?.data || res;
-        if (data && data.users) {
+        if (isMounted && data && Array.isArray(data.users)) {
           setRefData((prev) => ({ ...prev, ...data }));
           if (data.users.length > 0) {
             setDecisionOfficer((prev) => prev || data.users[0].name);
@@ -72,6 +75,9 @@ export default function InspectionDetailsPage() {
       }
     }
     fetchRef();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // PASS Form State
@@ -147,37 +153,51 @@ export default function InspectionDetailsPage() {
   const isUnassigned = !inspection?.assignedInspectorId || inspection?.status === "PENDING_ASSIGNMENT";
 
   const loadInspection = useCallback(async () => {
+    if (!id || id === "undefined" || id === "null") {
+      setError("Inspection ID is missing or invalid in the URL.");
+      setLoading(false);
+      return;
+    }
+
     setLoading(true);
     setError(null);
     try {
       const res = await qualityService.getInspectionById(id);
-      if (res?.data) {
-        setInspection(res.data);
-        if (res.data.assignedInspector?.name) {
-          setDecisionOfficer(res.data.assignedInspector.name);
-        } else if (res.data.decisionOfficer) {
-          setDecisionOfficer(res.data.decisionOfficer);
+      const data = res?.data || res;
+      if (data && (data.id || data.inspectionNo)) {
+        setInspection(data);
+        if (data.assignedInspector?.name) {
+          setDecisionOfficer(data.assignedInspector.name);
+        } else if (data.decisionOfficer) {
+          setDecisionOfficer(data.decisionOfficer);
         } else {
           setDecisionOfficer("");
         }
-        if (res.data.measurements?.parameters) {
-          setParameters((prev) => ({ ...prev, ...res.data.measurements.parameters }));
-        } else if (res.data.measurements && typeof res.data.measurements === "object") {
-          setParameters((prev) => ({ ...prev, ...res.data.measurements }));
+        if (data.measurements?.parameters) {
+          setParameters((prev) => ({ ...prev, ...data.measurements.parameters }));
+        } else if (data.measurements && typeof data.measurements === "object") {
+          setParameters((prev) => ({ ...prev, ...data.measurements }));
         }
 
-        const remaining = Math.max(0, Number(res.data.inspectedQuantity || res.data.quantity || 0) - (Number(res.data.acceptedQuantity || 0) + Number(res.data.reworkQuantity || 0) + Number(res.data.rejectedQuantity || 0)));
+        const remaining = Math.max(
+          0,
+          Number(data.inspectedQuantity || data.quantity || 0) -
+            (Number(data.acceptedQuantity || 0) +
+              Number(data.reworkQuantity || 0) +
+              Number(data.rejectedQuantity || 0))
+        );
         const defaultQty = remaining > 0 ? String(remaining) : "0";
 
         setPassForm((prev) => ({ ...prev, quantity: defaultQty }));
         setReworkForm((prev) => ({ ...prev, quantity: defaultQty }));
         setRejectForm((prev) => ({ ...prev, quantity: defaultQty }));
       } else {
-        throw new Error("No inspection record returned");
+        throw new Error("No inspection record returned by server.");
       }
     } catch (err) {
       console.error("Failed to load inspection file:", err);
-      setError(err?.message || "Failed to load inspection from ERP server.");
+      const msg = err?.message || err?.data?.message || err?.error?.message || "Failed to load inspection from ERP server.";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -265,7 +285,7 @@ export default function InspectionDetailsPage() {
         notes: passForm.notes,
       });
 
-      alert(`Quality Decision confirmed: PASS for ${qty} units. Lot released to Dispatch!`);
+      alert(`Quality Decision confirmed: PASS for ${qty} units. Approved quantity added to Finished Goods Inventory and available for Dispatch!`);
       setIsPassModalOpen(false);
       await loadInspection();
     } catch (err) {
@@ -403,15 +423,42 @@ export default function InspectionDetailsPage() {
   }
 
   if (error && !inspection) {
+    const isNotFound = typeof error === "string" && (error.includes("not found") || error.includes("404"));
     return (
       <div className="space-y-4 py-12">
         <div className="p-6 bg-[#10182f] border border-rose-500/30 rounded-2xl max-w-lg mx-auto text-center space-y-4">
-          <p className="text-sm font-semibold text-rose-300">{error}</p>
+          <div className="w-12 h-12 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center mx-auto text-rose-400">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h2 className="text-base font-bold text-[#f1f5f9]">
+            {isNotFound ? "Inspection Record Not Found" : "Unable to Load Inspection"}
+          </h2>
+          <p className="text-sm text-rose-300">
+            {typeof error === "string" ? error : error?.message || "Failed to load inspection from ERP server."}
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <Link to="/pq/inspections">
+              <Button variant="secondary" size="sm">Back to Inspections</Button>
+            </Link>
+            {!isNotFound && (
+              <Button variant="primary" size="sm" onClick={loadInspection}>Retry</Button>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!inspection) {
+    return (
+      <div className="space-y-4 py-12">
+        <div className="p-6 bg-[#10182f] border border-[#1e2a4a] rounded-2xl max-w-lg mx-auto text-center space-y-4">
+          <p className="text-sm font-semibold text-[#94a3b8]">Inspection lot #{id} is not available.</p>
           <div className="flex items-center justify-center gap-3">
             <Link to="/pq/inspections">
               <Button variant="secondary" size="sm">Back to Inspections</Button>
             </Link>
-            <Button variant="primary" size="sm" onClick={loadInspection}>Retry</Button>
+            <Button variant="primary" size="sm" onClick={loadInspection}>Refresh</Button>
           </div>
         </div>
       </div>
@@ -1254,6 +1301,8 @@ export default function InspectionDetailsPage() {
         isOpen={isQRModalOpen}
         onClose={() => setIsQRModalOpen(false)}
         workOrderId={inspection?.workOrderId}
+        workOrderNo={inspection?.workOrder?.workOrderNo}
+        workOrder={inspection?.workOrder}
       />
     </div>
   );
