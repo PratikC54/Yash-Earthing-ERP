@@ -23,6 +23,7 @@ import {
 import { initialNavSections } from '../../data/navigationModules'
 import { engineeringService } from '../../services/engineeringService'
 import { module1Service } from '../../services/dataServices'
+import authService from '../../services/authService'
 
 export default function Navbar({
   activeModule = 'Dashboard',
@@ -41,6 +42,29 @@ export default function Navbar({
   const [searchScope, setSearchScope] = useState('ALL')
   const [searchTerm, setSearchTerm] = useState('')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [pendingApprovalsCount, setPendingApprovalsCount] = useState(0)
+
+  useEffect(() => {
+    if (!isAdmin) return
+    let isMounted = true
+    const checkPending = async () => {
+      try {
+        const res = await authService.getPendingUsers()
+        if (isMounted && res?.data) {
+          setPendingApprovalsCount(Array.isArray(res.data) ? res.data.length : 0)
+        }
+      } catch (err) {
+        // silent
+      }
+    }
+    checkPending()
+    const interval = setInterval(checkPending, 30000)
+    return () => {
+      isMounted = false
+      clearInterval(interval)
+    }
+  }, [isAdmin])
+
   const [liveResults, setLiveResults] = useState({
     products: [],
     leads: [],
@@ -316,16 +340,21 @@ export default function Navbar({
           </button>
         )}
 
-        {/* Admin Approvals Quick Access */}
+        {/* Admin Approvals Quick Access with Live Pending Badge & Visible on Mobile */}
         {isAdmin && onOpenAdminApprovals && (
           <button
             type="button"
             onClick={onOpenAdminApprovals}
-            className="hidden sm:flex items-center space-x-1 sm:space-x-1.5 px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-xs font-extrabold transition cursor-pointer active:scale-95 shadow-xs"
-            title="Review pending user registrations"
+            className="relative flex items-center space-x-1 sm:space-x-1.5 px-2.5 sm:px-3 py-1.5 rounded-xl bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 text-xs font-extrabold transition cursor-pointer active:scale-95 shadow-xs"
+            title={pendingApprovalsCount > 0 ? `${pendingApprovalsCount} user(s) awaiting approval` : "Review pending user registrations"}
           >
             <UserCheck className="w-3.5 h-3.5 text-sky-700" />
-            <span className="hidden lg:inline">Approvals</span>
+            <span className="hidden sm:inline">Approvals</span>
+            {pendingApprovalsCount > 0 && (
+              <span className="inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-black bg-rose-600 text-white rounded-full ring-2 ring-white animate-pulse">
+                {pendingApprovalsCount}
+              </span>
+            )}
           </button>
         )}
 
