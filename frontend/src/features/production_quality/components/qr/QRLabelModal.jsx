@@ -373,7 +373,7 @@ export default function QRLabelModal({
     }
   };
 
-  
+
   const handleDownloadPdfReport = async () => {
     if (!resolvedWorkOrderId) return;
     try {
