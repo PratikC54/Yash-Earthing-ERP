@@ -1,6 +1,8 @@
 import prisma from "../../../db/prisma.js";
 import { AuditService } from "../../../services/audit.service.js";
 import { ApiError } from "../../../utils/apiResponse.js";
+import { NotificationService } from "../../notifications/notification.service.js";
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITY } from "../../notifications/notification.constants.js";
 import {
   INVENTORY_MOVEMENT_TYPE,
   INVENTORY_REFERENCE_TYPE,
@@ -227,6 +229,24 @@ export class QualityService {
           },
         },
       });
+
+      // Set WorkOrder to QC_HOLD
+      await tx.workOrder.update({
+        where: { id: inspection.workOrderId },
+        data: { status: WORK_ORDER_STATUS.QC_HOLD },
+      });
+
+      NotificationService.notifyRoles(["QUALITY_INSPECTOR", "PRODUCTION_MANAGER", "ADMIN"], {
+        type: NOTIFICATION_TYPES.INSPECTION_FAILED,
+        title: `Quality Inspection FAILED: Lot ${inspection.inspectionNo}`,
+        message: `Inspection Lot ${inspection.inspectionNo} (WO: ${inspection.workOrder?.workOrderNo || inspection.workOrderId}) has FAILED quality checks. Reason: ${reason}. Work Order moved to QC_HOLD.`,
+        priority: NOTIFICATION_PRIORITY.CRITICAL,
+        link: `/pq/inspections/${id}`,
+        entityType: "QualityInspection",
+        entityId: Number(id),
+        dedupKey: `INSP_FAILED:${id}`,
+        metadata: { inspectionNo: inspection.inspectionNo, workOrderId: inspection.workOrderId, reason },
+      }).catch((err) => console.error("Failed to emit INSPECTION_FAILED alert:", err));
 
       await AuditService.record({
         userId: user?.id,
@@ -594,6 +614,16 @@ export class QualityService {
         },
       });
 
+      NotificationService.notifyRoles(["QUALITY_INSPECTOR", "PRODUCTION_MANAGER"], {
+        type: NOTIFICATION_TYPES.REWORK_COMPLETED,
+        title: `Rework Required: Lot ${inspection.inspectionNo}`,
+        message: `Rework instructions logged for Inspection ${inspection.inspectionNo}: ${notes}. Must be re-inspected before dispatch.`,
+        priority: NOTIFICATION_PRIORITY.HIGH,
+        link: `/pq/inspections/${id}`,
+        entityType: "QualityInspection",
+        entityId: Number(id),
+      }).catch((err) => console.error("Failed to emit REWORK alert:", err));
+
       await AuditService.record({
         userId: user?.id,
         action: "REWORK_REQUESTED",
@@ -628,6 +658,26 @@ export class QualityService {
       proposedAction,
       loggedAt: new Date().toISOString(),
     };
+
+    if (severity === "CRITICAL") {
+      // Apply automatic quality hold on work order
+      await prisma.workOrder.update({
+        where: { id: inspection.workOrderId },
+        data: { status: WORK_ORDER_STATUS.QC_HOLD },
+      });
+
+      NotificationService.notifyRoles(["QUALITY_INSPECTOR", "PRODUCTION_MANAGER", "ADMIN"], {
+        type: NOTIFICATION_TYPES.CRITICAL_DEFECT,
+        title: `CRITICAL DEFECT DETECTED: ${defectType}`,
+        message: `A critical defect (${defectType}) was reported on Lot ${inspection.inspectionNo} (WO: ${inspection.workOrder?.workOrderNo || inspection.workOrderId}): ${description}. Work Order has been placed on QC_HOLD immediately.`,
+        priority: NOTIFICATION_PRIORITY.CRITICAL,
+        link: `/pq/inspections/${inspectionId}`,
+        entityType: "QualityInspection",
+        entityId: Number(inspectionId),
+        dedupKey: `CRITICAL_DEFECT:${inspectionId}:${Date.now()}`,
+        metadata: { inspectionId, workOrderId: inspection.workOrderId, defectType, severity, description },
+      }).catch((err) => console.error("Failed to emit CRITICAL_DEFECT alert:", err));
+    }
 
     await AuditService.record({
       userId: user?.id,

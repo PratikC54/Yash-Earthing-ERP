@@ -2,6 +2,7 @@ import { Router } from "express";
 import authRouter from "../features/auth/auth.routes.js";
 import healthRouter from "../features/health/health.routes.js";
 import productionQualityRouter from "../features/production-quality/productionQuality.routes.js";
+import notificationRouter from "../features/notifications/notification.routes.js";
 import leadRouter from "../features/leads/lead.routes.js";
 import quotationRouter from "../features/quotations/quotation.routes.js";
 import orderRouter from "../features/orders/order.routes.js";
@@ -36,6 +37,7 @@ apiRouter.use("/", dashboardRouter);
 
 apiRouter.use("/production-quality", productionQualityRouter);
 apiRouter.use("/pq", productionQualityRouter);
+apiRouter.use("/notifications", notificationRouter);
 
 // Module 7: HRMS Workforce
 import hrmsRouter from "../features/hrms/hrms.routes.js";
@@ -51,4 +53,3 @@ apiRouter.use("/installations", installationRouter);
 apiRouter.use("/service-tickets", serviceTicketRouter);
 
 export default apiRouter;
-

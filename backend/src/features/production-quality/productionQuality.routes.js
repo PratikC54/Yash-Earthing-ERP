@@ -4,6 +4,8 @@ import manufacturingRouter from "./manufacturing/manufacturing.routes.js";
 import planningRouter from "./planning/planning.routes.js";
 import qualityRouter from "./quality/quality.routes.js";
 import masterDataRouter from "./master-data/masterData.routes.js";
+import qrRouter from "./qr/qr.routes.js";
+import notificationRouter from "../notifications/notification.routes.js";
 
 const productionQualityRouter = Router();
 
@@ -21,6 +23,13 @@ productionQualityRouter.use("/quality", qualityRouter);
 
 // Submodule M4.4 — Dispatch Management
 productionQualityRouter.use("/dispatch", dispatchRouter);
+
+// QR Tracking Endpoints
+productionQualityRouter.use("/qr", qrRouter);
+productionQualityRouter.use("/", qrRouter);
+
+// Notification Endpoints inside Module 4
+productionQualityRouter.use("/notifications", notificationRouter);
 
 // Direct root alias for work orders and planning shortcuts
 productionQualityRouter.use("/", planningRouter);

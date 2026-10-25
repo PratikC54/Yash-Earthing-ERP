@@ -1,6 +1,8 @@
 import prisma from "../../../db/prisma.js";
 import { AuditService } from "../../../services/audit.service.js";
 import { ApiError } from "../../../utils/apiResponse.js";
+import { NotificationService } from "../../notifications/notification.service.js";
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITY } from "../../notifications/notification.constants.js";
 import {
   INVENTORY_MOVEMENT_TYPE,
   INVENTORY_REFERENCE_TYPE,
@@ -466,6 +468,24 @@ export class ManufacturingService {
         client: tx,
       });
 
+      if (newStatus === WORK_ORDER_STATUS.COMPLETED) {
+        NotificationService.notifyRoles(["QUALITY_INSPECTOR"], {
+          type: NOTIFICATION_TYPES.PRODUCTION_COMPLETED,
+          title: `Production Completed: Work Order ${workOrder.workOrderNo}`,
+          message: `Work Order ${workOrder.workOrderNo} (${workOrder.bomRevision?.product?.name || "Product"}) has reached 100% completed production (${newGood} units). Output is ready for Quality Inspection.`,
+          priority: NOTIFICATION_PRIORITY.HIGH,
+          link: "/pq/inspections",
+          entityType: "WorkOrder",
+          entityId: workOrderId,
+          dedupKey: `PROD_COMPLETE:${workOrderId}`,
+          metadata: {
+            workOrderNo: workOrder.workOrderNo,
+            goodQuantity: newGood,
+            batchNumber: data.batchNumber || `BATCH-${workOrder.workOrderNo}`,
+          },
+        }).catch((err) => console.error("Failed to emit PRODUCTION_COMPLETED alert:", err));
+      }
+
       return {
         workOrderId,
         quantityCompleted: quantityToAdd,
@@ -838,6 +858,23 @@ export class ManufacturingService {
       entityId: workOrderId,
       after: downtime,
     });
+
+    NotificationService.notifyRoles(["PRODUCTION_MANAGER", "ENGINEER", "ADMIN"], {
+      type: NOTIFICATION_TYPES.MACHINE_BREAKDOWN,
+      title: `Machine Breakdown: ${machineOrWorkCenter}`,
+      message: `Machine breakdown / downtime logged on ${machineOrWorkCenter} for Work Order ${workOrder.workOrderNo}. Duration: ${durationMinutes} mins. Reason: ${reason}.`,
+      priority: NOTIFICATION_PRIORITY.CRITICAL,
+      link: "/pq/manufacturing",
+      entityType: "MachineDowntime",
+      entityId: Number(workOrderId),
+      metadata: {
+        workOrderId: Number(workOrderId),
+        workOrderNo: workOrder.workOrderNo,
+        machineOrWorkCenter,
+        durationMinutes: Number(durationMinutes),
+        reason,
+      },
+    }).catch((err) => console.error("Failed to emit MACHINE_BREAKDOWN alert:", err));
 
     return downtime;
   }

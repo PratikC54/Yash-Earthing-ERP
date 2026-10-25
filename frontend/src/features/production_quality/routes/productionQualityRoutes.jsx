@@ -12,6 +12,8 @@ import ShopFloorPage from "../pages/ShopFloorPage";
 import ReworkTrackingPage from "../pages/ReworkTrackingPage";
 import ProductionCompletionPage from "../pages/ProductionCompletionPage";
 import DispatchPage from "../pages/DispatchPage";
+import QRWorkOrderPage from "../pages/QRWorkOrderPage";
+import NotificationHistoryPage from "../pages/NotificationHistoryPage";
 
 /**
  * Route objects for Production & Quality Module (M4)
@@ -50,6 +52,10 @@ export const productionQualityRoutes = [
         element: <WorkOrderDetailsPage />,
       },
       {
+        path: "work-orders/:id/qr",
+        element: <QRWorkOrderPage />,
+      },
+      {
         path: "material-issuance",
         element: <MaterialIssuancePage />,
       },
@@ -84,6 +90,10 @@ export const productionQualityRoutes = [
       {
         path: "completion",
         element: <ProductionCompletionPage />,
+      },
+      {
+        path: "notifications",
+        element: <NotificationHistoryPage />,
       },
     ],
   },

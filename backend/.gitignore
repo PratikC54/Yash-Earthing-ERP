@@ -16,15 +16,13 @@ package-lock.json
 README.md
 CONTRIBUTING.md
 
-# Tests
-tests/
-*.test.js
-*.test.jsx
-*.test.ts
-*.test.tsx
-*.spec.js
-*.spec.jsx
-*.spec.ts
-*.spec.tsx
-test-*.js
-test_*.js
+# Test output and temporary artifacts
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+blob-report/
+
+# Temporary test files
+*.test.tmp
+*.spec.tmp

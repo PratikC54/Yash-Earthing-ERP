@@ -8,6 +8,8 @@ import {
   RotateCcw,
   Send,
   Plus,
+  QrCode,
+  Printer,
 } from "lucide-react";
 import ModuleHeader from "../components/shared/ModuleHeader";
 import Card from "../../../components/common/Card";
@@ -17,6 +19,7 @@ import Loader from "../../../components/common/Loader";
 import Modal from "../../../components/common/Modal";
 import ProductionProgress from "../components/production/ProductionProgress";
 import productionService from "../services/productionService";
+import QRLabelModal from "../components/qr/QRLabelModal";
 import authService from "../../../services/authService";
 import { formatDateTime } from "../utils/productionQualityHelpers";
 import {
@@ -47,6 +50,7 @@ export default function WorkOrderDetailsPage() {
   const [completionSuccess, setCompletionSuccess] = useState("");
 
   const [isTransferModalOpen, setIsTransferModalOpen] = useState(false);
+  const [isQRLabelModalOpen, setIsQRLabelModalOpen] = useState(false);
   const [transferData, setTransferData] = useState({ quantity: "", notes: "" });
   const [transferError, setTransferError] = useState("");
 
@@ -302,6 +306,9 @@ export default function WorkOrderDetailsPage() {
       <ModuleHeader
         title={`${order.workOrderNo} — Specifications & Lifecycle`}
         subtitle={`Manufacturing execution details for ${targetProductName}`}
+        workOrderId={id}
+        workOrderNo={order.workOrderNo}
+        workOrder={order}
         breadcrumbs={[
           { label: "Production & Quality", to: "/production-quality/planning" },
           { label: "Work Orders", to: "/production-quality/work-orders" },
@@ -341,6 +348,13 @@ export default function WorkOrderDetailsPage() {
 
         {/* Transition Buttons */}
         <div className="flex flex-wrap items-center gap-2">
+          {/* QR Code Tracking & Printable Label */}
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => setIsQRLabelModalOpen(true)}
+            icon={QrCode}
+          >QR Code</Button>
           {status === "DRAFT" && (
             <>
               <Button
@@ -988,6 +1002,15 @@ export default function WorkOrderDetailsPage() {
           </div>
         </form>
       </Modal>
+      {order && (
+        <QRLabelModal
+          isOpen={isQRLabelModalOpen}
+          onClose={() => setIsQRLabelModalOpen(false)}
+          workOrderId={id}
+          workOrderNo={order.workOrderNo}
+          workOrder={order}
+        />
+      )}
     </div>
   );
 }
