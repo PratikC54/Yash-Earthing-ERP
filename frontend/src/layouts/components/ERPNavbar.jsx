@@ -7,8 +7,9 @@ import {
   ChevronRight,
   Layers,
   LogOut,
-  X,
+  X
 } from "lucide-react";
+import NotificationBell from "./NotificationBell";
 import { findNavItemByPath } from "../../config/navigationConfig";
 import authService from "../../services/authService";
 
@@ -133,7 +134,6 @@ export default function ERPNavbar({
             </div>
           )}
         </div>
-
       </div>
 
       {/* 3. RIGHT: Active Module Pill + User Profile */}
@@ -146,6 +146,9 @@ export default function ERPNavbar({
             {currentNavItem?.parentLabel || currentNavItem?.label || "Production & Quality"}
           </span>
         </div>
+
+        {/* Smart Alerts & Notification Bell */}
+        <NotificationBell />
 
         {/* User Profile Card / Dropdown */}
         <div ref={userMenuRef} className="relative">

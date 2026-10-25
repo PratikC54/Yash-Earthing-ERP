@@ -13,8 +13,10 @@ import {
   ShieldAlert,
   CheckCircle2,
   Filter,
+  QrCode,
 } from "lucide-react";
 import qualityService from "../services/qualityService";
+import QRLabelModal from "../components/qr/QRLabelModal";
 import AssignInspectorModal from "../components/quality/AssignInspectorModal";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Button from "../../../components/common/Button";
@@ -28,6 +30,7 @@ export default function InspectionPage() {
   const [activeTab, setActiveTab] = useState("ALL");
   const [viewedInspection, setViewedInspection] = useState(null);
   const [assigningInspection, setAssigningInspection] = useState(null);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   const loadInspections = useCallback(async () => {
     setLoading(true);
@@ -154,6 +157,15 @@ export default function InspectionPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={QrCode}
+            onClick={() => setIsQRModalOpen(true)}
+            title="View & Print Work Order QR Code"
+          >
+            QR Code
+          </Button>
           <Button
             variant="secondary"
             size="sm"
@@ -537,6 +549,10 @@ export default function InspectionPage() {
           </div>
         </div>
       )}
+      <QRLabelModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+      />
     </div>
   );
 }

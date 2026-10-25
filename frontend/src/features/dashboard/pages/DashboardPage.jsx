@@ -20,9 +20,11 @@ import {
   ChevronDown,
   ChevronUp,
   AlertOctagon,
+  QrCode,
 } from "lucide-react";
 import productionService from "../../production_quality/services/productionService";
 import qualityService from "../../production_quality/services/qualityService";
+import QRLabelModal from "../../production_quality/components/qr/QRLabelModal";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Loader from "../../../components/common/Loader";
 import { formatDate } from "../../production_quality/utils/productionQualityHelpers";
@@ -34,6 +36,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [showKpis, setShowKpis] = useState(true);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   // Raw data from APIs
   const [planningMetrics, setPlanningMetrics] = useState(null);
@@ -510,6 +513,17 @@ export default function DashboardPage() {
           <p className="text-xs sm:text-sm text-[#94a3b8] mt-1 max-w-3xl">
             Operational metrics from production orders and quality inspections.
           </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsQRModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#0a1020] hover:bg-[#1e2a4a] border border-[#1e2a4a] text-blue-400 hover:text-blue-300 transition shadow-sm cursor-pointer"
+            title="View & Print Work Order QR Code"
+          >
+            <QrCode className="w-4 h-4 text-blue-400" />
+            <span>QR Code</span>
+          </button>
         </div>
 
       </div>
@@ -1246,6 +1260,10 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+      <QRLabelModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+      />
     </div>
   );
 }

@@ -8,6 +8,7 @@ import {
   Award,
   Printer,
   Truck,
+  QrCode,
   UserCheck,
   UserPlus,
   ShieldAlert,
@@ -22,6 +23,7 @@ import Modal from "../../../components/common/Modal";
 import qualityService from "../services/qualityService";
 import productionService from "../services/productionService";
 import CustomDropdown from "../../../components/common/CustomDropdown";
+import QRLabelModal from "../components/qr/QRLabelModal";
 import {
   getTodayDateString,
   validatePastDate,
@@ -445,6 +447,15 @@ export default function InspectionDetailsPage() {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="md"
+            icon={QrCode}
+            onClick={() => setIsQRModalOpen(true)}
+            title="View & Print Work Order QR Code"
+          >
+            QR Code
+          </Button>
           {availableToDispatch > 0 && (
             <Link to="/pq/dispatch">
               <Button
@@ -1238,6 +1249,11 @@ export default function InspectionDetailsPage() {
           </div>
         </form>
       </Modal>
+      <QRLabelModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+        workOrderId={inspection?.workOrderId}
+      />
     </div>
   );
 }

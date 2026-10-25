@@ -9,9 +9,11 @@ import {
   AlertCircle,
   RefreshCw,
   ExternalLink,
+  QrCode,
 } from "lucide-react";
 import productionService from "../services/productionService";
 import CustomDropdown from "../../../components/common/CustomDropdown";
+import QRLabelModal from "../components/qr/QRLabelModal";
 import {
   getTodayDateString,
   validatePastDate,
@@ -45,6 +47,7 @@ export default function WorkOrdersPage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [viewedOrder, setViewedOrder] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
+  const [labelModalOrder, setLabelModalOrder] = useState(null);
 
   const [newOrder, setNewOrder] = useState(getDefaultNewOrder);
   const [refData, setRefData] = useState({
@@ -116,14 +119,17 @@ export default function WorkOrdersPage() {
       const rawList = res?.data || (Array.isArray(res) ? res : []);
       const normalized = rawList.map((item) => ({
         id: item.id,
-        workOrderNumber: item.workOrderNo || "",
+        workOrderNo: item.workOrderNo || item.workOrderNumber || "",
+        workOrderNumber: item.workOrderNo || item.workOrderNumber || "",
         productName:
           item.bomRevision?.product?.name ||
           item.items?.[0]?.product?.name ||
           item.salesOrder?.productSummary ||
           item.productName ||
           "",
-        bomReference: item.bomRevision?.revision || "",
+        productCode: item.bomRevision?.product?.sku || item.items?.[0]?.product?.sku || item.productSku || "",
+        productSku: item.bomRevision?.product?.sku || item.items?.[0]?.product?.sku || item.productSku || "",
+        batchNumber: item.batchNumber || (item.notes?.match(/Batch:?\s*([A-Za-z0-9_-]+)/i)?.[1]) || (item.workOrderNo ? `BATCH-${item.workOrderNo}` : ""),
         plannedQuantity: Number(item.plannedQuantity || 0),
         producedQuantity: Number(item.goodQuantity ?? item.producedQuantity ?? 0),
         priority: item.priority || "",
@@ -276,15 +282,25 @@ export default function WorkOrdersPage() {
             Create, schedule, track fabrication status, and inspect BOM material allocation.
           </p>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#3b82f6] hover:bg-blue-600 text-white transition shadow-sm cursor-pointer"
-        >
-          <Plus className="w-4 h-4 stroke-[2.5]" />
-          <span>Create Work Order</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setLabelModalOrder(orders[0] || { id: null })}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold bg-[#10182f] hover:bg-[#1e2a4a] border border-[#1e2a4a] text-blue-400 hover:text-blue-300 transition shadow-sm cursor-pointer"
+            title="View & Print Work Order QR Code"
+          >
+            <QrCode className="w-4 h-4 text-blue-400" />
+            <span>QR Code</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold bg-[#3b82f6] hover:bg-blue-600 text-white transition shadow-sm cursor-pointer"
+          >
+            <Plus className="w-4 h-4 stroke-[2.5]" />
+            <span>Create Work Order</span>
+          </button>
+        </div>
       </div>
 
       {/* Filter Tabs & Search Controls */}
@@ -454,6 +470,15 @@ export default function WorkOrdersPage() {
                           >
                             <ExternalLink className="w-3.5 h-3.5" />
                           </Link>
+                          
+                          <button
+                            type="button"
+                            onClick={() => setLabelModalOrder(wo)}
+                            title="Print / Preview QR Label"
+                            className="p-1.5 rounded-lg bg-[#0a1020] hover:bg-blue-600 hover:text-white text-blue-400 border border-[#1e2a4a] transition cursor-pointer"
+                          >
+                            <QrCode className="w-3.5 h-3.5" />
+                          </button>
                           <button
                             type="button"
                             onClick={() => setViewedOrder(wo)}
@@ -894,6 +919,15 @@ export default function WorkOrdersPage() {
             </div>
           </div>
         </div>
+      )}
+      {labelModalOrder && (
+        <QRLabelModal
+          isOpen={Boolean(labelModalOrder)}
+          onClose={() => setLabelModalOrder(null)}
+          workOrderId={labelModalOrder.id}
+          workOrderNo={labelModalOrder.workOrderNo || labelModalOrder.workOrderNumber}
+          workOrder={labelModalOrder}
+        />
       )}
     </div>
   );

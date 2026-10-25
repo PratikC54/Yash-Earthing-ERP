@@ -11,20 +11,26 @@ export class PlanningService {
    * Get production dashboard statistics
    */
   static async getDashboard() {
-    const [total, draft, planned, released, inProgress, onHold, completed, cancelled] = await Promise.all([
-      prisma.workOrder.count(),
-      prisma.workOrder.count({ where: { status: WORK_ORDER_STATUS.DRAFT } }),
-      prisma.workOrder.count({ where: { status: WORK_ORDER_STATUS.PLANNED } }),
-      prisma.workOrder.count({ where: { status: WORK_ORDER_STATUS.RELEASED } }),
-      prisma.workOrder.count({ where: { status: WORK_ORDER_STATUS.IN_PROGRESS } }),
-      prisma.workOrder.count({
-        where: {
-          status: { in: [WORK_ORDER_STATUS.MATERIAL_HOLD, WORK_ORDER_STATUS.QC_HOLD] },
-        },
+    const [countsByStatus, total] = await Promise.all([
+      prisma.workOrder.groupBy({
+        by: ["status"],
+        _count: { _all: true },
       }),
-      prisma.workOrder.count({ where: { status: WORK_ORDER_STATUS.COMPLETED } }),
-      prisma.workOrder.count({ where: { status: WORK_ORDER_STATUS.CANCELLED } }),
+      prisma.workOrder.count(),
     ]);
+
+    const statusMap = {};
+    for (const item of countsByStatus) {
+      statusMap[item.status] = item._count._all;
+    }
+
+    const draft = statusMap[WORK_ORDER_STATUS.DRAFT] || 0;
+    const planned = statusMap[WORK_ORDER_STATUS.PLANNED] || 0;
+    const released = statusMap[WORK_ORDER_STATUS.RELEASED] || 0;
+    const inProgress = statusMap[WORK_ORDER_STATUS.IN_PROGRESS] || 0;
+    const onHold = (statusMap[WORK_ORDER_STATUS.MATERIAL_HOLD] || 0) + (statusMap[WORK_ORDER_STATUS.QC_HOLD] || 0);
+    const completed = statusMap[WORK_ORDER_STATUS.COMPLETED] || 0;
+    const cancelled = statusMap[WORK_ORDER_STATUS.CANCELLED] || 0;
 
     const recentWorkOrders = await prisma.workOrder.findMany({
       take: 5,

@@ -1,16 +1,23 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, QrCode } from "lucide-react";
+import QRLabelModal from "../qr/QRLabelModal";
 
 /**
- * Reusable ModuleHeader with Reference Navy Theme
+ * Reusable ModuleHeader with Reference Navy Theme & QR Code Action
  */
 export default function ModuleHeader({
   title,
   subtitle,
   breadcrumbs = [],
   action,
+  showQR = true,
+  workOrderId = null,
+  workOrderNo = null,
+  workOrder = null,
 }) {
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+
   return (
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
       <div>
@@ -47,7 +54,30 @@ export default function ModuleHeader({
         )}
       </div>
 
-      {action && <div className="flex items-center gap-2.5 shrink-0">{action}</div>}
+      <div className="flex items-center gap-2.5 shrink-0">
+        {showQR && (
+          <button
+            type="button"
+            onClick={() => setIsQRModalOpen(true)}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#1e2a4a] bg-[#10182f] hover:bg-[#1e2a4a] text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors shadow-xs cursor-pointer"
+            title="View & Print Work Order QR Code"
+          >
+            <QrCode className="w-4 h-4 text-blue-400" />
+            <span>QR Code</span>
+          </button>
+        )}
+        {action}
+      </div>
+
+      {showQR && (
+        <QRLabelModal
+          isOpen={isQRModalOpen}
+          onClose={() => setIsQRModalOpen(false)}
+          workOrderId={workOrderId}
+          workOrderNo={workOrderNo}
+          workOrder={workOrder}
+        />
+      )}
     </div>
   );
 }

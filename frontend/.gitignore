@@ -23,13 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 
-# Tests
-tests/
-*.test.js
-*.test.jsx
-*.test.ts
-*.test.tsx
-*.spec.js
-*.spec.jsx
-*.spec.ts
-*.spec.tsx
+# Test output and temporary artifacts
+coverage/
+.nyc_output/
+test-results/
+playwright-report/
+blob-report/
+
+# Temporary test files
+*.test.tmp
+*.spec.tmp

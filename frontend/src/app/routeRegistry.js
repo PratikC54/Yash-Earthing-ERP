@@ -13,6 +13,8 @@ import ReworkTrackingPage from "../features/production_quality/pages/ReworkTrack
 import MaterialIssuancePage from "../features/production_quality/pages/MaterialIssuancePage";
 import ProductionCompletionPage from "../features/production_quality/pages/ProductionCompletionPage";
 import DispatchPage from "../features/production_quality/pages/DispatchPage";
+import QRWorkOrderPage from "../features/production_quality/pages/QRWorkOrderPage";
+import NotificationHistoryPage from "../features/production_quality/pages/NotificationHistoryPage";
 import productionQualityRoutes from "../features/production_quality/routes/productionQualityRoutes";
 
 const redirect = (to) =>
@@ -40,6 +42,7 @@ export const moduleRoutes = [
   { path: "pq/manufacturing", element: comp(ShopFloorPage) },
   { path: "pq/work-orders", element: comp(WorkOrdersPage) },
   { path: "pq/work-orders/:id", element: comp(WorkOrderDetailsPage) },
+  { path: "pq/work-orders/:id/qr", element: comp(QRWorkOrderPage) },
   { path: "pq/material-issuance", element: comp(MaterialIssuancePage) },
   { path: "pq/completion", element: comp(ProductionCompletionPage) },
   { path: "pq/quality", element: comp(QualityDashboard) },
@@ -50,6 +53,8 @@ export const moduleRoutes = [
   { path: "dispatch", element: redirect("/pq/dispatch") },
   { path: "pq/non-conformance", element: comp(NonConformancePage) },
   { path: "pq/rework", element: comp(ReworkTrackingPage) },
+  { path: "pq/notifications", element: comp(NotificationHistoryPage) },
+  { path: "notifications", element: redirect("/pq/notifications") },
 
   // Direct Submodule & Production routes
   { path: "production", element: redirect("/pq/dashboard") },

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
-import { RefreshCw, Truck, AlertCircle } from "lucide-react";
+import { RefreshCw, Truck, AlertCircle, QrCode } from "lucide-react";
+import QRLabelModal from "../components/qr/QRLabelModal";
 import { Link } from "react-router-dom";
 import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
@@ -13,6 +14,7 @@ export default function DispatchPage() {
   const [readyInspections, setReadyInspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   // Dispatch Action Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -131,15 +133,26 @@ export default function DispatchPage() {
             </h1>
           </div>
         </div>
-        <Button
-          variant="secondary"
-          size="md"
-          icon={RefreshCw}
-          onClick={loadDispatches}
-          loading={loading}
-        >
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="secondary"
+            size="md"
+            icon={QrCode}
+            onClick={() => setIsQRModalOpen(true)}
+            title="View & Print Work Order QR Code"
+          >
+            QR Code
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            icon={RefreshCw}
+            onClick={loadDispatches}
+            loading={loading}
+          >
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -474,6 +487,10 @@ export default function DispatchPage() {
           </div>
         </div>
       )}
+      <QRLabelModal
+        isOpen={isQRModalOpen}
+        onClose={() => setIsQRModalOpen(false)}
+      />
     </div>
   );
 }

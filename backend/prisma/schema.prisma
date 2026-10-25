@@ -341,6 +341,7 @@ model User {
   employee               Employee?
   communications         Communication[]
   sessions               Session[]
+  notifications          Notification[]
 }
 
 model Customer {
@@ -936,6 +937,7 @@ model WorkOrder {
   dispatchRecords  DispatchRecord[]
   assignedLine     String?
   mediaAssets      MediaAsset[]
+  qrCode           String?             @unique
 
   @@index([status, plannedStart])
 }
@@ -1524,4 +1526,43 @@ model CustomDropdownOption {
 
   @@unique([category, value])
   @@index([category])
+}
+
+model Notification {
+  id          Int       @id @default(autoincrement())
+  recipientId Int
+  recipient   User      @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  type        String
+  title       String
+  message     String
+  priority    Priority  @default(MEDIUM)
+  status      String    @default("UNREAD")
+  readAt      DateTime?
+  link        String?
+  entityType  String?
+  entityId    Int?
+  dedupKey    String?
+  metadata    Json?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@unique([recipientId, dedupKey])
+  @@index([recipientId, status, createdAt])
+  @@index([entityType, entityId])
+  @@index([type, createdAt])
+}
+
+model EscalationRule {
+  id             Int      @id @default(autoincrement())
+  name           String
+  eventType      String
+  level          Int      @default(1)
+  thresholdHours Int      @default(24)
+  targetRoles    String[]
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([eventType, level])
+  @@index([eventType, isActive])
 }
