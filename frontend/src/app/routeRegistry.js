@@ -82,7 +82,11 @@ export const moduleRoutes = [
   { path: "production/work-orders", element: comp(WorkOrdersPage) },
   { path: "production/work-orders/:id", element: comp(WorkOrderDetailsPage) },
   { path: "erp/production/work-orders", element: redirect("/production-quality/work-orders") },
-  { path: "erp/production/work-orders/:id", element: redirect("/production-quality/work-orders") },
+  { path: "erp/production/work-orders/:id", element: comp(WorkOrderDetailsPage) },
+  { path: "work-orders", element: comp(WorkOrdersPage) },
+  { path: "work-orders/:id", element: comp(WorkOrderDetailsPage) },
+  { path: "production-quality/work-orders", element: comp(WorkOrdersPage) },
+  { path: "production-quality/work-orders/:id", element: comp(WorkOrderDetailsPage) },
 
   { path: "production/material-issuance", element: comp(MaterialIssuancePage) },
   { path: "erp/production/material-issuance", element: redirect("/production-quality/material-issuance") },

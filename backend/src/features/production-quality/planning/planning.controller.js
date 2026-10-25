@@ -1,3 +1,4 @@
+import prisma from "../../../db/prisma.js";
 import { AuditService } from "../../../services/audit.service.js";
 import { sendCreated, sendSuccess } from "../../../utils/apiResponse.js";
 import { asyncHandler } from "../../../utils/asyncHandler.js";
@@ -107,7 +108,20 @@ export const cancelWorkOrder = asyncHandler(async (req, res) => {
 });
 
 export const getWorkOrderHistory = asyncHandler(async (req, res) => {
-  const history = await AuditService.getHistory("WorkOrder", req.params.id);
+  let targetId = req.params.id;
+  if (isNaN(Number(targetId))) {
+    const wo = await prisma.workOrder.findFirst({
+      where: {
+        OR: [
+          { workOrderNo: { equals: targetId, mode: "insensitive" } },
+          { qrCode: { equals: targetId, mode: "insensitive" } },
+        ],
+      },
+      select: { id: true },
+    });
+    if (wo) targetId = wo.id;
+  }
+  const history = await AuditService.getHistory("WorkOrder", targetId);
   return sendSuccess(res, {
     message: "Work Order audit history retrieved successfully",
     data: history,

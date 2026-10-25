@@ -367,47 +367,70 @@ export class PlanningService {
   /**
    * Get single Work Order by ID with complete relations
    */
-  static async getWorkOrderById(id) {
-    const workOrder = await prisma.workOrder.findUnique({
-      where: { id: Number(id) },
-      include: {
-        salesOrder: {
-          include: {
-            customer: true,
-            items: { include: { product: true } },
-          },
-        },
-        bomRevision: {
-          include: {
-            items: { include: { component: true } },
-            operations: { orderBy: { sequence: "asc" } },
-            product: {
-              include: {
-                productSpecifications: { orderBy: { id: "desc" }, take: 1 },
-              },
-            },
-          },
-        },
-        items: {
-          include: {
-            product: {
-              include: {
-                inventory: true,
-              },
-            },
-          },
-        },
-        inspections: {
-          orderBy: { createdAt: "desc" },
-        },
-        createdBy: {
-          select: { id: true, name: true, email: true, role: true },
+  static async getWorkOrderById(idOrNo) {
+    const clean = String(idOrNo || "").trim();
+    const isNum = /^\d+$/.test(clean);
+
+    const includeRelations = {
+      salesOrder: {
+        include: {
+          customer: true,
+          items: { include: { product: true } },
         },
       },
-    });
+      bomRevision: {
+        include: {
+          items: { include: { component: true } },
+          operations: { orderBy: { sequence: "asc" } },
+          product: {
+            include: {
+              productSpecifications: { orderBy: { id: "desc" }, take: 1 },
+            },
+          },
+        },
+      },
+      items: {
+        include: {
+          product: {
+            include: {
+              inventory: true,
+            },
+          },
+        },
+      },
+      inspections: {
+        include: {
+          assignedInspector: { select: { id: true, name: true, email: true, role: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      },
+      createdBy: {
+        select: { id: true, name: true, email: true, role: true },
+      },
+    };
+
+    let workOrder = null;
+    if (isNum) {
+      workOrder = await prisma.workOrder.findUnique({
+        where: { id: Number(clean) },
+        include: includeRelations,
+      });
+    }
 
     if (!workOrder) {
-      throw ApiError.notFound(`Work Order with ID ${id} not found`);
+      workOrder = await prisma.workOrder.findFirst({
+        where: {
+          OR: [
+            { workOrderNo: { equals: clean, mode: "insensitive" } },
+            { qrCode: { equals: clean, mode: "insensitive" } },
+          ],
+        },
+        include: includeRelations,
+      });
+    }
+
+    if (!workOrder) {
+      throw ApiError.notFound(`Work Order "${idOrNo}" not found`);
     }
 
     return workOrder;

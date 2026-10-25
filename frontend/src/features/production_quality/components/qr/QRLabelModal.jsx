@@ -205,15 +205,28 @@ export default function QRLabelModal({
     }
   }, [activeOrder]);
 
-  // Dynamic application target URL (using current browser origin)
+  // Dynamic application target URL
   const targetUrl = useMemo(() => {
     if (!resolvedWorkOrderId) return "";
-    const origin =
-      typeof window !== "undefined" && window.location.origin
-        ? window.location.origin
-        : "http://localhost:5173";
-    return `${origin}/pq/work-orders/${resolvedWorkOrderId}`;
-  }, [resolvedWorkOrderId]);
+
+    // 1. If backend returned a verified targetUrl with detected LAN or configured domain
+    if (activeOrder?.targetUrl || activeOrder?.qrTargetUrl) {
+      return activeOrder.targetUrl || activeOrder.qrTargetUrl;
+    }
+
+    // 2. If VITE_APP_URL is explicitly configured in environment
+    if (import.meta.env.VITE_APP_URL) {
+      const base = String(import.meta.env.VITE_APP_URL).replace(/\/+$/, "");
+      return `${base}/pq/work-orders/${resolvedWorkOrderId}`;
+    }
+
+    // 3. In browser environment: use window.location.origin
+    if (typeof window !== "undefined" && window.location.origin) {
+      return `${window.location.origin}/pq/work-orders/${resolvedWorkOrderId}`;
+    }
+
+    return `/pq/work-orders/${resolvedWorkOrderId}`;
+  }, [resolvedWorkOrderId, activeOrder]);
 
   // Generate QR Code locally whenever targetUrl changes
   useEffect(() => {

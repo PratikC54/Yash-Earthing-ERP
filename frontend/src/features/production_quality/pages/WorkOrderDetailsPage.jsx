@@ -296,6 +296,20 @@ export default function WorkOrderDetailsPage() {
     statusBadgeStyle = "bg-blue-500/10 text-blue-400 border-blue-500/30";
   }
 
+  // Extra production, batch, team and quality metrics
+  const batchMatch = order.notes?.match(/Batch:?\s*([A-Za-z0-9_-]+)/i);
+  const batchNumber = batchMatch ? batchMatch[1] : (order.batchNumber || `BATCH-${order.workOrderNo}`);
+  const assignedTeam = order.assignedLine || order.createdBy?.name || "Shop Floor Production Team";
+  const startDate = order.actualStart ? new Date(order.actualStart).toLocaleDateString() : (order.plannedStart ? new Date(order.plannedStart).toLocaleDateString() : "Not Started");
+  const dueDate = order.plannedEnd ? new Date(order.plannedEnd).toLocaleDateString() : "N/A";
+
+  const inspections = order.inspections || [];
+  const acceptedQuantity = inspections.reduce((sum, insp) => sum + Number(insp.acceptedQuantity || 0), 0);
+  const totalRejectedQuantity = Number(order.rejectedQuantity || 0) + inspections.reduce((sum, insp) => sum + Number(insp.rejectedQuantity || 0), 0);
+  const pendingInspectionQuantity = Math.max(0, completedGood - previouslyTransferred);
+  const latestInspection = inspections[0];
+  const inspectionStatusText = latestInspection?.status || (availableForTransfer > 0 ? "PENDING_TRANSFER" : "NO_INSPECTIONS");
+
   const currentUser = authService.getStoredUser();
   const isAuthorizedToUpdate =
     !currentUser ||
@@ -514,53 +528,77 @@ export default function WorkOrderDetailsPage() {
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card title="Order Specifications">
+        <Card title="Order Specifications & Batch">
           <div className="space-y-2 text-xs">
             <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Work Order No</span>
+              <span className="font-mono font-bold text-blue-400">{order.workOrderNo}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
               <span className="text-[#94a3b8]">Target Product</span>
-              <span className="font-semibold text-[#f1f5f9]">{targetProductName}</span>
+              <span className="font-semibold text-[#f1f5f9] truncate max-w-[180px]" title={targetProductName}>{targetProductName}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">Product SKU</span>
-              <span className="font-medium text-[#f1f5f9]">{targetProductSku}</span>
+              <span className="text-[#94a3b8]">Product SKU / Code</span>
+              <span className="font-mono text-[#3b82f6]">{targetProductSku}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">BOM Revision</span>
-              <span className="font-medium text-[#f1f5f9]">{bomRevision?.revision || "—"}</span>
+              <span className="text-[#94a3b8]">Batch Number</span>
+              <span className="font-mono font-semibold text-emerald-400">{batchNumber}</span>
             </div>
             <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">Assigned Line</span>
-              <span className="font-semibold text-blue-400">{order.assignedLine || "—"}</span>
+              <span className="text-[#94a3b8]">Assigned Team / Line</span>
+              <span className="font-medium text-[#f1f5f9]">{assignedTeam}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Start Date</span>
+              <span className="font-medium text-[#f1f5f9]">{startDate}</span>
+            </div>
+            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
+              <span className="text-[#94a3b8]">Due Date</span>
+              <span className="font-medium text-amber-400">{dueDate}</span>
             </div>
             <div className="flex justify-between py-1">
-              <span className="text-[#94a3b8]">Customer / SO</span>
-              <span className="font-medium text-[#f1f5f9]">
-                {salesOrder?.customer?.name || "—"} ({salesOrder?.orderNumber || "—"})
-              </span>
+              <span className="text-[#94a3b8]">QC Inspection Status</span>
+              <span className="font-semibold uppercase text-blue-400">{inspectionStatusText.replace(/_/g, ' ')}</span>
             </div>
           </div>
         </Card>
 
-        <Card title="Production Output Progress">
+        <Card title="Production & Quality Output">
           <div className="space-y-3">
             <ProductionProgress
               produced={order.goodQuantity}
               planned={order.plannedQuantity}
-              rejected={order.rejectedQuantity}
+              rejected={totalRejectedQuantity}
               unit={uom}
             />
-            <div className="grid grid-cols-3 text-center pt-2 border-t border-[#1e2a4a]">
+            <div className="grid grid-cols-3 text-center pt-2 border-t border-[#1e2a4a] gap-y-2">
               <div>
                 <p className="text-[10px] text-[#94a3b8]">Planned</p>
-                <p className="text-sm font-bold text-[#f1f5f9]">{order.plannedQuantity} {uom}</p>
+                <p className="text-xs font-bold text-[#f1f5f9]">{order.plannedQuantity} {uom}</p>
               </div>
               <div>
-                <p className="text-[10px] text-emerald-400">Good Output</p>
-                <p className="text-sm font-bold text-emerald-400">{order.goodQuantity} {uom}</p>
+                <p className="text-[10px] text-blue-400">Produced</p>
+                <p className="text-xs font-bold text-blue-400">{order.goodQuantity} {uom}</p>
               </div>
               <div>
-                <p className="text-[10px] text-red-400">Rejections</p>
-                <p className="text-sm font-bold text-red-400">{order.rejectedQuantity} {uom}</p>
+                <p className="text-[10px] text-emerald-400">Accepted (QC)</p>
+                <p className="text-xs font-bold text-emerald-400">{acceptedQuantity} {uom}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-rose-400">Rejected</p>
+                <p className="text-xs font-bold text-rose-400">{totalRejectedQuantity} {uom}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-amber-400">Pending QC</p>
+                <p className="text-xs font-bold text-amber-400">{pendingInspectionQuantity} {uom}</p>
+              </div>
+              <div>
+                <p className="text-[10px] text-indigo-400">Pass Rate</p>
+                <p className="text-xs font-bold text-indigo-400">
+                  {completedQuantity > 0 ? Math.round((acceptedQuantity / completedQuantity) * 100) : 0}%
+                </p>
               </div>
             </div>
           </div>
@@ -658,6 +696,54 @@ export default function WorkOrderDetailsPage() {
           </div>
         </Card>
       </div>
+
+      {/* Quality Inspections & Compliance */}
+      <Card title="Quality Inspection History" subtitle="Inspections and quality verification logs for this work order">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left text-xs">
+            <thead>
+              <tr className="border-b border-[#1e2a4a] text-[#94a3b8] font-semibold bg-[#0b1329]">
+                <th className="py-2.5 px-3">Inspection No</th>
+                <th className="py-2.5 px-3">Status</th>
+                <th className="py-2.5 px-3 text-right">Inspected Qty</th>
+                <th className="py-2.5 px-3 text-right">Accepted Qty</th>
+                <th className="py-2.5 px-3 text-right">Rejected Qty</th>
+                <th className="py-2.5 px-3">Inspector</th>
+                <th className="py-2.5 px-3">Date</th>
+                <th className="py-2.5 px-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[#1e2a4a]">
+              {inspections.length === 0 ? (
+                <tr>
+                  <td colSpan="8" className="text-center py-6 text-[#94a3b8]">
+                    No quality inspections transferred or recorded yet for this work order.
+                  </td>
+                </tr>
+              ) : (
+                inspections.map((insp) => (
+                  <tr key={insp.id} className="hover:bg-slate-800/40">
+                    <td className="py-2.5 px-3 font-semibold text-[#3b82f6] font-mono">{insp.inspectionNo}</td>
+                    <td className="py-2.5 px-3">
+                      <StatusBadge status={insp.status} />
+                    </td>
+                    <td className="py-2.5 px-3 text-right font-medium text-[#f1f5f9]">{Number(insp.inspectedQuantity || 0)}</td>
+                    <td className="py-2.5 px-3 text-right text-emerald-400 font-medium">{Number(insp.acceptedQuantity || 0)}</td>
+                    <td className="py-2.5 px-3 text-right text-rose-400 font-medium">{Number(insp.rejectedQuantity || 0)}</td>
+                    <td className="py-2.5 px-3 text-[#94a3b8]">{insp.assignedInspector?.name || insp.decisionOfficer || "Unassigned"}</td>
+                    <td className="py-2.5 px-3 text-[#94a3b8]">{insp.inspectedAt ? new Date(insp.inspectedAt).toLocaleDateString() : (insp.createdAt ? new Date(insp.createdAt).toLocaleDateString() : "Pending")}</td>
+                    <td className="py-2.5 px-3 text-right">
+                      <Link to={`/pq/inspections/${insp.id}`} className="text-blue-400 hover:text-blue-300 font-medium">
+                        View
+                      </Link>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </Card>
 
       {/* Bill of Materials Items */}
       <Card title="Bill of Materials & Component Consumption" subtitle="Components required for this work order batch">

@@ -30,11 +30,17 @@ export const updateWorkOrderSchema = z.object({
 });
 
 export const workOrderIdParamSchema = z.object({
-  id: z.coerce.number().int().positive("Work Order ID must be a positive integer"),
+  id: z.union([
+    z.coerce.number().int().positive("Work Order ID must be a positive integer"),
+    z.string().min(1, "Work Order identifier cannot be empty"),
+  ]),
 });
 
 export const workOrderIdInParamsSchema = z.object({
-  workOrderId: z.coerce.number().int().positive("Work Order ID must be a positive integer"),
+  workOrderId: z.union([
+    z.coerce.number().int().positive("Work Order ID must be a positive integer"),
+    z.string().min(1, "Work Order identifier cannot be empty"),
+  ]),
 });
 
 export const transitionStatusSchema = z.object({

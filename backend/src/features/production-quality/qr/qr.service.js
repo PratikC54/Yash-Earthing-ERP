@@ -1,3 +1,4 @@
+import os from "node:os";
 import QRCode from "qrcode";
 import prisma from "../../../db/prisma.js";
 import { ApiError } from "../../../utils/apiResponse.js";
@@ -20,15 +21,32 @@ export class QRService {
       if (origin) {
         try {
           const parsed = new URL(origin);
-          return `${parsed.protocol}//${parsed.host}`;
+          if (parsed.hostname !== "localhost" && parsed.hostname !== "127.0.0.1") {
+            return `${parsed.protocol}//${parsed.host}`;
+          }
         } catch {
           // Fall through
         }
       }
       const host = req.get("x-forwarded-host") || req.get("host");
       const proto = req.get("x-forwarded-proto") || req.protocol || "http";
-      if (host) {
+      if (host && !host.includes("localhost") && !host.includes("127.0.0.1")) {
         return `${proto}://${host}`;
+      }
+    }
+    // In local development, detect network IPv4 for LAN device scanning
+    if (process.env.NODE_ENV !== "production") {
+      try {
+        const nets = os.networkInterfaces();
+        for (const name of Object.keys(nets)) {
+          for (const net of nets[name]) {
+            if (net.family === "IPv4" && !net.internal) {
+              return `http://${net.address}:5173`;
+            }
+          }
+        }
+      } catch {
+        // Fall back
       }
     }
     return "http://localhost:5173";
