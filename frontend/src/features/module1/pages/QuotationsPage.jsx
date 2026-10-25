@@ -20,30 +20,88 @@ export default function QuotationsPage({ onNavigateToOrders }) {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [poModalQuotation, setPoModalQuotation] = useState(null);
 
-  const fetchQuotationsAndLeads = useCallback(async () => {
-    setLoading(true);
+  // Fetch quotations batch
+  const fetchQuotations = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
     try {
-      const [quoteRes, leadsRes] = await Promise.allSettled([
-        module1Service.getQuotations({ search: searchQuery, status: statusFilter }),
-        module1Service.getLeads({ limit: 100 }),
-      ]);
-
-      if (quoteRes.status === "fulfilled" && quoteRes.value?.success && quoteRes.value?.data?.quotations) {
-        setQuotations(quoteRes.value.data.quotations);
-      }
-      if (leadsRes.status === "fulfilled" && leadsRes.value?.success && leadsRes.value?.data?.leads) {
-        setLeads(leadsRes.value.data.leads);
+      const quoteRes = await module1Service.getQuotations({ limit: 150 });
+      if (quoteRes?.success && quoteRes?.data?.quotations) {
+        setQuotations(quoteRes.data.quotations);
       }
     } catch (err) {
       console.error("Failed to fetch quotations:", err);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
-  }, [searchQuery, statusFilter]);
+  }, []);
+
+  // Fetch leads for modal dropdown (only needed on mount)
+  const fetchLeads = useCallback(async () => {
+    try {
+      const leadsRes = await module1Service.getLeads({ limit: 100 });
+      if (leadsRes?.success && leadsRes?.data?.leads) {
+        setLeads(leadsRes.data.leads);
+      }
+    } catch (err) {
+      console.warn("Failed to fetch leads for modal:", err);
+    }
+  }, []);
+
+  const fetchData = useCallback(() => {
+    fetchQuotations(false);
+    fetchLeads();
+  }, [fetchQuotations, fetchLeads]);
 
   useEffect(() => {
-    fetchQuotationsAndLeads();
-  }, [fetchQuotationsAndLeads]);
+    fetchQuotations(true);
+    fetchLeads();
+  }, [fetchQuotations, fetchLeads]);
+
+  // Debounced background sync for remote search if needed
+  useEffect(() => {
+    const term = searchQuery.trim();
+    if (!term || term.length < 2) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await module1Service.getQuotations({ search: term });
+        if (res?.success && Array.isArray(res?.data?.quotations)) {
+          setQuotations((prev) => {
+            const existingIds = new Set(prev.map((q) => q.id));
+            const newRecords = res.data.quotations.filter((q) => !existingIds.has(q.id));
+            return newRecords.length > 0 ? [...newRecords, ...prev] : prev;
+          });
+        }
+      } catch (err) {
+        console.warn("Background quotation search:", err);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Zero-latency instant in-memory filtering (0ms)
+  const displayedQuotations = useMemo(() => {
+    let result = quotations;
+
+    if (statusFilter && statusFilter !== "ALL") {
+      result = result.filter((q) => q.status === statusFilter);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((item) =>
+        (item.quotationNo && item.quotationNo.toLowerCase().includes(q)) ||
+        (item.proformaInvoiceNumber && item.proformaInvoiceNumber.toLowerCase().includes(q)) ||
+        (item.customerPONumber && item.customerPONumber.toLowerCase().includes(q)) ||
+        (item.customer?.name && item.customer.name.toLowerCase().includes(q)) ||
+        (item.lead?.customerName && item.lead.customerName.toLowerCase().includes(q)) ||
+        (item.lead?.contactName && item.lead.contactName.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [quotations, statusFilter, searchQuery]);
 
   // Create Quotation (Back Officer action)
   const handleCreateQuotation = async (formData) => {
@@ -51,7 +109,7 @@ export default function QuotationsPage({ onNavigateToOrders }) {
       const res = await module1Service.createQuotation(formData);
       if (res?.success) {
         setIsCreateModalOpen(false);
-        fetchQuotationsAndLeads();
+        fetchData();
         // Automatically open the generated quotation in HTML viewer!
         setSelectedQuotation(res.data);
       }
@@ -69,7 +127,7 @@ export default function QuotationsPage({ onNavigateToOrders }) {
     try {
       const res = await module1Service.reviseQuotation(id, negotiationData);
       if (res?.success) {
-        fetchQuotationsAndLeads();
+        fetchData();
         setSelectedQuotation(res.data);
         alert(res.message || "Quotation revised successfully with negotiated terms.");
       }
@@ -84,7 +142,7 @@ export default function QuotationsPage({ onNavigateToOrders }) {
     try {
       const res = await module1Service.finalizeProformaInvoice(id);
       if (res?.success) {
-        fetchQuotationsAndLeads();
+        fetchData();
         setSelectedQuotation(res.data);
         alert(res.message || "Quotation confirmed and finalized as Proforma Invoice (PI).");
       }
@@ -103,7 +161,7 @@ export default function QuotationsPage({ onNavigateToOrders }) {
         if (selectedQuotation?.id === quotationId) {
           setSelectedQuotation(res.data);
         }
-        fetchQuotationsAndLeads();
+        fetchData();
         if (onNavigateToOrders) {
           const jump = confirm(
             "Customer PO recorded successfully! Would you like to view Sales Orders & Invoicing now?"
@@ -169,36 +227,68 @@ export default function QuotationsPage({ onNavigateToOrders }) {
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             TOTAL QUOTATIONS ISSUED
           </div>
-          <div className="text-3xl font-black text-white">{quotations.length}</div>
-          <div className="text-xs text-blue-400 mt-1">Official commercial estimates</div>
+          {loading ? (
+            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-3xl font-black text-white">{quotations.length}</div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-xs text-blue-400 mt-1">Official commercial estimates</div>
+          )}
         </div>
 
         <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             TOTAL QUOTED VALUE
           </div>
-          <div className="text-3xl font-black text-cyan-400">
-            {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
-              totalValue
-            )}
-          </div>
-          <div className="text-xs text-cyan-400/80 mt-1">Active commercial pipeline</div>
+          {loading ? (
+            <div className="h-8 w-24 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-3xl font-black text-cyan-400">
+              {new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(
+                totalValue
+              )}
+            </div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-xs text-cyan-400/80 mt-1">Active commercial pipeline</div>
+          )}
         </div>
 
         <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             PROFORMA INVOICES (PI)
           </div>
-          <div className="text-3xl font-black text-emerald-400">{piCount}</div>
-          <div className="text-xs text-emerald-400/80 mt-1">Accepted & finalized offers</div>
+          {loading ? (
+            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-3xl font-black text-emerald-400">{piCount}</div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-xs text-emerald-400/80 mt-1">Accepted & finalized offers</div>
+          )}
         </div>
 
         <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-5 shadow-lg">
           <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">
             CUSTOMER PO RECEIVED
           </div>
-          <div className="text-3xl font-black text-amber-400">{poCount}</div>
-          <div className="text-xs text-amber-400/80 mt-1">Ready for Sales Order release</div>
+          {loading ? (
+            <div className="h-8 w-16 bg-slate-200/80 rounded animate-pulse my-1" />
+          ) : (
+            <div className="text-3xl font-black text-amber-400">{poCount}</div>
+          )}
+          {loading ? (
+            <div className="h-3 w-32 bg-slate-200/60 rounded animate-pulse mt-1" />
+          ) : (
+            <div className="text-xs text-amber-400/80 mt-1">Ready for Sales Order release</div>
+          )}
         </div>
         </div>
       </KpiSection>
@@ -254,19 +344,27 @@ export default function QuotationsPage({ onNavigateToOrders }) {
             </thead>
             <tbody className="divide-y divide-slate-800/80">
               {loading && quotations.length === 0 ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-12 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-36 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/70 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/70 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-5 w-20 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-24 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4 text-center"><div className="h-6 w-24 bg-slate-200/60 rounded-lg mx-auto" /></td>
+                  </tr>
+                ))
+              ) : displayedQuotations.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="py-10 text-center text-slate-500">
-                    Loading commercial quotations...
-                  </td>
-                </tr>
-              ) : quotations.length === 0 ? (
-                <tr>
-                  <td colSpan={9} className="py-10 text-center text-slate-500">
-                    No quotations found. Click "Issue Quotation" to create an estimate.
+                    No quotations found matching your search and filter criteria.
                   </td>
                 </tr>
               ) : (
-                quotations.map((q) => (
+                displayedQuotations.map((q) => (
                   <tr key={q.id} className="hover:bg-slate-800/40 transition">
                     <td className="py-3 px-4 font-mono font-bold text-cyan-300">
                       {q.quotationNo}

@@ -60,13 +60,7 @@ export default function QualityDashboard() {
         }
       />
 
-      {loading ? (
-        <div className="py-24 text-center">
-          <Loader label="Loading quality assurance metrics & queue..." size="lg" />
-        </div>
-      ) : (
-        <>
-          <QualityStats metrics={metrics || {}} />
+      <QualityStats metrics={metrics || {}} loading={loading} />
 
           {/* Pending Inspection Queue Snapshot */}
           <div className="space-y-3">
@@ -90,7 +84,7 @@ export default function QualityDashboard() {
 
             <InspectionTable
               inspections={queue}
-              loading={false}
+              loading={loading}
               onInspect={(row) => navigate(`/production-quality/inspections/${row.id}`)}
               onAssign={(row) => setAssigningInspection(row)}
             />
@@ -137,8 +131,6 @@ export default function QualityDashboard() {
               </div>
             </Card>
           </div>
-        </>
-      )}
 
       {/* Manual Inspector Assignment Modal */}
       {assigningInspection && (

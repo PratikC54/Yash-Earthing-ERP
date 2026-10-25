@@ -40,18 +40,18 @@ export default function Modal({
         {/* Header */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4.5 border-b border-[#1e2a4a] bg-[#0b172d] shrink-0">
           <div>
-            <h3 className="text-base font-bold text-[#f1f5f9] tracking-tight">
+            <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
               {title}
             </h3>
             {subtitle && (
-              <p className="text-xs text-[#94a3b8] mt-0.5">{subtitle}</p>
+              <p className="text-xs text-slate-600 font-semibold mt-0.5">{subtitle}</p>
             )}
           </div>
           {onClose && (
             <button
               type="button"
               onClick={onClose}
-              className="p-1 rounded-lg text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-slate-800/40 transition cursor-pointer"
+              className="p-1 rounded-lg text-slate-400 hover:text-slate-900 hover:bg-slate-200/60 transition cursor-pointer"
             >
               <X className="w-5 h-5" />
             </button>

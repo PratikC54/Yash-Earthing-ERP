@@ -233,7 +233,11 @@ export default function ManufacturingIntegration() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Active Lines</span>
             <Factory className="w-4 h-4 text-cyan-400" />
           </div>
-          <div className="text-xl font-bold text-white mt-2">4 Factory Lines</div>
+          {isLoading ? (
+            <div className="h-7 w-20 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-white mt-2">4 Factory Lines</div>
+          )}
           <div className="text-[11px] text-slate-400 mt-1">Copper, Bonding, Lathe, QC</div>
         </div>
 
@@ -242,9 +246,13 @@ export default function ManufacturingIntegration() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Workforce Stationed</span>
             <Users className="w-4 h-4 text-emerald-400" />
           </div>
-          <div className="text-xl font-bold text-emerald-400 mt-2">
-            {readiness?.allocations?.length || 2} Operators
-          </div>
+          {isLoading ? (
+            <div className="h-7 w-20 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-emerald-400 mt-2">
+              {readiness?.allocations?.length || 2} Operators
+            </div>
+          )}
           <div className="text-[11px] text-slate-400 mt-1">Active on Work Orders</div>
         </div>
 
@@ -253,7 +261,11 @@ export default function ManufacturingIntegration() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Shift Change</span>
             <Clock className="w-4 h-4 text-blue-400" />
           </div>
-          <div className="text-xl font-bold text-blue-400 mt-2">Shift A &rarr; Shift B</div>
+          {isLoading ? (
+            <div className="h-7 w-24 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-blue-400 mt-2">Shift A &rarr; Shift B</div>
+          )}
           <div className="text-[11px] text-slate-400 mt-1">02:00 PM Handover Window</div>
         </div>
 
@@ -262,7 +274,11 @@ export default function ManufacturingIntegration() {
             <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">Absence Alert</span>
             <AlertOctagon className="w-4 h-4 text-amber-400" />
           </div>
-          <div className="text-xl font-bold text-amber-400 mt-2">1 Alert</div>
+          {isLoading ? (
+            <div className="h-7 w-16 bg-slate-200/80 rounded animate-pulse my-2" />
+          ) : (
+            <div className="text-xl font-bold text-amber-400 mt-2">1 Alert</div>
+          )}
           <div className="text-[11px] text-slate-400 mt-1">Operator absent on Line 1</div>
         </div>
       </div>

@@ -235,6 +235,16 @@ export async function checkInventoryStockAndReserve(orderId) {
   }
 
   const items = order.items.length > 0 ? order.items : order.quotation?.items || [];
+  const prodIds = items.map((it) => it.productId).filter(Boolean);
+
+  // Fast single batch query for all inventory items
+  const inventories = prodIds.length > 0
+    ? await prisma.inventory.findMany({
+        where: { productId: { in: prodIds } },
+      })
+    : [];
+  const invMap = new Map(inventories.map((inv) => [inv.productId, inv]));
+
   let allAvailable = true;
   let totalAvailableStock = 0;
   let totalOrderedQty = 0;
@@ -245,11 +255,7 @@ export async function checkInventoryStockAndReserve(orderId) {
     const reqQty = Number(it.orderedQuantity || it.quantity || 1);
     totalOrderedQty += reqQty;
 
-    // Check real Inventory record from PostgreSQL for this product
-    const inv = await prisma.inventory.findFirst({
-      where: { productId: prodId },
-    });
-
+    const inv = invMap.get(prodId);
     const onHand = inv ? Number(inv.physicalQuantity) : 0;
     const reserved = inv ? Number(inv.reservedQuantity || 0) : 0;
     const available = Math.max(0, onHand - reserved);
@@ -272,26 +278,29 @@ export async function checkInventoryStockAndReserve(orderId) {
     });
   }
 
-  if (allAvailable) {
-    // Reserve stock in PostgreSQL inventory and transition dispatch status to READY_FOR_DISPATCH
-    for (const it of items) {
-      const prodId = it.productId;
-      const reqQty = Number(it.orderedQuantity || it.quantity || 1);
-      await prisma.inventory.updateMany({
-        where: { productId: prodId },
-        data: {
-          reservedQuantity: { increment: reqQty },
-        },
-      });
-    }
+  const checkTimestamp = new Date().toISOString();
 
-    await prisma.salesOrder.update({
-      where: { id: order.id },
-      data: {
-        stockReserved: true,
-        dispatchStatus: "READY_FOR_DISPATCH",
-      },
-    });
+  if (allAvailable && items.length > 0) {
+    // Reserve stock in PostgreSQL inventory and transition dispatch status to READY_FOR_DISPATCH
+    await Promise.all([
+      ...items.map((it) => {
+        const prodId = it.productId;
+        const reqQty = Number(it.orderedQuantity || it.quantity || 1);
+        return prisma.inventory.updateMany({
+          where: { productId: prodId },
+          data: {
+            reservedQuantity: { increment: reqQty },
+          },
+        });
+      }),
+      prisma.salesOrder.update({
+        where: { id: order.id },
+        data: {
+          stockReserved: true,
+          dispatchStatus: "READY_FOR_DISPATCH",
+        },
+      }),
+    ]);
 
     return {
       orderId: order.id,
@@ -301,17 +310,28 @@ export async function checkInventoryStockAndReserve(orderId) {
       totalOrderedQuantity: totalOrderedQty,
       totalAvailableStock,
       items: inventoryResults,
+      checkedAt: checkTimestamp,
       message: "Standard product inventory verified! Required quantity is available. Stock has been reserved and marked Ready for Dispatch.",
     };
   } else {
+    // Shortage detected - update stockReserved to false
+    await prisma.salesOrder.update({
+      where: { id: order.id },
+      data: {
+        stockReserved: false,
+        dispatchStatus: order.dispatchStatus === "READY_FOR_DISPATCH" ? "WAITING_APPROVAL" : order.dispatchStatus,
+      },
+    }).catch(() => null);
+
     return {
       orderId: order.id,
       orderNumber: order.orderNumber,
       stockReserved: false,
-      dispatchStatus: order.dispatchStatus,
+      dispatchStatus: order.dispatchStatus === "READY_FOR_DISPATCH" ? "WAITING_APPROVAL" : order.dispatchStatus,
       totalOrderedQuantity: totalOrderedQty,
       totalAvailableStock,
       items: inventoryResults,
+      checkedAt: checkTimestamp,
       message: "Inventory shortage detected. Some or all products have insufficient stock. Production replenishment required.",
     };
   }

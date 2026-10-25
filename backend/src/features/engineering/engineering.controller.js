@@ -838,11 +838,21 @@ export const engineeringController = {
       const revCode = revisionCode?.trim() || 'Rev A';
       const reason = changeReason?.trim() || 'Initial production release.';
 
+      const revStatus = req.body.initialStatus === 'IN_REVIEW' ? 'IN_REVIEW' : 'DRAFT';
+      const submittedBy = req.body.initialStatus === 'IN_REVIEW' ? (req.user?.name || "Requestor") : null;
+      const submittedAt = req.body.initialStatus === 'IN_REVIEW' ? new Date().toISOString() : null;
+
       const newBom = {
         id: bomId,
         productId: product.id,
         bomCode: code,
         title: title || `Bill of Materials for ${product.name}`,
+        connectedSource: req.body.connectedSource || 'CATALOG',
+        connectedSourceId: req.body.connectedSourceId || null,
+        connectedSourceRef: req.body.connectedSourceRef || null,
+        customerName: req.body.customerName || null,
+        orderNo: req.body.orderNo || null,
+        workOrderNo: req.body.workOrderNo || null,
         createdAt: new Date().toISOString(),
         product: {
           id: product.id,
@@ -854,11 +864,11 @@ export const engineeringController = {
           {
             id: `rev_${Date.now()}_a`,
             revisionCode: revCode,
-            status: "DRAFT",
+            status: revStatus,
             changeReason: reason,
             createdBy: req.user?.name || "Product Engineer",
-            submittedBy: null,
-            submittedAt: null,
+            submittedBy,
+            submittedAt,
             approvedBy: null,
             approvedAt: null,
             releasedBy: null,

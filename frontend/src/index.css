@@ -762,35 +762,6 @@ html body aside input::placeholder {
 }
 
 /* ==========================================================================
-   HEADER / NAVBAR (Clean Crisp White Surface)
-   ========================================================================== */
-
-header,
-header .bg-\[\#0b172d\],
-header.bg-\[\#0b172d\] {
-  background-color: #ffffff !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05) !important;
-}
-
-header .text-\[\#f1f5f9\],
-header .text-white {
-  color: #0f172a !important;
-}
-
-header .text-\[\#94a3b8\],
-header .text-\[\#64748b\] {
-  color: #475569 !important;
-}
-
-header .bg-\[\#10182f\] {
-  background-color: #f8fafc !important;
-  border-color: #e2e8f0 !important;
-  color: #0f172a !important;
-}
-
-/* ==========================================================================
    DEEP DEVICE RESPONSIVENESS (Samsung, iPhone, Vivo, Oppo, Android, Mac)
    ========================================================================== */
 

@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
-import { PhoneCall, Trash2, UserPlus, Clock } from "lucide-react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { PhoneCall, Trash2, UserPlus, Clock, X, FileText } from "lucide-react";
 import Module1KpiCards from "../components/Module1KpiCards";
 import FilterBar from "../components/FilterBar";
 import CreateLeadModal from "../components/CreateLeadModal";
@@ -8,17 +8,23 @@ import module1Service from "../services/module1Service";
 import { useAuth } from "../../auth/useAuth";
 import { exportToExcel, importFromExcel } from "../utils/excelUtils";
 
-export default function LeadsPage({ onNavigateToQuotation }) {
+export default function LeadsPage({ onNavigateToQuotation, globalSearch = "" }) {
   const { user } = useAuth();
   const canReassign = user?.role === "ADMIN" || user?.role === "SALES_MANAGER";
 
   const [leads, setLeads] = useState([]);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(globalSearch || "");
   const [selectedStage, setSelectedStage] = useState("ALL");
   const [selectedSource, setSelectedSource] = useState("ALL");
   const [selectedPriority, setSelectedPriority] = useState("ALL");
+
+  useEffect(() => {
+    if (globalSearch !== undefined && globalSearch !== null) {
+      setSearchQuery(globalSearch);
+    }
+  }, [globalSearch]);
 
   // Modals state
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -28,37 +34,98 @@ export default function LeadsPage({ onNavigateToQuotation }) {
   const [selectedConsultantId, setSelectedConsultantId] = useState("");
   const [consultantsList, setConsultantsList] = useState([]);
 
-  // Fetch leads and pipeline stats from backend
-  const fetchData = useCallback(async () => {
-    setLoading(true);
+  // Fetch pipeline stats once (or on mutation), not on every search keystroke
+  const fetchStats = useCallback(async () => {
     try {
-      const [leadsRes, statsRes] = await Promise.allSettled([
-        module1Service.getLeads({
-          search: searchQuery,
-          stage: selectedStage,
-          source: selectedSource,
-          priority: selectedPriority,
-          limit: 100,
-        }),
-        module1Service.getPipelineStats(),
-      ]);
-
-      if (leadsRes.status === "fulfilled" && leadsRes.value?.success && leadsRes.value?.data?.leads) {
-        setLeads(leadsRes.value.data.leads);
+      const statsRes = await module1Service.getPipelineStats();
+      if (statsRes?.success && statsRes?.data) {
+        setStats(statsRes.data);
       }
-      if (statsRes.status === "fulfilled" && statsRes.value?.success && statsRes.value?.data) {
-        setStats(statsRes.value.data);
+    } catch (err) {
+      console.warn("Could not load pipeline stats:", err);
+    }
+  }, []);
+
+  // Fetch full leads batch
+  const fetchLeads = useCallback(async (isInitial = false) => {
+    if (isInitial) setLoading(true);
+    try {
+      const res = await module1Service.getLeads({ limit: 150 });
+      if (res?.success && res?.data?.leads) {
+        setLeads(res.data.leads);
       }
     } catch (err) {
       console.error("Failed to fetch leads data:", err);
     } finally {
-      setLoading(false);
+      if (isInitial) setLoading(false);
     }
-  }, [searchQuery, selectedStage, selectedSource, selectedPriority]);
+  }, []);
+
+  const fetchData = useCallback(() => {
+    fetchLeads(false);
+    fetchStats();
+  }, [fetchLeads, fetchStats]);
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchLeads(true);
+    fetchStats();
+  }, [fetchLeads, fetchStats]);
+
+  // Optional background search sync when user searches remotely (debounced)
+  useEffect(() => {
+    const term = searchQuery.trim();
+    if (!term || term.length < 2) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const res = await module1Service.getLeads({ search: term, limit: 100 });
+        if (res?.success && Array.isArray(res?.data?.leads)) {
+          setLeads((prev) => {
+            const existingIds = new Set(prev.map((l) => l.id));
+            const newRecords = res.data.leads.filter((l) => !existingIds.has(l.id));
+            return newRecords.length > 0 ? [...newRecords, ...prev] : prev;
+          });
+        }
+      } catch (err) {
+        console.warn("Background lead search:", err);
+      }
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Zero-latency instant in-memory filtering (0ms)
+  const displayedLeads = useMemo(() => {
+    let result = leads;
+
+    if (selectedStage && selectedStage !== "ALL") {
+      result = result.filter((l) => l.stage === selectedStage);
+    }
+
+    if (selectedSource && selectedSource !== "ALL") {
+      result = result.filter((l) => l.source === selectedSource);
+    }
+
+    if (selectedPriority && selectedPriority !== "ALL") {
+      result = result.filter((l) => l.priority === selectedPriority);
+    }
+
+    if (searchQuery.trim()) {
+      const q = searchQuery.trim().toLowerCase();
+      result = result.filter((l) =>
+        (l.code && l.code.toLowerCase().includes(q)) ||
+        (l.customerName && l.customerName.toLowerCase().includes(q)) ||
+        (l.contactName && l.contactName.toLowerCase().includes(q)) ||
+        (l.phone && l.phone.toLowerCase().includes(q)) ||
+        (l.productName && l.productName.toLowerCase().includes(q)) ||
+        (l.productSku && l.productSku.toLowerCase().includes(q)) ||
+        (l.city && l.city.toLowerCase().includes(q)) ||
+        (l.requirement && l.requirement.toLowerCase().includes(q))
+      );
+    }
+
+    return result;
+  }, [leads, selectedStage, selectedSource, selectedPriority, searchQuery]);
 
   // Handle Create Lead
   const handleCreateLead = async (formData) => {
@@ -243,7 +310,7 @@ export default function LeadsPage({ onNavigateToQuotation }) {
   return (
     <div className="min-h-full">
       {/* 4 Top KPI Cards */}
-      <Module1KpiCards stats={stats} />
+      <Module1KpiCards stats={stats} loading={loading} />
 
       {/* Filter and Search Bar with Import/Export Excel */}
       <FilterBar
@@ -265,7 +332,9 @@ export default function LeadsPage({ onNavigateToQuotation }) {
             <h3 className="text-sm font-bold text-white tracking-wide uppercase">
               Sales & CRM Pipeline · Leads & Enquiries
             </h3>
-            <span className="text-xs text-slate-400">({leads.length} records)</span>
+            <span className="text-xs text-slate-400">
+              ({displayedLeads.length} {displayedLeads.length === 1 ? 'record' : 'records'})
+            </span>
           </div>
           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
             <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
@@ -290,19 +359,26 @@ export default function LeadsPage({ onNavigateToQuotation }) {
             </thead>
             <tbody className="divide-y divide-slate-800/80">
               {loading && leads.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500">
-                    Loading inbound leads pipeline...
-                  </td>
-                </tr>
-              ) : leads.length === 0 ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <tr key={i} className="animate-pulse">
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/80 rounded" /><div className="h-3 w-12 bg-slate-200/50 rounded mt-1" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-32 bg-slate-200/80 rounded" /><div className="h-3 w-24 bg-slate-200/50 rounded mt-1" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-28 bg-slate-200/80 rounded" /><div className="h-3 w-16 bg-slate-200/50 rounded mt-1" /></td>
+                    <td className="py-3 px-4"><div className="h-5 w-20 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-3 px-4"><div className="h-5 w-24 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-24 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4 text-center"><div className="h-6 w-16 bg-slate-200/60 rounded-lg mx-auto" /></td>
+                  </tr>
+                ))
+              ) : displayedLeads.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-slate-500">
                     No leads found matching your search and filter criteria.
                   </td>
                 </tr>
               ) : (
-                leads.map((l) => (
+                displayedLeads.map((l) => (
                   <tr key={l.id} className="hover:bg-slate-800/40 transition">
                     {/* 1. Lead Code & Date */}
                     <td className="py-3 px-4">
@@ -447,66 +523,144 @@ export default function LeadsPage({ onNavigateToQuotation }) {
 
       {/* Lead Details Drawer / Modal */}
       {selectedLeadDetails && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm">
-          <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-lg rounded-2xl p-6 text-xs text-slate-200 space-y-4">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-sm font-bold text-white">Lead Details: {selectedLeadDetails.code}</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden my-auto text-slate-800 animate-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#0c1222] text-[#d4ff00] flex items-center justify-center shadow-xs">
+                  <FileText className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#0f172a]">Lead Details: {selectedLeadDetails.code}</h3>
+                  <p className="text-[11px] font-semibold text-slate-500">{selectedLeadDetails.customerName}</p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setSelectedLeadDetails(null)}
-                className="text-slate-400 hover:text-white"
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition cursor-pointer"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="space-y-2">
-              <div><b>Company:</b> {selectedLeadDetails.customerName}</div>
-              <div><b>Contact:</b> {selectedLeadDetails.contactName} ({selectedLeadDetails.phone})</div>
-              <div><b>Email:</b> {selectedLeadDetails.email || "N/A"}</div>
-              <div><b>Location:</b> {selectedLeadDetails.city}, {selectedLeadDetails.state}</div>
-              <div><b>Product Requirement:</b> {selectedLeadDetails.productName} (Total Qty: {selectedLeadDetails.quantity})</div>
+
+            <div className="p-6 space-y-4 text-xs">
+              <div className="grid grid-cols-2 gap-3 bg-slate-50 border border-slate-200 p-3.5 rounded-xl">
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Company</span>
+                  <span className="font-bold text-slate-900 text-xs">{selectedLeadDetails.customerName}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Contact</span>
+                  <span className="font-semibold text-slate-800 text-xs">{selectedLeadDetails.contactName}</span>
+                  <div className="font-mono font-bold text-slate-900 mt-0.5">{selectedLeadDetails.phone}</div>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Email</span>
+                  <span className="text-slate-700 font-medium">{selectedLeadDetails.email || "N/A"}</span>
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-bold text-slate-500 block mb-0.5">Location</span>
+                  <span className="text-slate-800 font-medium">{selectedLeadDetails.city || "—"}, {selectedLeadDetails.state || "—"}</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-blue-50/60 border border-blue-200 rounded-xl">
+                <span className="text-[10px] uppercase font-bold text-blue-900 block mb-0.5">Primary Requirement</span>
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-bold text-slate-900">{selectedLeadDetails.productName}</span>
+                  <span className="font-bold font-mono text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded-md">Total Qty: {selectedLeadDetails.quantity}</span>
+                </div>
+              </div>
 
               {/* Items Breakdown if multiple */}
               {selectedLeadDetails.items && selectedLeadDetails.items.length > 0 && (
-                <div className="p-2.5 bg-[#0a1226] rounded-xl border border-slate-800 text-[11px] space-y-1">
-                  <div className="font-bold text-slate-300">Detailed Product Line Items:</div>
-                  {selectedLeadDetails.items.map((it, idx) => (
-                    <div key={it.id || idx} className="flex justify-between text-slate-300">
-                      <span>• {it.productName || it.product?.name} ({it.productSku || it.product?.sku})</span>
-                      <span className="font-mono font-bold text-cyan-300">Qty: {it.quantity}</span>
-                    </div>
-                  ))}
+                <div className="p-3 bg-white rounded-xl border border-slate-200 text-xs space-y-2 shadow-xs">
+                  <div className="font-bold text-slate-900 text-[11px] uppercase tracking-wider">Detailed Product Line Items:</div>
+                  <div className="space-y-1">
+                    {selectedLeadDetails.items.map((it, idx) => (
+                      <div key={it.id || idx} className="flex justify-between items-center py-1 border-b border-slate-100 last:border-0 text-slate-800">
+                        <span className="font-medium">• {it.productName || it.product?.name} <span className="text-slate-500 text-[11px]">({it.productSku || it.product?.sku})</span></span>
+                        <span className="font-mono font-bold text-slate-900 bg-slate-100 px-2 py-0.5 rounded text-[11px]">Qty: {it.quantity}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
 
-              <div><b>Assigned Consultant:</b> {selectedLeadDetails.assignedTo?.name || selectedLeadDetails.assignedByName} ({selectedLeadDetails.assignedTo?.role || "SALES_CONSULTANT"})</div>
-              <div><b>Current Stage:</b> {selectedLeadDetails.stage}</div>
-              <div><b>Activity Notes:</b> {selectedLeadDetails.lastActivityNote || "No notes yet"}</div>
+              <div className="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                  <span className="text-slate-500 font-medium">Assigned Consultant:</span>
+                  <div className="font-bold text-slate-900 mt-0.5">
+                    {selectedLeadDetails.assignedTo?.name || selectedLeadDetails.assignedByName}
+                  </div>
+                </div>
+                <div>
+                  <span className="text-slate-500 font-medium">Current Stage:</span>
+                  <div className="mt-0.5">
+                    <span className="px-2 py-0.5 bg-slate-100 border border-slate-300 text-slate-900 rounded font-bold text-[11px]">
+                      {selectedLeadDetails.stage}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {selectedLeadDetails.lastActivityNote && (
+                <div className="text-slate-700 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs font-medium">
+                  <span className="font-bold text-slate-900 block mb-0.5">Activity Notes:</span>
+                  {selectedLeadDetails.lastActivityNote}
+                </div>
+              )}
 
               {/* Previous Call Logs in Detail View */}
-              <div className="mt-3 pt-3 border-t border-slate-800">
-                <div className="font-bold text-cyan-400 mb-1 flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>Previous Call Logs ({selectedLeadDetails.callLogs?.length || 0})</span>
+              <div className="pt-3 border-t border-slate-200">
+                <div className="font-bold text-slate-800 mb-2 flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-slate-500" />
+                    <span>Previous Call Logs ({selectedLeadDetails.callLogs?.length || 0})</span>
+                  </span>
+                  <span className="text-[10px] text-slate-500 font-normal">Call records</span>
                 </div>
                 {selectedLeadDetails.callLogs && selectedLeadDetails.callLogs.length > 0 ? (
-                  <div className="space-y-1.5 max-h-36 overflow-y-auto">
+                  <div className="space-y-2 max-h-40 overflow-y-auto">
                     {selectedLeadDetails.callLogs.map((log) => (
-                      <div key={log.id} className="p-2 bg-[#081024] rounded-lg border border-slate-800 text-[11px]">
-                        <div className="flex justify-between text-white font-medium">
-                          <span>Outcome: <b className={log.outcome === "ANSWERED" || log.quoteRequested ? "text-emerald-400" : "text-amber-400"}>{log.outcome}</b></span>
-                          <span className="text-[10px] text-slate-400">{new Date(log.loggedAt || log.createdAt).toLocaleDateString()}</span>
+                      <div key={log.id} className="p-2.5 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-1">
+                        <div className="flex justify-between items-center text-slate-900 font-bold">
+                          <span>
+                            Outcome:{" "}
+                            <span className={log.outcome === "ANSWERED" || log.quoteRequested ? "text-emerald-800 bg-emerald-100 border border-emerald-300 px-2 py-0.5 rounded text-[11px]" : "text-amber-800 bg-amber-100 border border-amber-300 px-2 py-0.5 rounded text-[11px]"}>
+                              {log.outcome}
+                            </span>
+                          </span>
+                          <span className="text-[10px] text-slate-500 font-mono font-medium">
+                            {new Date(log.loggedAt || log.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
-                        {log.discussionHighlights && <p className="text-slate-300 italic mt-0.5">"{log.discussionHighlights}"</p>}
+                        {log.discussionHighlights && (
+                          <p className="text-slate-700 italic font-medium bg-white p-1.5 rounded border border-slate-200 mt-1">
+                            "{log.discussionHighlights}"
+                          </p>
+                        )}
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <div className="text-slate-500 italic text-[11px]">No calls logged yet for this lead.</div>
+                  <div className="text-slate-500 italic text-xs bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                    No calls logged yet for this lead.
+                  </div>
                 )}
               </div>
             </div>
-            <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+
+            <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setSelectedLeadDetails(null)}
+                className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold rounded-xl transition cursor-pointer text-xs"
+              >
+                Close
+              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -514,47 +668,54 @@ export default function LeadsPage({ onNavigateToQuotation }) {
                   setSelectedLeadDetails(null);
                   setCallModalLead(target);
                 }}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl"
+                className="px-5 py-2 bg-[#d4ff00] hover:bg-[#bce600] text-black font-black rounded-xl shadow-md transition cursor-pointer text-xs flex items-center gap-1.5"
               >
-                Log Call Now
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedLeadDetails(null)}
-                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl"
-              >
-                Close
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>Log Call Now</span>
               </button>
             </div>
           </div>
         </div>
       )}
+
       {/* Manual Reassign Modal */}
       {reassignModalLead && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
-          <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-md rounded-2xl p-6 text-xs text-slate-200 shadow-2xl">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <h3 className="text-sm font-bold text-white">Manual Lead Reassignment</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white border border-slate-200 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden my-auto text-slate-800 animate-in zoom-in-95 duration-150">
+            <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-[#0c1222] text-[#d4ff00] flex items-center justify-center shadow-xs">
+                  <UserPlus className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-[#0f172a]">Manual Lead Reassignment</h3>
+                  <p className="text-[11px] font-semibold text-slate-500">{reassignModalLead.code}</p>
+                </div>
+              </div>
               <button
                 type="button"
                 onClick={() => setReassignModalLead(null)}
-                className="text-slate-400 hover:text-white"
+                className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition cursor-pointer"
               >
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
-            <form onSubmit={handleReassignSubmit} className="space-y-4 mt-4">
-              <div className="p-3 bg-[#0a1226] rounded-xl border border-slate-800">
-                <div className="font-semibold text-white">{reassignModalLead.code} · {reassignModalLead.customerName}</div>
-                <div className="text-[11px] text-slate-400 mt-0.5">Currently assigned to: <span className="text-cyan-300 font-semibold">{reassignModalLead.assignedTo?.name || reassignModalLead.assignedByName}</span></div>
+
+            <form onSubmit={handleReassignSubmit} className="p-6 space-y-4 text-xs">
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                <div className="font-bold text-slate-900 text-xs">{reassignModalLead.code} · {reassignModalLead.customerName}</div>
+                <div className="text-[11px] text-slate-600 mt-1">
+                  Currently assigned to: <span className="font-bold text-slate-900">{reassignModalLead.assignedTo?.name || reassignModalLead.assignedByName}</span>
+                </div>
               </div>
 
               <div>
-                <label className="block text-slate-300 font-semibold mb-1">Select New Consultant *</label>
+                <label className="block text-slate-700 font-bold mb-1.5 text-xs">Select New Consultant *</label>
                 <select
                   value={selectedConsultantId}
                   onChange={(e) => setSelectedConsultantId(e.target.value)}
-                  className="w-full bg-[#081022] text-slate-100 text-xs px-3.5 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  className="w-full bg-white text-slate-900 text-xs px-3.5 py-2.5 rounded-xl border border-slate-300 font-semibold focus:outline-none focus:border-[#0c1222] shadow-xs"
+                  style={{ backgroundColor: '#ffffff', color: '#0f172a' }}
                   required
                 >
                   <option value="">-- Choose User --</option>
@@ -566,17 +727,17 @@ export default function LeadsPage({ onNavigateToQuotation }) {
                 </select>
               </div>
 
-              <div className="pt-3 border-t border-slate-800 flex justify-end gap-2">
+              <div className="pt-3 border-t border-slate-200 flex justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setReassignModalLead(null)}
-                  className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-medium"
+                  className="px-4 py-2 bg-white border border-slate-300 hover:bg-slate-50 text-slate-700 rounded-xl font-bold transition cursor-pointer text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl shadow-md"
+                  className="px-5 py-2.5 bg-[#d4ff00] hover:bg-[#bce600] text-black font-black rounded-xl shadow-md transition cursor-pointer text-xs"
                 >
                   Reassign Lead
                 </button>

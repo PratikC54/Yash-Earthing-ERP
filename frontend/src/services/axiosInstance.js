@@ -1,9 +1,11 @@
 import axios from "axios";
 
-const rawBaseUrl = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
-const baseURL = rawBaseUrl.endsWith("/api")
-  ? rawBaseUrl
-  : `${rawBaseUrl.replace(/\/+$/, "")}/api`;
+const rawBaseUrl =
+  import.meta.env.VITE_API_URL ||
+  import.meta.env.VITE_API_BASE_URL ||
+  "http://localhost:5000/api/v1";
+
+const baseURL = rawBaseUrl.replace(/\/+$/, "");
 
 const axiosInstance = axios.create({
   baseURL,
@@ -19,9 +21,9 @@ axiosInstance.interceptors.request.use(
   (config) => {
     const token =
       typeof window !== "undefined"
-        ? window.localStorage.getItem("authToken") ||
-          window.localStorage.getItem("yash_auth_token") ||
-          window.sessionStorage.getItem("yash_auth_token")
+        ? window.localStorage.getItem("yash_auth_token") ||
+          window.sessionStorage.getItem("yash_auth_token") ||
+          window.localStorage.getItem("authToken")
         : null;
 
     if (token && token.trim().length > 0) {

@@ -57,9 +57,11 @@ export default function InstallationRegisterPage() {
     try {
       setLoading(true);
       const res = await module5Api.getInstallations({ search, status: statusFilter });
-      setInstallations(res.data);
+      const list = res?.installations || res?.data || (Array.isArray(res) ? res : []);
+      setInstallations(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('Failed to load installations', err);
+      setInstallations([]);
     } finally {
       setLoading(false);
     }
@@ -203,19 +205,25 @@ export default function InstallationRegisterPage() {
             </thead>
             <tbody className="divide-y divide-[#1e2a4a]">
               {loading ? (
-                <tr>
-                  <td colSpan="7" className="py-8 text-center text-slate-500">
-                    Loading installations...
-                  </td>
-                </tr>
-              ) : installations.length === 0 ? (
+                Array.from({ length: 5 }).map((_, rIdx) => (
+                  <tr key={`skel-inst-${rIdx}`} className="animate-pulse">
+                    <td className="py-3 px-4"><div className="h-4 w-24 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-32 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-28 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-3 px-4 text-right"><div className="h-4 w-12 bg-slate-200/60 rounded ml-auto" /></td>
+                  </tr>
+                ))
+              ) : (!installations || installations.length === 0) ? (
                 <tr>
                   <td colSpan="7" className="py-8 text-center text-slate-500">
                     No installation records found.
                   </td>
                 </tr>
               ) : (
-                installations.map((inst) => {
+                (installations || []).map((inst) => {
                   const ohms = inst.testResults?.resistanceOhms;
                   const isPassed = inst.testResults?.passedQC;
 

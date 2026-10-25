@@ -28,27 +28,27 @@ export default function ModuleHeader({
                 {crumb.to ? (
                   <Link
                     to={crumb.to}
-                    className="hover:text-[#3b82f6] transition font-medium"
+                    className="hover:text-black transition font-semibold"
                   >
                     {crumb.label}
                   </Link>
                 ) : (
-                  <span className="text-[#f1f5f9] font-semibold">
+                  <span className="text-slate-800 font-bold">
                     {crumb.label}
                   </span>
                 )}
                 {idx < breadcrumbs.length - 1 && (
-                  <ChevronRight className="w-3.5 h-3.5 text-[#64748b]" />
+                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
                 )}
               </React.Fragment>
             ))}
           </nav>
         )}
-        <h1 className="text-xl sm:text-2xl font-extrabold text-[#f1f5f9] tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
           {title}
         </h1>
         {subtitle && (
-          <p className="text-xs sm:text-sm text-[#94a3b8] mt-0.5">
+          <p className="text-xs sm:text-sm text-slate-700 font-medium mt-0.5">
             {subtitle}
           </p>
         )}

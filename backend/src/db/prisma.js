@@ -7,9 +7,9 @@ const basePrisma =
   globalForPrisma.prisma ??
   new PrismaClient({
     log:
-      process.env.NODE_ENV === "development"
+      process.env.DEBUG_PRISMA === "true"
         ? ["query", "error", "warn"]
-        : ["error"],
+        : ["error", "warn"],
   });
 
 // Enhance $transaction with a 30s timeout for cloud database latency tolerance

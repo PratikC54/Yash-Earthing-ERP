@@ -522,20 +522,29 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
       derStat.includes(q);
 
     let matchesStatus = true;
-    if (statusFilter === 'ALL') {
+    const invStatusUpper = (inv.status || '').toUpperCase().replace(/\s+/g, '_');
+    const invDerivedUpper = (inv.derivedStatus || '').toUpperCase().replace(/\s+/g, '_');
+    const numBal = Number(inv.balanceAmount) || 0;
+    const numPaid = Number(inv.paidAmount) || 0;
+    const isPaid = (numBal <= 0 && (numPaid > 0 || Number(inv.grandTotal) > 0)) || invStatusUpper === 'PAID' || invDerivedUpper === 'PAID';
+    const isPartPaid = (numPaid > 0 && numBal > 0) || invStatusUpper.includes('PART') || invDerivedUpper.includes('PART');
+    const isOverdue = Boolean(inv.isOverdue || invStatusUpper.includes('OVERDUE') || invDerivedUpper.includes('OVERDUE'));
+
+    if (!statusFilter || statusFilter === 'ALL') {
       matchesStatus = true;
-    } else if (statusFilter === 'ISSUED') {
-      matchesStatus = inv.status === 'ISSUED' || inv.status === 'PENDING' || inv.derivedStatus === 'ISSUED' || inv.derivedStatus === 'PENDING';
-    } else if (statusFilter === 'OVERDUE') {
-      matchesStatus = Boolean(inv.isOverdue || inv.derivedStatus?.includes('OVERDUE') || inv.status === 'OVERDUE');
     } else if (statusFilter === 'PAID') {
-      matchesStatus = inv.status === 'PAID' || inv.derivedStatus === 'PAID';
+      matchesStatus = isPaid;
     } else if (statusFilter === 'PART_PAID') {
-      matchesStatus = inv.status === 'PART_PAID' || inv.derivedStatus === 'PART_PAID';
+      matchesStatus = isPartPaid && !isPaid;
+    } else if (statusFilter === 'ISSUED') {
+      matchesStatus = (numPaid === 0 && numBal > 0 && !isOverdue) ||
+        invStatusUpper === 'ISSUED' || invStatusUpper === 'PENDING' || invDerivedUpper === 'ISSUED';
+    } else if (statusFilter === 'OVERDUE') {
+      matchesStatus = isOverdue && !isPaid;
     } else if (statusFilter === 'CANCELLED') {
-      matchesStatus = inv.status === 'CANCELLED' || inv.derivedStatus === 'CANCELLED';
+      matchesStatus = invStatusUpper === 'CANCELLED' || invStatusUpper === 'VOID' || invDerivedUpper === 'CANCELLED';
     } else {
-      matchesStatus = inv.status === statusFilter || inv.derivedStatus === statusFilter;
+      matchesStatus = invStatusUpper === statusFilter || invDerivedUpper === statusFilter;
     }
 
     return matchesSearch && matchesStatus;
@@ -678,19 +687,19 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
         </div>
       )}
 
-      {/* Module Title Banner & Strategic Handshake Strip (Matching Module 3 UI/UX) */}
-      <div className="bg-[#141d30] border border-slate-800 rounded-2xl p-6 shadow-xl text-white">
+      {/* Module Title Banner & Strategic Handshake Strip */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-xs text-slate-900">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center space-x-3">
-              <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-blue-600 text-white tracking-wider">
+              <span className="px-2.5 py-1 rounded-lg text-xs font-black bg-[#d4ff00] text-black border border-lime-400 tracking-wider">
                 MODULE 6
               </span>
-              <h1 className="text-xl font-extrabold tracking-tight">
+              <h1 className="text-xl font-black text-slate-900 tracking-tight">
                 Finance & Commercial — Billing, Collections & Margins
               </h1>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs text-slate-600 font-semibold mt-1">
               Final operational link in 10-step ERP: GST Invoicing from M1/M2 Dispatches, Receivables Ageing, 3-Way Payables Match & Job Margins.
             </p>
           </div>
@@ -698,9 +707,9 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={() => setIsExtractModalOpen(true)}
-              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-cyan-400 font-bold rounded-xl text-xs shadow-sm transition flex items-center space-x-1.5"
+              className="px-3.5 py-2 bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 font-bold rounded-xl text-xs shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
             >
-              <UploadCloud className="w-4 h-4 text-cyan-400" />
+              <UploadCloud className="w-4 h-4 text-slate-700" />
               <span>Smart Import (CSV/Excel)</span>
             </button>
 
@@ -708,14 +717,14 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
               <>
                 <button
                   onClick={() => setIsInvoiceModalOpen(true)}
-                  className="px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl text-xs shadow-md shadow-blue-500/20 transition flex items-center space-x-1.5"
+                  className="px-3.5 py-2 bg-[#d4ff00] hover:bg-[#c2ed00] text-black font-black border border-lime-400 rounded-xl text-xs shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   <span>+ Generate Invoice</span>
                 </button>
                 <button
                   onClick={() => setIsReceiptModalOpen(true)}
-                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md transition flex items-center space-x-1.5"
+                  className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-xs transition flex items-center space-x-1.5 cursor-pointer"
                 >
                   <IndianRupee className="w-4 h-4" />
                   <span>+ Record Receipt</span>
@@ -726,28 +735,28 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
         </div>
 
         {/* Relational Process Flow Strip */}
-        <div className="mt-5 pt-4 border-t border-slate-800/80 flex items-center space-x-3 text-xs overflow-x-auto pb-1">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 shrink-0">
+        <div className="mt-5 pt-4 border-t border-slate-200 flex items-center space-x-3 text-xs overflow-x-auto pb-1">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-slate-500 shrink-0">
             Workflow Stream:
           </span>
           <div className="flex items-center space-x-2 shrink-0">
-            <span className="px-3 py-1 rounded-full bg-blue-500/20 text-blue-400 border border-blue-500/30 font-semibold flex items-center space-x-1.5">
+            <span className="px-3 py-1 rounded-full bg-blue-50 text-blue-800 border border-blue-200 font-bold flex items-center space-x-1.5">
               <span>01. Billing Plan & Eligibility (M1/M2)</span>
             </span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <span className="px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 font-semibold flex items-center space-x-1.5">
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <span className="px-3 py-1 rounded-full bg-sky-50 text-sky-800 border border-sky-200 font-bold flex items-center space-x-1.5">
               <span>02. GST Tax Invoice (CGST/SGST/IGST)</span>
             </span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <span className="px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold flex items-center space-x-1.5">
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 font-bold flex items-center space-x-1.5">
               <span>03. Collections, TDS & Ageing</span>
             </span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30 font-semibold flex items-center space-x-1.5">
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <span className="px-3 py-1 rounded-full bg-purple-50 text-purple-800 border border-purple-200 font-bold flex items-center space-x-1.5">
               <span>04. 3-Way Match Payables (M2)</span>
             </span>
-            <ChevronRight className="w-3.5 h-3.5 text-slate-600" />
-            <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 font-semibold flex items-center space-x-1.5">
+            <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+            <span className="px-3 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 font-bold flex items-center space-x-1.5">
               <span>05. Job Costing & Margins (M3)</span>
             </span>
           </div>
@@ -758,19 +767,19 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
         <button
           onClick={() => setActiveTab('invoices')}
-          className={`p-3.5 rounded-2xl border text-left transition flex items-center justify-between shadow-xl cursor-pointer ${
+          className={`p-3.5 rounded-2xl border text-left transition flex items-center justify-between shadow-xs cursor-pointer ${
             activeTab === 'invoices' || activeTab === 'receipts'
-              ? 'bg-[#14234b] border-blue-500 text-white'
-              : 'bg-[#10182f] border-[#1e2a4a] text-slate-300 hover:bg-[#162242]'
+              ? 'bg-lime-50/80 border-2 border-lime-400 text-slate-900 ring-2 ring-lime-400/30'
+              : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50'
           }`}
         >
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-600/20 text-cyan-400 border border-blue-500/30 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold">
               <IndianRupee className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-white">Billing & Receivables</div>
-              <div className="text-[11px] text-slate-400 font-medium">Invoices · Collections · Ageing</div>
+              <div className="text-xs font-black text-slate-900">Billing & Receivables</div>
+              <div className="text-[11px] text-slate-600 font-bold">Invoices · Collections · Ageing</div>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -778,19 +787,19 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
 
         <button
           onClick={() => setActiveTab('payables')}
-          className={`p-3.5 rounded-2xl border text-left transition flex items-center justify-between shadow-xl cursor-pointer ${
+          className={`p-3.5 rounded-2xl border text-left transition flex items-center justify-between shadow-xs cursor-pointer ${
             activeTab === 'payables'
-              ? 'bg-[#211640] border-purple-500 text-white'
-              : 'bg-[#10182f] border-[#1e2a4a] text-slate-300 hover:bg-[#162242]'
+              ? 'bg-lime-50/80 border-2 border-lime-400 text-slate-900 ring-2 ring-lime-400/30'
+              : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50'
           }`}
         >
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-purple-50 text-purple-700 border border-purple-200 flex items-center justify-center font-bold">
               <Building2 className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-white">Payables & Expenses</div>
-              <div className="text-[11px] text-slate-400 font-medium">Vendor Bills · PO Checks · 3-Way Match</div>
+              <div className="text-xs font-black text-slate-900">Payables & Expenses</div>
+              <div className="text-[11px] text-slate-600 font-bold">Vendor Bills · PO Checks · 3-Way Match</div>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -798,19 +807,19 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
 
         <button
           onClick={() => setActiveTab('costing')}
-          className={`p-3.5 rounded-2xl border text-left transition flex items-center justify-between shadow-xl cursor-pointer ${
+          className={`p-3.5 rounded-2xl border text-left transition flex items-center justify-between shadow-xs cursor-pointer ${
             activeTab === 'costing'
-              ? 'bg-[#112d2b] border-emerald-500 text-white'
-              : 'bg-[#10182f] border-[#1e2a4a] text-slate-300 hover:bg-[#162242]'
+              ? 'bg-lime-50/80 border-2 border-lime-400 text-slate-900 ring-2 ring-lime-400/30'
+              : 'bg-white border-slate-200 text-slate-800 hover:bg-slate-50'
           }`}
         >
           <div className="flex items-center space-x-3">
-            <div className="w-9 h-9 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
+            <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold">
               <Percent className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs font-bold text-white">Costing, Ledger & MIS</div>
-              <div className="text-[11px] text-slate-400 font-medium">Job Margin · Realization · Financial MIS</div>
+              <div className="text-xs font-black text-slate-900">Costing, Ledger & MIS</div>
+              <div className="text-[11px] text-slate-600 font-bold">Job Margin · Realization · Financial MIS</div>
             </div>
           </div>
           <ChevronRight className="w-4 h-4 text-slate-400" />
@@ -819,22 +828,22 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
 
       {/* Critical Actions Feed Banner */}
       {dashboardData?.criticalActions?.length > 0 && currentRole !== 'SALES_OWNER' && (
-        <div className="bg-[#1b1915] border border-amber-500/40 rounded-2xl p-4 shadow-xl">
+        <div className="bg-amber-50/70 border border-amber-300 rounded-2xl p-4 shadow-xs">
           <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center space-x-2 text-amber-400 font-bold text-xs uppercase tracking-wider">
-              <AlertTriangle className="w-4 h-4 text-amber-400" />
+            <div className="flex items-center space-x-2 text-amber-800 font-black text-xs uppercase tracking-wider">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
               <span>Critical Action Center ({dashboardData.criticalActions.length} Pending Items)</span>
             </div>
-            <span className="text-[11px] text-amber-400/80 font-mono">Live ERP Governance Feed</span>
+            <span className="text-[11px] text-amber-800 font-mono font-bold">Live ERP Governance Feed</span>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
             {dashboardData.criticalActions.map((act) => (
-              <div key={act.id} className="p-2.5 bg-[#10182f] border border-[#1e2a4a] rounded-xl flex justify-between items-center text-slate-200">
+              <div key={act.id} className="p-2.5 bg-white border border-slate-200 rounded-xl flex justify-between items-center text-slate-800 shadow-xs">
                 <div>
-                  <div className="font-bold text-white">{act.title}</div>
-                  <div className="text-[11px] text-slate-400 font-medium">{act.customer} · Amount: <strong className="font-mono text-cyan-300">₹{act.amount.toLocaleString('en-IN')}</strong></div>
+                  <div className="font-extrabold text-slate-900">{act.title}</div>
+                  <div className="text-[11px] text-slate-600 font-bold">{act.customer} · Amount: <strong className="font-mono text-blue-700 font-black">₹{act.amount.toLocaleString('en-IN')}</strong></div>
                 </div>
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                <span className="px-2 py-0.5 rounded text-[10px] font-black bg-amber-100 text-amber-900 border border-amber-300">
                   ACTION DUE
                 </span>
               </div>
@@ -847,97 +856,117 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
       <KpiSection title="Financial & Operational Performance">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {/* KPI 1: Revenue */}
-        <div className="p-4 rounded-2xl bg-[#10182f] border border-[#1e2a4a] shadow-xl flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Taxable Revenue (Net)</div>
-            <div className="text-2xl font-black text-white mt-1 font-mono">
-              ₹{kpis.totalRevenue.toLocaleString('en-IN')}
-            </div>
-            <div className="text-[11px] text-emerald-400 font-semibold mt-1">Active Billing · Dispatches</div>
+            <div className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider">Taxable Revenue (Net)</div>
+            {loading ? (
+              <div className="h-7 w-28 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-2xl font-black text-slate-900 mt-1 font-mono">
+                ₹{kpis.totalRevenue.toLocaleString('en-IN')}
+              </div>
+            )}
+            <div className="text-[11px] text-emerald-700 font-bold mt-1">Active Billing · Dispatches</div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-600/20 text-cyan-400 border border-blue-500/30 flex items-center justify-center font-bold">
-            <TrendingUp className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-blue-50 text-blue-700 border border-blue-200 flex items-center justify-center font-bold">
+            <TrendingUp className="w-5 h-5 text-blue-700" />
           </div>
         </div>
 
         {/* KPI 2: Receivables */}
-        <div className="p-4 rounded-2xl bg-[#10182f] border border-[#1e2a4a] shadow-xl flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Outstanding Receivables</div>
-            <div className="text-2xl font-black text-amber-400 mt-1 font-mono">
-              ₹{kpis.totalReceivables.toLocaleString('en-IN')}
-            </div>
-            <div className="text-[11px] text-red-400 font-semibold mt-1">
+            <div className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider">Outstanding Receivables</div>
+            {loading ? (
+              <div className="h-7 w-28 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-2xl font-black text-amber-700 mt-1 font-mono">
+                ₹{kpis.totalReceivables.toLocaleString('en-IN')}
+              </div>
+            )}
+            <div className="text-[11px] text-rose-700 font-bold mt-1">
               Overdue: ₹{kpis.overdueReceivables.toLocaleString('en-IN')}
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-600/20 text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold">
-            <Clock className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 border border-amber-200 flex items-center justify-center font-bold">
+            <Clock className="w-5 h-5 text-amber-700" />
           </div>
         </div>
 
         {/* KPI 3: Vendor Payables */}
-        <div className="p-4 rounded-2xl bg-[#10182f] border border-[#1e2a4a] shadow-xl flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Vendor Payables (3-Way)</div>
-            <div className="text-2xl font-black text-purple-300 mt-1 font-mono">
-              {canViewPayables ? `₹${kpis.totalPayables.toLocaleString('en-IN')}` : 'RESTRICTED'}
-            </div>
-            <div className="text-[11px] text-cyan-400 font-semibold mt-1">
-              Advance: ₹{kpis.unallocatedCredit.toLocaleString('en-IN')}
+            <div className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider">Vendor Payables (3-Way)</div>
+            {loading ? (
+              <div className="h-7 w-28 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-2xl font-black text-purple-950 mt-1 font-mono">
+                {canViewPayables ? `₹${kpis.totalPayables.toLocaleString('en-IN')}` : 'RESTRICTED'}
+              </div>
+            )}
+            <div className="text-[11px] text-slate-600 font-bold mt-1">
+              Advance: <span className="text-purple-900 font-extrabold">₹{kpis.unallocatedCredit.toLocaleString('en-IN')}</span>
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-600/20 text-purple-400 border border-purple-500/30 flex items-center justify-center font-bold">
-            <Building2 className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-900 border border-purple-200 flex items-center justify-center font-bold">
+            <Building2 className="w-5 h-5 text-purple-900" />
           </div>
         </div>
 
         {/* KPI 4: Job Costing / Margin */}
-        <div className="p-4 rounded-2xl bg-[#10182f] border border-[#1e2a4a] shadow-xl flex items-center justify-between">
+        <div className="p-4 rounded-2xl bg-white border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Gross Profit Margin</div>
-            <div className="text-2xl font-black text-emerald-400 mt-1 font-mono">
-              {canViewMargins ? `${kpis.avgMarginPercent}%` : 'RESTRICTED'}
-            </div>
-            <div className="text-[11px] text-slate-400 font-medium mt-1">
+            <div className="text-[10px] sm:text-[11px] font-black text-slate-500 uppercase tracking-wider">Gross Profit Margin</div>
+            {loading ? (
+              <div className="h-7 w-20 bg-slate-200/80 rounded animate-pulse mt-1" />
+            ) : (
+              <div className="text-2xl font-black text-emerald-700 mt-1 font-mono">
+                {canViewMargins ? `${kpis.avgMarginPercent}%` : 'RESTRICTED'}
+              </div>
+            )}
+            <div className="text-[11px] text-slate-600 font-bold mt-1">
               {canViewMargins ? 'BOM Snapshot vs Actuals' : 'Proprietary Costing'}
             </div>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold">
-            <Percent className="w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center font-bold">
+            <Percent className="w-5 h-5 text-emerald-700" />
           </div>
         </div>
         </div>
       </KpiSection>
 
-      {/* Main Tab Controls (Exact Module 1 / Module 3 Underlined Cyber Steel Tabs) */}
-      <div className="flex border-b border-[#1e2a4a] space-x-2 text-xs font-bold overflow-x-auto">
+      {/* Main Tab Controls (Clean High-Contrast Tabs) */}
+      <div className="flex border-b border-slate-200 space-x-2 text-xs font-bold overflow-x-auto bg-white p-1 rounded-xl">
         <button
           onClick={() => setActiveTab('invoices')}
-          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 cursor-pointer ${
+          className={`py-2.5 px-4 rounded-lg transition flex items-center space-x-2 shrink-0 cursor-pointer ${
             activeTab === 'invoices'
-              ? 'border-cyan-400 text-cyan-300'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'bg-slate-900 text-white font-black shadow-xs'
+              : 'text-slate-600 hover:text-black hover:bg-slate-100 font-bold'
           }`}
         >
-          <FileText className="w-4 h-4" />
+          <FileText className={`w-4 h-4 ${activeTab === 'invoices' ? 'text-white' : 'text-slate-500 group-hover:text-black'}`} />
           <span>Invoices & Billing</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#0a1020] border border-slate-800 text-slate-300">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            activeTab === 'invoices' ? 'bg-slate-800 text-[#d4ff00]' : 'bg-slate-100 text-slate-700'
+          }`}>
             {filteredInvoices.length}
           </span>
         </button>
 
         <button
           onClick={() => setActiveTab('receipts')}
-          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 cursor-pointer ${
+          className={`py-2.5 px-4 rounded-lg transition flex items-center space-x-2 shrink-0 cursor-pointer ${
             activeTab === 'receipts'
-              ? 'border-cyan-400 text-cyan-300'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'bg-slate-900 text-white font-black shadow-xs'
+              : 'text-slate-600 hover:text-black hover:bg-slate-100 font-bold'
           }`}
         >
-          <IndianRupee className="w-4 h-4" />
+          <IndianRupee className={`w-4 h-4 ${activeTab === 'receipts' ? 'text-white' : 'text-slate-500 group-hover:text-black'}`} />
           <span>Collections & Ageing</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#0a1020] border border-slate-800 text-slate-300">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            activeTab === 'receipts' ? 'bg-slate-800 text-[#d4ff00]' : 'bg-slate-100 text-slate-700'
+          }`}>
             {filteredReceipts.length}
           </span>
         </button>
@@ -945,15 +974,17 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
         {canViewPayables && (
           <button
             onClick={() => setActiveTab('payables')}
-            className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 cursor-pointer ${
+            className={`py-2.5 px-4 rounded-lg transition flex items-center space-x-2 shrink-0 cursor-pointer ${
               activeTab === 'payables'
-                ? 'border-cyan-400 text-cyan-300'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'bg-slate-900 text-white font-black shadow-xs'
+                : 'text-slate-600 hover:text-black hover:bg-slate-100 font-bold'
             }`}
           >
-            <Building2 className="w-4 h-4" />
+            <Building2 className={`w-4 h-4 ${activeTab === 'payables' ? 'text-white' : 'text-slate-500 group-hover:text-black'}`} />
             <span>Payables & 3-Way Match</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#0a1020] border border-slate-800 text-slate-300">
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+              activeTab === 'payables' ? 'bg-slate-800 text-[#d4ff00]' : 'bg-slate-100 text-slate-700'
+            }`}>
               {filteredVendorBills.length}
             </span>
           </button>
@@ -961,15 +992,17 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
 
         <button
           onClick={() => setActiveTab('costing')}
-          className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 cursor-pointer ${
+          className={`py-2.5 px-4 rounded-lg transition flex items-center space-x-2 shrink-0 cursor-pointer ${
             activeTab === 'costing'
-              ? 'border-cyan-400 text-cyan-300'
-              : 'border-transparent text-slate-400 hover:text-slate-200'
+              ? 'bg-slate-900 text-white font-black shadow-xs'
+              : 'text-slate-600 hover:text-black hover:bg-slate-100 font-bold'
           }`}
         >
-          <Percent className="w-4 h-4" />
+          <Percent className={`w-4 h-4 ${activeTab === 'costing' ? 'text-white' : 'text-slate-500 group-hover:text-black'}`} />
           <span>Costing & Job Margins</span>
-          <span className="px-2 py-0.5 rounded-full text-[10px] bg-[#0a1020] border border-slate-800 text-slate-300">
+          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+            activeTab === 'costing' ? 'bg-slate-800 text-[#d4ff00]' : 'bg-slate-100 text-slate-700'
+          }`}>
             {filteredJobCosting.length}
           </span>
         </button>
@@ -977,10 +1010,10 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
         {canViewSettings && (
           <button
             onClick={() => setActiveTab('settings')}
-            className={`py-3 px-4 border-b-2 transition flex items-center space-x-2 shrink-0 cursor-pointer ${
+            className={`py-2.5 px-4 rounded-lg transition flex items-center space-x-2 shrink-0 cursor-pointer ${
               activeTab === 'settings'
-                ? 'border-cyan-400 text-cyan-300'
-                : 'border-transparent text-slate-400 hover:text-slate-200'
+                ? 'bg-slate-900 text-white font-black shadow-xs'
+                : 'text-slate-600 hover:text-black hover:bg-slate-100 font-bold'
             }`}
           >
             <Landmark className="w-4 h-4" />
@@ -1002,14 +1035,14 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
                   placeholder="Search invoice no, customer, order..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 text-xs bg-[#0a1020] text-slate-100 border border-slate-800 rounded-xl placeholder:text-slate-500 font-medium focus:border-cyan-400 focus:outline-none shadow-inner"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-white text-slate-900 border border-slate-300 rounded-xl placeholder:text-slate-400 font-medium focus:border-[#0c1222] focus:outline-none shadow-xs"
                 />
               </div>
 
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="px-3 py-1.5 text-xs bg-[#0a1020] text-slate-200 border border-slate-800 rounded-xl focus:border-cyan-400 focus:outline-none font-medium shadow-inner cursor-pointer"
+                className="px-4 py-2 text-xs bg-white text-slate-800 border border-slate-300 rounded-xl focus:border-[#0c1222] focus:outline-none font-bold shadow-xs cursor-pointer hover:border-slate-400 transition"
               >
                 <option value="ALL">All Statuses</option>
                 <option value="ISSUED">Issued (Unpaid)</option>
@@ -1060,7 +1093,21 @@ export default function FinanceDashboard({ initialTab = 'invoices', globalSearch
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
-                  {filteredInvoices.map((inv) => (
+                  {loading ? (
+                    Array.from({ length: 5 }).map((_, i) => (
+                      <tr key={i} className="animate-pulse">
+                        <td className="py-3 px-4"><div className="h-4 w-24 bg-slate-200/80 rounded" /><div className="h-3 w-16 bg-slate-200/50 rounded mt-1" /></td>
+                        <td className="py-3 px-4"><div className="h-4 w-36 bg-slate-200/80 rounded" /><div className="h-3 w-28 bg-slate-200/50 rounded mt-1" /></td>
+                        <td className="py-3 px-3"><div className="h-4 w-20 bg-slate-200/60 rounded" /></td>
+                        <td className="py-3 px-3"><div className="h-4 w-16 bg-slate-200/60 rounded" /></td>
+                        <td className="py-3 px-3 text-right"><div className="h-4 w-16 bg-slate-200/80 rounded ml-auto" /></td>
+                        <td className="py-3 px-3 text-right"><div className="h-4 w-16 bg-slate-200/80 rounded ml-auto" /></td>
+                        <td className="py-3 px-3 text-right"><div className="h-4 w-16 bg-slate-200/80 rounded ml-auto" /></td>
+                        <td className="py-3 px-3 text-center"><div className="h-5 w-16 bg-slate-200/70 rounded mx-auto" /></td>
+                        <td className="py-3 px-4 text-center"><div className="h-6 w-16 bg-slate-200/60 rounded mx-auto" /></td>
+                      </tr>
+                    ))
+                  ) : filteredInvoices.map((inv) => (
                     <tr key={inv.id} className="hover:bg-slate-800/40 transition">
                       <td className="py-3 px-4 font-mono font-bold text-cyan-300">
                         {inv.invoiceNo}

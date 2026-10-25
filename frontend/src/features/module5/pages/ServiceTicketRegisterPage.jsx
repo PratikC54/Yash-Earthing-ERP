@@ -50,9 +50,11 @@ export default function ServiceTicketRegisterPage() {
     try {
       setLoading(true);
       const res = await module5Api.getServiceTickets({ search, status: statusFilter });
-      setTickets(res.data);
+      const list = res?.tickets || res?.data || (Array.isArray(res) ? res : []);
+      setTickets(Array.isArray(list) ? list : []);
     } catch (err) {
       console.error('Failed to load tickets', err);
+      setTickets([]);
     } finally {
       setLoading(false);
     }
@@ -187,19 +189,24 @@ export default function ServiceTicketRegisterPage() {
             </thead>
             <tbody className="divide-y divide-[#1e2a4a]">
               {loading ? (
-                <tr>
-                  <td colSpan="6" className="py-8 text-center text-slate-500">
-                    Loading tickets...
-                  </td>
-                </tr>
-              ) : tickets.length === 0 ? (
+                Array.from({ length: 5 }).map((_, rIdx) => (
+                  <tr key={`skel-tkt-${rIdx}`} className="animate-pulse">
+                    <td className="py-3 px-4"><div className="h-4 w-24 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-32 bg-slate-200/80 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-44 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-20 bg-slate-200/60 rounded" /></td>
+                    <td className="py-3 px-4"><div className="h-4 w-16 bg-slate-200/70 rounded-full" /></td>
+                    <td className="py-3 px-4 text-right"><div className="h-4 w-12 bg-slate-200/60 rounded ml-auto" /></td>
+                  </tr>
+                ))
+              ) : (!tickets || tickets.length === 0) ? (
                 <tr>
                   <td colSpan="6" className="py-8 text-center text-slate-500">
                     No service tickets found.
                   </td>
                 </tr>
               ) : (
-                tickets.map((t) => {
+                (tickets || []).map((t) => {
                   const isWarranty = t.warrantyStatus === 'UNDER_WARRANTY';
 
                   return (

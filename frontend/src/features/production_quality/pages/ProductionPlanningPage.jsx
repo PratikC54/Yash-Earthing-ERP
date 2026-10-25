@@ -105,12 +105,12 @@ export default function ProductionPlanningPage() {
   const filteredEvents = useMemo(() => {
     return calendarEvents.filter((evt) => {
       // Status filter
-      if (statusFilter !== "ALL" && evt.status !== statusFilter) {
+      if (statusFilter && statusFilter !== "ALL" && evt.status?.toUpperCase() !== statusFilter.toUpperCase()) {
         return false;
       }
 
       // Priority filter
-      if (priorityFilter !== "ALL" && evt.priority !== priorityFilter) {
+      if (priorityFilter && priorityFilter !== "ALL" && evt.priority?.toUpperCase() !== priorityFilter.toUpperCase()) {
         return false;
       }
 
@@ -341,8 +341,36 @@ export default function ProductionPlanningPage() {
       )}
 
       {loading ? (
-        <div className="py-24 text-center">
-          <Loader label="Loading production calendar events..." size="lg" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-pulse">
+          <div className="lg:col-span-2 bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-6 space-y-4">
+            <div className="h-6 w-48 bg-slate-200/80 rounded" />
+            <div className="h-4 w-72 bg-slate-200/60 rounded" />
+            <div className="space-y-3 pt-2">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="p-4 rounded-xl border border-[#1e2a4a] bg-[#0b1329] flex items-center justify-between">
+                  <div className="space-y-2">
+                    <div className="h-4 w-32 bg-slate-200/80 rounded" />
+                    <div className="h-3 w-56 bg-slate-200/60 rounded" />
+                  </div>
+                  <div className="h-6 w-20 bg-slate-200/70 rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+          <div className="space-y-6">
+            <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-6 space-y-4">
+              <div className="h-5 w-40 bg-slate-200/80 rounded" />
+              <div className="space-y-2.5">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="h-10 bg-slate-200/60 rounded-xl" />
+                ))}
+              </div>
+            </div>
+            <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-6 space-y-3">
+              <div className="h-5 w-32 bg-slate-200/80 rounded" />
+              <div className="h-20 bg-slate-200/50 rounded-xl" />
+            </div>
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -585,56 +613,56 @@ export default function ProductionPlanningPage() {
           subtitle="Complete master scheduling and operational metadata"
           maxWidth="max-w-3xl"
         >
-          <div className="space-y-5 text-xs text-[#f1f5f9]">
+          <div className="space-y-5 text-xs text-slate-800">
             {/* Header Badges */}
-            <div className="p-3 bg-[#0a1020] rounded-xl border border-[#1e2a4a] flex flex-wrap items-center justify-between gap-3">
+            <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex flex-wrap items-center justify-between gap-3">
               <div className="flex items-center gap-2">
-                <span className="text-xs text-[#94a3b8]">Status:</span>
+                <span className="text-xs text-slate-500 font-bold">Status:</span>
                 <StatusBadge status={selectedOrder.status || "—"} />
-                <span className="text-xs text-[#94a3b8] ml-2">Priority:</span>
+                <span className="text-xs text-slate-500 font-bold ml-2">Priority:</span>
                 <StatusBadge status={selectedOrder.priority || "—"} />
               </div>
-              <div className="text-[11px] text-[#94a3b8]">
-                WO System ID: <span className="font-mono text-[#f1f5f9]">#{selectedOrder.id}</span>
+              <div className="text-[11px] text-slate-500 font-semibold">
+                WO System ID: <span className="font-mono text-slate-900 font-extrabold">#{selectedOrder.id}</span>
               </div>
             </div>
 
             {/* Product & Sales Order Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Product Information */}
-              <div className="p-4 bg-[#0a1020] rounded-xl border border-[#1e2a4a] space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#3b82f6] border-b border-[#1e2a4a] pb-2">
-                  <PackageCheck className="w-4 h-4" />
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-900 border-b border-slate-200 pb-2">
+                  <PackageCheck className="w-4 h-4 text-slate-700" />
                   <span>Finished Good Specifications</span>
                 </div>
                 <div className="space-y-1.5 text-xs">
                   <div>
-                    <span className="text-[#94a3b8]">Product:</span>{" "}
-                    <span className="font-semibold text-[#f1f5f9]">
+                    <span className="text-slate-500 font-semibold">Product:</span>{" "}
+                    <span className="font-bold text-slate-900">
                       {selectedOrder.bomRevision?.product?.name ||
                         selectedOrder.items?.[0]?.product?.name ||
                         "—"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#94a3b8]">SKU Code:</span>{" "}
-                    <span className="font-mono text-[#3b82f6]">
+                    <span className="text-slate-500 font-semibold">SKU Code:</span>{" "}
+                    <span className="font-mono font-bold text-slate-900 bg-white px-2 py-0.5 rounded border border-slate-200">
                       {selectedOrder.bomRevision?.product?.sku ||
                         selectedOrder.items?.[0]?.product?.sku ||
                         "—"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#94a3b8]">Unit of Measure:</span>{" "}
-                    <span>
+                    <span className="text-slate-500 font-semibold">Unit of Measure:</span>{" "}
+                    <span className="font-bold text-slate-900">
                       {selectedOrder.bomRevision?.product?.unitOfMeasure ||
                         selectedOrder.items?.[0]?.product?.unitOfMeasure ||
                         "PCS"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#94a3b8]">BOM Engineering Revision:</span>{" "}
-                    <span className="text-emerald-400 font-semibold">
+                    <span className="text-slate-500 font-semibold">BOM Engineering Revision:</span>{" "}
+                    <span className="text-emerald-800 font-bold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
                       {selectedOrder.bomRevision?.revision || "Default Active BOM"}
                     </span>
                   </div>
@@ -642,33 +670,33 @@ export default function ProductionPlanningPage() {
               </div>
 
               {/* Customer & Order Reference */}
-              <div className="p-4 bg-[#0a1020] rounded-xl border border-[#1e2a4a] space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#3b82f6] border-b border-[#1e2a4a] pb-2">
-                  <Building className="w-4 h-4" />
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-900 border-b border-slate-200 pb-2">
+                  <Building className="w-4 h-4 text-slate-700" />
                   <span>Commercial & Customer Reference</span>
                 </div>
                 <div className="space-y-1.5 text-xs">
                   <div>
-                    <span className="text-[#94a3b8]">Customer Client:</span>{" "}
-                    <span className="font-semibold text-[#f1f5f9]">
+                    <span className="text-slate-500 font-semibold">Customer Client:</span>{" "}
+                    <span className="font-bold text-slate-900">
                       {selectedOrder.salesOrder?.customer?.name || "Internal Plant Production"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#94a3b8]">Sales Order #:</span>{" "}
-                    <span className="font-mono text-[#f1f5f9]">
+                    <span className="text-slate-500 font-semibold">Sales Order #:</span>{" "}
+                    <span className="font-mono font-bold text-slate-900">
                       {selectedOrder.salesOrder?.orderNumber || "Standard Stock Build"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#94a3b8]">Assigned Production Line:</span>{" "}
-                    <span className="font-semibold text-blue-400">
+                    <span className="text-slate-500 font-semibold">Assigned Production Line:</span>{" "}
+                    <span className="font-bold text-slate-900">
                       {selectedOrder.assignedLine || "Unassigned / General Shop Floor"}
                     </span>
                   </div>
                   <div>
-                    <span className="text-[#94a3b8]">Created Timestamp:</span>{" "}
-                    <span>{formatDateTime(selectedOrder.createdAt)}</span>
+                    <span className="text-slate-500 font-semibold">Created Timestamp:</span>{" "}
+                    <span className="font-medium text-slate-700">{formatDateTime(selectedOrder.createdAt)}</span>
                   </div>
                 </div>
               </div>
@@ -677,60 +705,60 @@ export default function ProductionPlanningPage() {
             {/* Production Schedule & Quantities */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {/* Schedule Dates */}
-              <div className="p-4 bg-[#0a1020] rounded-xl border border-[#1e2a4a] space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#3b82f6] border-b border-[#1e2a4a] pb-2">
-                  <Clock className="w-4 h-4" />
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-900 border-b border-slate-200 pb-2">
+                  <Clock className="w-4 h-4 text-slate-700" />
                   <span>Production Timeline</span>
                 </div>
                 <div className="space-y-1.5 text-xs">
                   <div>
-                    <span className="text-[#94a3b8]">Planned Start:</span>{" "}
-                    <span className="font-semibold text-[#f1f5f9]">{formatDate(selectedOrder.plannedStart)}</span>
+                    <span className="text-slate-500 font-semibold">Planned Start:</span>{" "}
+                    <span className="font-bold text-slate-900">{formatDate(selectedOrder.plannedStart)}</span>
                   </div>
                   <div>
-                    <span className="text-[#94a3b8]">Planned End:</span>{" "}
-                    <span className="font-semibold text-[#f1f5f9]">{formatDate(selectedOrder.plannedEnd)}</span>
+                    <span className="text-slate-500 font-semibold">Planned End:</span>{" "}
+                    <span className="font-bold text-slate-900">{formatDate(selectedOrder.plannedEnd)}</span>
                   </div>
                   <div>
-                    <span className="text-[#94a3b8]">Actual Start:</span>{" "}
-                    <span>{selectedOrder.actualStart ? formatDateTime(selectedOrder.actualStart) : "Not started yet"}</span>
+                    <span className="text-slate-500 font-semibold">Actual Start:</span>{" "}
+                    <span className="font-medium text-slate-700">{selectedOrder.actualStart ? formatDateTime(selectedOrder.actualStart) : "Not started yet"}</span>
                   </div>
                   <div>
-                    <span className="text-[#94a3b8]">Actual End:</span>{" "}
-                    <span>{selectedOrder.actualEnd ? formatDateTime(selectedOrder.actualEnd) : "—"}</span>
+                    <span className="text-slate-500 font-semibold">Actual End:</span>{" "}
+                    <span className="font-medium text-slate-700">{selectedOrder.actualEnd ? formatDateTime(selectedOrder.actualEnd) : "—"}</span>
                   </div>
                 </div>
               </div>
 
               {/* Output Metrics */}
-              <div className="p-4 bg-[#0a1020] rounded-xl border border-[#1e2a4a] space-y-2.5">
-                <div className="flex items-center gap-2 text-xs font-bold text-[#3b82f6] border-b border-[#1e2a4a] pb-2">
-                  <Factory className="w-4 h-4" />
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-black text-slate-900 border-b border-slate-200 pb-2">
+                  <Factory className="w-4 h-4 text-slate-700" />
                   <span>Output & Progress Metrics</span>
                 </div>
                 <div className="space-y-2 text-xs">
                   <div className="flex items-center justify-between">
-                    <span className="text-[#94a3b8]">Target Planned Qty:</span>
-                    <span className="font-bold text-[#f1f5f9]">{selectedOrder.plannedQuantity ?? 0} units</span>
+                    <span className="text-slate-500 font-semibold">Target Planned Qty:</span>
+                    <span className="font-black text-slate-900">{selectedOrder.plannedQuantity ?? 0} units</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#94a3b8]">Good Finished Output:</span>
-                    <span className="font-bold text-emerald-400">{selectedOrder.goodQuantity ?? 0} units</span>
+                    <span className="text-slate-500 font-semibold">Good Finished Output:</span>
+                    <span className="font-black text-emerald-700">{selectedOrder.goodQuantity ?? 0} units</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-[#94a3b8]">Scrap / Rejected Qty:</span>
-                    <span className="font-bold text-rose-400">{selectedOrder.rejectedQuantity ?? 0} units</span>
+                    <span className="text-slate-500 font-semibold">Scrap / Rejected Qty:</span>
+                    <span className="font-black text-rose-700">{selectedOrder.rejectedQuantity ?? 0} units</span>
                   </div>
                   <div>
-                    <div className="flex justify-between text-[11px] mb-1">
-                      <span className="text-[#94a3b8]">Completion Ratio:</span>
-                      <span className="font-semibold text-[#3b82f6]">
+                    <div className="flex justify-between text-[11px] mb-1.5">
+                      <span className="text-slate-500 font-bold">Completion Ratio:</span>
+                      <span className="font-black text-slate-900">
                         {calculateProgress(selectedOrder.goodQuantity, selectedOrder.plannedQuantity)}%
                       </span>
                     </div>
-                    <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-[#3b82f6] rounded-full transition-all"
+                        className="h-full bg-slate-900 rounded-full transition-all"
                         style={{
                           width: `${calculateProgress(selectedOrder.goodQuantity, selectedOrder.plannedQuantity)}%`,
                         }}
@@ -743,13 +771,13 @@ export default function ProductionPlanningPage() {
 
             {/* Bill of Materials Staged Components */}
             {selectedOrder.items && selectedOrder.items.length > 0 && (
-              <div className="p-4 bg-[#0a1020] rounded-xl border border-[#1e2a4a] space-y-2.5">
-                <div className="flex items-center justify-between border-b border-[#1e2a4a] pb-2">
-                  <div className="flex items-center gap-2 text-xs font-bold text-[#3b82f6]">
-                    <Layers className="w-4 h-4" />
+              <div className="p-4 bg-slate-50 rounded-xl border border-slate-200 space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div className="flex items-center gap-2 text-xs font-black text-slate-900">
+                    <Layers className="w-4 h-4 text-slate-700" />
                     <span>Raw Material Staging & Component Breakdown</span>
                   </div>
-                  <span className="text-[11px] text-[#94a3b8]">
+                  <span className="text-[11px] text-slate-600 font-bold bg-white px-2 py-0.5 rounded border border-slate-200">
                     {selectedOrder.items.length} Component lines
                   </span>
                 </div>
@@ -757,16 +785,16 @@ export default function ProductionPlanningPage() {
                 <div className="overflow-x-auto">
                   <table className="w-full text-left text-xs">
                     <thead>
-                      <tr className="border-b border-[#1e2a4a] text-[#94a3b8] text-[11px]">
-                        <th className="py-1.5">Component / Item</th>
-                        <th className="py-1.5">SKU</th>
-                        <th className="py-1.5 text-right">Planned Qty</th>
-                        <th className="py-1.5 text-right">Issued Qty</th>
-                        <th className="py-1.5 text-right">Consumed Qty</th>
-                        <th className="py-1.5 text-center">Status</th>
+                      <tr className="border-b border-slate-200 text-slate-600 text-[11px] font-bold">
+                        <th className="py-2">Component / Item</th>
+                        <th className="py-2">SKU</th>
+                        <th className="py-2 text-right">Planned Qty</th>
+                        <th className="py-2 text-right">Issued Qty</th>
+                        <th className="py-2 text-right">Consumed Qty</th>
+                        <th className="py-2 text-center">Status</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#1e2a4a]/50 text-[11px]">
+                    <tbody className="divide-y divide-slate-200/80 text-[11px]">
                       {selectedOrder.items.map((item) => {
                         const planned = Number(item.plannedQuantity) || 0;
                         const issued = Number(item.issuedQuantity) || 0;
@@ -774,33 +802,33 @@ export default function ProductionPlanningPage() {
                         const isPartiallyIssued = issued > 0 && issued < planned;
 
                         return (
-                          <tr key={item.id}>
-                            <td className="py-2 text-[#f1f5f9] font-medium">
+                          <tr key={item.id} className="hover:bg-white transition-colors">
+                            <td className="py-2.5 text-slate-900 font-bold">
                               {item.product?.name || "Component Item"}
                             </td>
-                            <td className="py-2 font-mono text-[#94a3b8]">
+                            <td className="py-2.5 font-mono text-slate-600 font-medium">
                               {item.product?.sku || "—"}
                             </td>
-                            <td className="py-2 text-right text-[#f1f5f9]">
+                            <td className="py-2.5 text-right text-slate-900 font-bold">
                               {item.plannedQuantity} {item.product?.unitOfMeasure || "NOS"}
                             </td>
-                            <td className="py-2 text-right text-emerald-400">
+                            <td className="py-2.5 text-right text-emerald-700 font-black">
                               {item.issuedQuantity || 0}
                             </td>
-                            <td className="py-2 text-right text-blue-400">
+                            <td className="py-2.5 text-right text-slate-800 font-bold">
                               {item.consumedQuantity || 0}
                             </td>
-                            <td className="py-2 text-center">
+                            <td className="py-2.5 text-center">
                               {isFullyIssued ? (
-                                <span className="bg-emerald-500/10 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                                <span className="bg-emerald-50 text-emerald-800 border border-emerald-300 px-2 py-0.5 rounded-full text-[10px] font-bold">
                                   Issued & Ready
                                 </span>
                               ) : isPartiallyIssued ? (
-                                <span className="bg-amber-500/10 text-amber-400 border border-amber-500/30 px-2 py-0.5 rounded-full text-[10px] font-semibold">
+                                <span className="bg-amber-50 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full text-[10px] font-bold">
                                   Partial
                                 </span>
                               ) : (
-                                <span className="bg-slate-800 text-[#94a3b8] border border-[#1e2a4a] px-2 py-0.5 rounded-full text-[10px]">
+                                <span className="bg-slate-100 text-slate-600 border border-slate-300 px-2 py-0.5 rounded-full text-[10px] font-semibold">
                                   Pending Issuance
                                 </span>
                               )}
@@ -816,11 +844,11 @@ export default function ProductionPlanningPage() {
 
             {/* Notes Section */}
             {selectedOrder.notes && (
-              <div className="p-3 bg-[#0a1020] rounded-xl border border-[#1e2a4a] space-y-1">
-                <span className="text-[#94a3b8] text-[11px] font-semibold flex items-center gap-1">
-                  <FileText className="w-3.5 h-3.5 text-[#3b82f6]" /> Planning Notes / Instructions:
+              <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1">
+                <span className="text-slate-700 text-[11px] font-bold flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-slate-600" /> Planning Notes / Instructions:
                 </span>
-                <p className="text-xs text-[#cbd5e1]">{selectedOrder.notes}</p>
+                <p className="text-xs text-slate-800 font-medium">{selectedOrder.notes}</p>
               </div>
             )}
 
@@ -829,26 +857,25 @@ export default function ProductionPlanningPage() {
               <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <Link
                   to={`/production-quality/work-orders/${selectedOrder.id}`}
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-lg font-semibold text-xs transition w-full sm:w-auto"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-[#d4ff00] hover:bg-[#bbf400] text-black rounded-xl font-black text-xs border border-[#bef264] shadow-sm transition w-full sm:w-auto cursor-pointer"
                 >
                   <span>Open Full Work Order</span>
                   <ExternalLink className="w-3.5 h-3.5" />
                 </Link>
                 <Link
                   to="/production-quality/material-issuance"
-                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-[#f1f5f9] rounded-lg font-semibold text-xs border border-[#1e2a4a] transition w-full sm:w-auto"
+                  className="inline-flex items-center justify-center gap-1.5 px-4 py-2.5 bg-white hover:bg-slate-100 text-slate-800 hover:text-black rounded-xl font-bold text-xs border border-slate-300 shadow-sm transition w-full sm:w-auto cursor-pointer"
                 >
                   <span>Issue Materials</span>
                 </Link>
               </div>
-              <Button
-                variant="secondary"
-                size="sm"
+              <button
+                type="button"
                 onClick={() => setSelectedOrder(null)}
-                className="w-full sm:w-auto"
+                className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-black rounded-xl font-bold text-xs border border-slate-200 transition w-full sm:w-auto cursor-pointer"
               >
                 Close
-              </Button>
+              </button>
             </div>
           </div>
         </Modal>
