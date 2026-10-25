@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Lock, Mail, ArrowRight, ShieldCheck, AlertCircle, KeyRound } from "lucide-react";
+import { Lock, Mail, AlertCircle, ArrowRight, ShieldCheck, CheckCircle2 } from "lucide-react";
 import authService from "../../../services/authService";
 
 export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const [email, setEmail] = useState("admin@yashgroup.com");
-  const [password, setPassword] = useState("YashERP@2026");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  // If already authenticated, redirect to dashboard
+  // Automatically redirect if already logged in with valid token
   useEffect(() => {
     if (authService.isAuthenticated()) {
       navigate("/pq/dashboard", { replace: true });
@@ -21,6 +21,7 @@ export default function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return; // Prevent duplicate login requests on rapid clicks
     if (!email.trim() || !password) {
       setError("Please enter both email and password.");
       return;
@@ -31,21 +32,41 @@ export default function LoginPage() {
 
     try {
       await authService.login(email.trim(), password);
-<<<<<<< HEAD
-      const from =
-        (location.state?.from?.pathname
-          ? location.state.from.pathname + (location.state.from.search || "")
-          : null) || "/pq/dashboard";
-=======
-      const from = location.state?.from?.pathname ? `${location.state.from.pathname}${location.state.from.search || ""}` : (typeof location.state?.from === "string" ? location.state.from : "/pq/dashboard");
->>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
+      const from = location.state?.from?.pathname
+        ? `${location.state.from.pathname}${location.state.from.search || ""}`
+        : typeof location.state?.from === "string"
+        ? location.state.from
+        : "/pq/dashboard";
       navigate(from, { replace: true });
     } catch (err) {
-      setError(
-        err?.response?.data?.message ||
-        err?.message ||
-        "Invalid email or password. Please try again."
-      );
+      const status = err?.response?.status;
+      if (
+        status === 502 ||
+        status === 503 ||
+        status === 504 ||
+        err?.code === "ERR_NETWORK" ||
+        err?.code === "ECONNREFUSED"
+      ) {
+        setError(
+          "Unable to connect to the backend server (502 Bad Gateway). Please ensure the backend API server is running on port 5000."
+        );
+      } else if (status === 401 || status === 400) {
+        setError(
+          err?.response?.data?.message ||
+          "Invalid email or password. Please verify your credentials."
+        );
+      } else if (status === 403) {
+        setError(
+          err?.response?.data?.message ||
+          "Account access is restricted or awaiting administrator approval."
+        );
+      } else {
+        setError(
+          err?.response?.data?.message ||
+          err?.message ||
+          "An unexpected error occurred during login. Please try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -109,7 +130,6 @@ export default function LoginPage() {
                 placeholder="name@yashgroup.com"
                 className="w-full bg-slate-50 border border-slate-300 text-slate-900 rounded-xl pl-10 pr-3.5 py-2.5 focus:outline-none focus:border-slate-800 focus:bg-white focus:ring-1 focus:ring-slate-800 transition text-xs font-medium"
               />
-              <Mail className="w-4 h-4 text-[#475569] absolute left-3 top-3 pointer-events-none" />
             </div>
           </div>
 
@@ -143,39 +163,36 @@ export default function LoginPage() {
             className="w-full mt-2 py-3 px-4 rounded-xl bg-[#d4ff00] hover:bg-[#bbf400] text-black font-black text-xs uppercase tracking-wider flex items-center justify-center gap-2 border border-[#bef264] shadow-md shadow-lime-900/10 cursor-pointer transition disabled:opacity-50"
           >
             {loading ? (
-              <span className="flex items-center gap-2 text-black font-bold">
-                <span className="w-4 h-4 border-2 border-black/40 border-t-black rounded-full animate-spin" />
-                Authenticating...
-              </span>
+              <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
             ) : (
               <>
-                <span>Sign In to ERP Portal</span>
+                <span>Sign In to System</span>
                 <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
-        {/* Demo Credentials Quick-Fill Helper */}
-        <div className="pt-4 border-t border-slate-200 text-center space-y-2">
-          <div className="text-[11px] text-slate-500 font-semibold">
-            Development Authorized Credentials
-          </div>
+        {/* Quick Demo Credentials Autofill */}
+        <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
           <button
             type="button"
             onClick={handleFillDemo}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-[#f7fee7] hover:border-[#bef264] border border-slate-300 text-xs font-mono font-bold text-slate-800 hover:text-black transition cursor-pointer"
+            className="w-full py-2 px-3 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-[11px] flex items-center justify-center gap-1.5 transition cursor-pointer"
           >
-            <KeyRound className="w-3.5 h-3.5 text-slate-600" />
-            <span>admin@yashgroup.com · admin123</span>
+            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+            <span>Autofill Admin Demo Credentials</span>
           </button>
+          <p className="text-[10px] text-center text-slate-400 font-medium">
+            Production & Quality Operations Control System
+          </p>
         </div>
+      </div>
 
-        {/* Security badge footer */}
-        <div className="flex items-center justify-center gap-1.5 text-[11px] text-slate-500 font-medium">
-          <ShieldCheck className="w-4 h-4 text-emerald-600" />
-          <span>Role-Based Access Control Active</span>
-        </div>
+      {/* ISO Compliance Footer */}
+      <div className="mt-8 flex items-center gap-2 text-[11px] text-slate-400 font-medium">
+        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+        <span>ISO 9001:2015 Compliant · Yash Earthing Solutions Pvt Ltd</span>
       </div>
     </div>
   );

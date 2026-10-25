@@ -367,9 +367,11 @@ export class PlanningService {
   /**
    * Get single Work Order by ID with complete relations
    */
-<<<<<<< HEAD
   static async getWorkOrderById(idOrNo) {
     const clean = String(idOrNo || "").trim();
+    if (!clean || clean.toLowerCase() === "undefined" || clean.toLowerCase() === "null") {
+      throw ApiError.badRequest("Invalid work order ID or number provided.");
+    }
     const isNum = /^\d+$/.test(clean);
 
     const includeRelations = {
@@ -377,55 +379,6 @@ export class PlanningService {
         include: {
           customer: true,
           items: { include: { product: true } },
-=======
-  static async getWorkOrderById(id) {
-    const workOrder = await prisma.workOrder.findUnique({
-      where: /^\d+$/.test(String(id).trim()) ? { id: Number(id) } : { workOrderNo: String(id).trim() },
-      include: {
-        salesOrder: {
-          include: {
-            customer: true,
-            items: { include: { product: true } },
-          },
-        },
-        bomRevision: {
-          include: {
-            items: { include: { component: true } },
-            operations: { orderBy: { sequence: "asc" } },
-            product: {
-              include: {
-                productSpecifications: { orderBy: { id: "desc" }, take: 1 },
-              },
-            },
-          },
-        },
-        items: {
-          include: {
-            product: {
-              include: {
-                inventory: true,
-              },
-            },
-          },
-        },
-        inspections: {
-          include: {
-            assignedInspector: { select: { id: true, name: true, email: true, role: true } },
-            assignedBy: { select: { id: true, name: true, email: true, role: true } },
-            capaRecords: true,
-            dispatchRecords: true,
-          },
-          orderBy: { createdAt: "desc" },
-        },
-        capaRecords: {
-          orderBy: { createdAt: "desc" },
-        },
-        dispatchRecords: {
-          orderBy: { createdAt: "desc" },
-        },
-        createdBy: {
-          select: { id: true, name: true, email: true, role: true },
->>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
         },
       },
       bomRevision: {

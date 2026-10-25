@@ -4,7 +4,7 @@ const api = axios.create({
   baseURL:
     import.meta.env.VITE_API_URL ||
     import.meta.env.VITE_API_BASE_URL ||
-    "/api/v1",
+    "/api",
   withCredentials: true,
   headers: {
     "Content-Type": "application/json",
@@ -30,10 +30,20 @@ api.interceptors.response.use(
   (response) => response,
   (error) => {
     const status = error.response?.status;
-    const message =
+    let message =
       error.response?.data?.message ||
       error.message ||
       "An unexpected API error occurred.";
+
+    if (
+      status === 502 ||
+      status === 503 ||
+      status === 504 ||
+      error.code === "ECONNREFUSED" ||
+      error.code === "ERR_NETWORK"
+    ) {
+      message = `Backend server unreachable (${status || error.code || "Gateway Error"}). Please ensure the API server is running.`;
+    }
 
     if (status === 401) {
       localStorage.removeItem("yash_auth_token");
@@ -41,7 +51,12 @@ api.interceptors.response.use(
       sessionStorage.removeItem("yash_auth_token");
     }
 
-    console.error("API Error:", message);
+    if (import.meta.env.DEV) {
+      // Diagnostic logging without credentials or sensitive request bodies
+      const method = error.config?.method?.toUpperCase() || "REQUEST";
+      const url = error.config?.url || "";
+      console.error(`[API ${method} ${url}] (${status || error.code || "ERR"}): ${message}`);
+    }
 
     return Promise.reject(error);
   },

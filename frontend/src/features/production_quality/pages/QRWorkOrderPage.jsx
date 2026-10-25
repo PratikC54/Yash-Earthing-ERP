@@ -24,7 +24,8 @@ import QRLabelModal from "../components/qr/QRLabelModal";
 import authService from "../../../services/authService";
 
 export default function QRWorkOrderPage() {
-  const { id } = useParams();
+  const { id: paramId } = useParams();
+  const id = paramId || (typeof window !== "undefined" ? window.location.pathname.match(/\/work-orders\/([^/?#]+)/)?.[1] : "");
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
 

@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { ChevronRight, QrCode } from "lucide-react";
 import QRLabelModal from "../qr/QRLabelModal";
+import ProductionQualitySubmoduleNav from "./ProductionQualitySubmoduleNav";
 
 /**
  * Reusable ModuleHeader with Reference Navy Theme & QR Code Action
@@ -15,69 +16,74 @@ export default function ModuleHeader({
   workOrderId = null,
   workOrderNo = null,
   workOrder = null,
+  showSubmoduleNav = true,
 }) {
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
-      <div>
-        {breadcrumbs.length > 0 && (
-          <nav className="flex flex-wrap items-center gap-1.5 text-xs text-[#94a3b8] mb-1.5">
-            {breadcrumbs.map((crumb, idx) => (
-              <React.Fragment key={crumb.label || idx}>
-                {crumb.to ? (
-                  <Link
-                    to={crumb.to}
-                    className="hover:text-black transition font-semibold"
-                  >
-                    {crumb.label}
-                  </Link>
-                ) : (
-                  <span className="text-slate-800 font-bold">
-                    {crumb.label}
-                  </span>
-                )}
-                {idx < breadcrumbs.length - 1 && (
-                  <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
-                )}
-              </React.Fragment>
-            ))}
-          </nav>
-        )}
-        <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-          {title}
-        </h1>
-        {subtitle && (
-          <p className="text-xs sm:text-sm text-slate-700 font-medium mt-0.5">
-            {subtitle}
-          </p>
-        )}
-      </div>
+    <div className="space-y-1">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
+        <div>
+          {breadcrumbs.length > 0 && (
+            <nav className="flex flex-wrap items-center gap-1.5 text-xs text-[#94a3b8] mb-1.5">
+              {breadcrumbs.map((crumb, idx) => (
+                <React.Fragment key={crumb.label || idx}>
+                  {crumb.to ? (
+                    <Link
+                      to={crumb.to}
+                      className="hover:text-black transition font-semibold"
+                    >
+                      {crumb.label}
+                    </Link>
+                  ) : (
+                    <span className="text-slate-800 font-bold">
+                      {crumb.label}
+                    </span>
+                  )}
+                  {idx < breadcrumbs.length - 1 && (
+                    <ChevronRight className="w-3.5 h-3.5 text-slate-400" />
+                  )}
+                </React.Fragment>
+              ))}
+            </nav>
+          )}
+          <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+            {title}
+          </h1>
+          {subtitle && (
+            <p className="text-xs sm:text-sm text-slate-700 font-medium mt-0.5">
+              {subtitle}
+            </p>
+          )}
+        </div>
 
-      <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+        <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          {showQR && (
+            <button
+              type="button"
+              onClick={() => setIsQRModalOpen(true)}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#1e2a4a] bg-[#10182f] hover:bg-[#1e2a4a] text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors shadow-xs cursor-pointer"
+              title="View & Print Work Order QR Code"
+            >
+              <QrCode className="w-4 h-4 text-blue-400" />
+              <span>QR Code</span>
+            </button>
+          )}
+          {action}
+        </div>
+
         {showQR && (
-          <button
-            type="button"
-            onClick={() => setIsQRModalOpen(true)}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[#1e2a4a] bg-[#10182f] hover:bg-[#1e2a4a] text-xs font-semibold text-blue-400 hover:text-blue-300 transition-colors shadow-xs cursor-pointer"
-            title="View & Print Work Order QR Code"
-          >
-            <QrCode className="w-4 h-4 text-blue-400" />
-            <span>QR Code</span>
-          </button>
+          <QRLabelModal
+            isOpen={isQRModalOpen}
+            onClose={() => setIsQRModalOpen(false)}
+            workOrderId={workOrderId}
+            workOrderNo={workOrderNo}
+            workOrder={workOrder}
+          />
         )}
-        {action}
       </div>
 
-      {showQR && (
-        <QRLabelModal
-          isOpen={isQRModalOpen}
-          onClose={() => setIsQRModalOpen(false)}
-          workOrderId={workOrderId}
-          workOrderNo={workOrderNo}
-          workOrder={workOrder}
-        />
-      )}
+      {showSubmoduleNav && <ProductionQualitySubmoduleNav />}
     </div>
   );
 }

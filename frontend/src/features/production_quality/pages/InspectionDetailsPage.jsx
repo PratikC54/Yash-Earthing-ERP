@@ -31,7 +31,8 @@ import {
 } from "../utils/formValidation";
 
 export default function InspectionDetailsPage() {
-  const { id } = useParams();
+  const { id: paramId } = useParams();
+  const id = paramId || (typeof window !== "undefined" ? window.location.pathname.match(/\/inspections\/([^/?#]+)/)?.[1] : "");
 
   const [inspection, setInspection] = useState(null);
   const [loading, setLoading] = useState(true);

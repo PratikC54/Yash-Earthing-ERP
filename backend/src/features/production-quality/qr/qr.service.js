@@ -1,8 +1,4 @@
-<<<<<<< HEAD
 import os from "node:os";
-=======
-import os from "os";
->>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
 import QRCode from "qrcode";
 import prisma from "../../../db/prisma.js";
 import { ApiError } from "../../../utils/apiResponse.js";

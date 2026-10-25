@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Plus,
   Search,
@@ -14,6 +14,7 @@ import {
 import productionService from "../services/productionService";
 import CustomDropdown from "../../../components/common/CustomDropdown";
 import QRLabelModal from "../components/qr/QRLabelModal";
+import ProductionQualitySubmoduleNav from "../components/shared/ProductionQualitySubmoduleNav";
 import {
   getTodayDateString,
   validatePastDate,
@@ -36,14 +37,25 @@ const getDefaultNewOrder = () => ({
 });
 
 export default function WorkOrdersPage() {
+  const [searchParams] = useSearchParams();
+  const initialSearch = searchParams.get("search") || "";
+  const initialStatus = searchParams.get("status") || "ALL";
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [actionError, setActionError] = useState("");
 
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
+
+  useEffect(() => {
+    const s = searchParams.get("search");
+    if (s !== null) setSearchTerm(s);
+    const st = searchParams.get("status");
+    if (st !== null) setStatusFilter(st);
+  }, [searchParams]);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [viewedOrder, setViewedOrder] = useState(null);
   const [editingOrder, setEditingOrder] = useState(null);
@@ -158,7 +170,19 @@ export default function WorkOrdersPage() {
 
   const filteredOrders = useMemo(() => {
     return orders.filter((o) => {
-      if (statusFilter && statusFilter !== "ALL" && o.status?.toUpperCase() !== statusFilter.toUpperCase()) return false;
+      if (statusFilter && statusFilter !== "ALL") {
+        if (statusFilter.toUpperCase() === "DELAYED") {
+          const today = new Date();
+          const isDelayed =
+            o.status !== "COMPLETED" &&
+            o.status !== "CANCELLED" &&
+            o.plannedCompletionDate &&
+            new Date(o.plannedCompletionDate) < today;
+          if (!isDelayed) return false;
+        } else if (o.status?.toUpperCase() !== statusFilter.toUpperCase()) {
+          return false;
+        }
+      }
       if (searchTerm) {
         const q = searchTerm.toLowerCase();
         return (
@@ -303,6 +327,9 @@ export default function WorkOrdersPage() {
         </div>
       </div>
 
+      {/* Production & Quality Submodule Navigation Bar */}
+      <ProductionQualitySubmoduleNav />
+
       {/* Filter Tabs & Search Controls */}
       <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-4 shadow-md flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div className="relative w-full md:w-80">
@@ -317,7 +344,7 @@ export default function WorkOrdersPage() {
         </div>
 
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-thin">
-          {["ALL", "PLANNED", "IN_PROGRESS", "COMPLETED", "DRAFT"].map((st) => (
+          {["ALL", "PLANNED", "IN_PROGRESS", "COMPLETED", "DELAYED", "DRAFT"].map((st) => (
             <button
               key={st}
               type="button"

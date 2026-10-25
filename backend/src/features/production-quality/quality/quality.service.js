@@ -230,23 +230,18 @@ export class QualityService {
         },
       });
 
-      // Set WorkOrder to QC_HOLD
-      await tx.workOrder.update({
-        where: { id: inspection.workOrderId },
-        data: { status: WORK_ORDER_STATUS.QC_HOLD },
-      });
-
-      NotificationService.notifyRoles(["QUALITY_INSPECTOR", "PRODUCTION_MANAGER", "ADMIN"], {
-        type: NOTIFICATION_TYPES.INSPECTION_FAILED,
-        title: `Quality Inspection FAILED: Lot ${inspection.inspectionNo}`,
-        message: `Inspection Lot ${inspection.inspectionNo} (WO: ${inspection.workOrder?.workOrderNo || inspection.workOrderId}) has FAILED quality checks. Reason: ${reason}. Work Order moved to QC_HOLD.`,
-        priority: NOTIFICATION_PRIORITY.CRITICAL,
+      NotificationService.createNotification({
+        recipientId: inspector.id,
+        type: NOTIFICATION_TYPES.WO_APPROACHING_DEADLINE,
+        title: `Quality Inspection Assigned: Lot ${inspection.inspectionNo}`,
+        message: `You have been assigned as the inspector for Lot ${inspection.inspectionNo} (WO: ${inspection.workOrder?.workOrderNo || inspection.workOrderId}).`,
+        priority: NOTIFICATION_PRIORITY.HIGH,
         link: `/pq/inspections/${id}`,
         entityType: "QualityInspection",
         entityId: Number(id),
-        dedupKey: `INSP_FAILED:${id}`,
-        metadata: { inspectionNo: inspection.inspectionNo, workOrderId: inspection.workOrderId, reason },
-      }).catch((err) => console.error("Failed to emit INSPECTION_FAILED alert:", err));
+        dedupKey: `INSP_ASSIGNED:${id}:${inspector.id}`,
+        metadata: { inspectionNo: inspection.inspectionNo, workOrderId: inspection.workOrderId },
+      }).catch((err) => console.error("Failed to emit inspector assigned alert:", err));
 
       await AuditService.record({
         userId: user?.id,
@@ -558,6 +553,24 @@ export class QualityService {
           assignedInspector: { select: { id: true, name: true, email: true, role: true } },
         },
       });
+
+      // Set WorkOrder to QC_HOLD
+      await tx.workOrder.update({
+        where: { id: inspection.workOrderId },
+        data: { status: WORK_ORDER_STATUS.QC_HOLD },
+      });
+
+      NotificationService.notifyRoles(["QUALITY_INSPECTOR", "PRODUCTION_MANAGER", "ADMIN"], {
+        type: NOTIFICATION_TYPES.INSPECTION_FAILED,
+        title: `Quality Inspection FAILED: Lot ${inspection.inspectionNo}`,
+        message: `Inspection Lot ${inspection.inspectionNo} (WO: ${inspection.workOrder?.workOrderNo || inspection.workOrderId}) has FAILED quality checks. Reason: ${reason}. Work Order moved to QC_HOLD.`,
+        priority: NOTIFICATION_PRIORITY.CRITICAL,
+        link: `/pq/inspections/${id}`,
+        entityType: "QualityInspection",
+        entityId: Number(id),
+        dedupKey: `INSP_FAILED:${id}`,
+        metadata: { inspectionNo: inspection.inspectionNo, workOrderId: inspection.workOrderId, reason },
+      }).catch((err) => console.error("Failed to emit INSPECTION_FAILED alert:", err));
 
       await AuditService.record({
         userId: user?.id,
@@ -1141,13 +1154,26 @@ export class QualityService {
           },
         });
 
-        // Also reflect rejection on WorkOrder
+        // Also reflect rejection on WorkOrder and place on QC_HOLD
         await tx.workOrder.update({
           where: { id: inspection.workOrderId },
           data: {
             rejectedQuantity: { increment: decideQty },
+            status: WORK_ORDER_STATUS.QC_HOLD,
           },
         });
+
+        NotificationService.notifyRoles(["QUALITY_INSPECTOR", "PRODUCTION_MANAGER", "ADMIN"], {
+          type: NOTIFICATION_TYPES.INSPECTION_FAILED,
+          title: `Quality Inspection FAILED: Lot ${inspection.inspectionNo}`,
+          message: `Inspection Lot ${inspection.inspectionNo} (WO: ${inspection.workOrder?.workOrderNo || inspection.workOrderId}) has FAILED quality checks. Reason: ${reason || notes}. Work Order moved to QC_HOLD.`,
+          priority: NOTIFICATION_PRIORITY.CRITICAL,
+          link: `/pq/inspections/${id}`,
+          entityType: "QualityInspection",
+          entityId: Number(id),
+          dedupKey: `INSP_FAILED:${id}`,
+          metadata: { inspectionNo: inspection.inspectionNo, workOrderId: inspection.workOrderId, reason: reason || notes },
+        }).catch((err) => console.error("Failed to emit INSPECTION_FAILED alert:", err));
 
         await AuditService.record({
           userId: user?.id,

@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { RefreshCw, Truck, AlertCircle, QrCode } from "lucide-react";
 import QRLabelModal from "../components/qr/QRLabelModal";
+import ProductionQualitySubmoduleNav from "../components/shared/ProductionQualitySubmoduleNav";
 import { Link } from "react-router-dom";
 import Card from "../../../components/common/Card";
 import Button from "../../../components/common/Button";
@@ -158,6 +159,9 @@ export default function DispatchPage() {
           </Button>
         </div>
       </div>
+
+      {/* Production & Quality Submodule Navigation Bar */}
+      <ProductionQualitySubmoduleNav />
 
       {error && (
         <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-center justify-between gap-3 text-rose-300 text-xs">

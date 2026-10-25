@@ -45,7 +45,8 @@ import {
 } from "../utils/formValidation";
 
 export default function WorkOrderDetailsPage() {
-  const { id } = useParams();
+  const { id: paramId } = useParams();
+  const id = paramId || (typeof window !== "undefined" ? window.location.pathname.match(/\/work-orders\/([^/?#]+)/)?.[1] : "");
 
   const [order, setOrder] = useState(null);
   const [history, setHistory] = useState([]);
@@ -70,6 +71,11 @@ export default function WorkOrderDetailsPage() {
   const [transferError, setTransferError] = useState("");
 
   const loadOrder = useCallback(async () => {
+    if (!id || id === "undefined" || id === "null") {
+      setLoading(false);
+      setErrorMsg("No work order ID specified.");
+      return;
+    }
     setLoading(true);
     setErrorMsg("");
     try {
@@ -331,17 +337,12 @@ export default function WorkOrderDetailsPage() {
     ["ADMIN", "PRODUCTION_MANAGER", "ENGINEER"].includes(currentUser?.role);
 
   // Comprehensive Quality & Batch Metrics
-  const inspections = order.inspections || [];
-  const latestInspection = inspections[0] || null;
   const inspectedTotal = inspections.reduce((sum, i) => sum + Number(i.inspectedQuantity || 0), 0);
   const acceptedTotal = inspections.reduce((sum, i) => sum + Number(i.acceptedQuantity || 0), 0);
   const rejectedTotal = inspections.reduce((sum, i) => sum + Number(i.rejectedQuantity || 0), 0);
   const reworkTotal = inspections.reduce((sum, i) => sum + Number(i.reworkQuantity || 0), 0);
   const pendingInspectionQty = Math.max(0, completedQuantity - inspectedTotal);
 
-  const batchNumber =
-    order.notes?.match(/Batch:?\s*([A-Za-z0-9_-]+)/i)?.[1] ||
-    `BATCH-${order.workOrderNo}`;
 
   const capaRecords = [
     ...(order.capaRecords || []),
@@ -582,43 +583,6 @@ export default function WorkOrderDetailsPage() {
         </div>
       </div>
 
-<<<<<<< HEAD
-      {/* Overview Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card title="Order Specifications & Batch">
-          <div className="space-y-2 text-xs">
-            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">Work Order No</span>
-              <span className="font-mono font-bold text-blue-400">{order.workOrderNo}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">Target Product</span>
-              <span className="font-semibold text-[#f1f5f9] truncate max-w-[180px]" title={targetProductName}>{targetProductName}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">Product SKU / Code</span>
-              <span className="font-mono text-[#3b82f6]">{targetProductSku}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">Batch Number</span>
-              <span className="font-mono font-semibold text-emerald-400">{batchNumber}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">Assigned Team / Line</span>
-              <span className="font-medium text-[#f1f5f9]">{assignedTeam}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">Start Date</span>
-              <span className="font-medium text-[#f1f5f9]">{startDate}</span>
-            </div>
-            <div className="flex justify-between py-1 border-b border-[#1e2a4a]">
-              <span className="text-[#94a3b8]">Due Date</span>
-              <span className="font-medium text-amber-400">{dueDate}</span>
-            </div>
-            <div className="flex justify-between py-1">
-              <span className="text-[#94a3b8]">QC Inspection Status</span>
-              <span className="font-semibold uppercase text-blue-400">{inspectionStatusText.replace(/_/g, ' ')}</span>
-=======
       {/* Quality Hold Active Warning */}
       {status === "QC_HOLD" && (
         <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 flex items-start gap-3 shadow-lg">
@@ -679,47 +643,10 @@ export default function WorkOrderDetailsPage() {
               <span className="font-medium text-slate-300">
                 {salesOrder?.customer?.name || "Internal Stock"} {salesOrder?.orderNumber ? `(${salesOrder.orderNumber})` : ""}
               </span>
->>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
             </div>
           </div>
         </Card>
 
-<<<<<<< HEAD
-        <Card title="Production & Quality Output">
-          <div className="space-y-3">
-            <ProductionProgress
-              produced={order.goodQuantity}
-              planned={order.plannedQuantity}
-              rejected={totalRejectedQuantity}
-              unit={uom}
-            />
-            <div className="grid grid-cols-3 text-center pt-2 border-t border-[#1e2a4a] gap-y-2">
-              <div>
-                <p className="text-[10px] text-[#94a3b8]">Planned</p>
-                <p className="text-xs font-bold text-[#f1f5f9]">{order.plannedQuantity} {uom}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-blue-400">Produced</p>
-                <p className="text-xs font-bold text-blue-400">{order.goodQuantity} {uom}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-emerald-400">Accepted (QC)</p>
-                <p className="text-xs font-bold text-emerald-400">{acceptedQuantity} {uom}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-rose-400">Rejected</p>
-                <p className="text-xs font-bold text-rose-400">{totalRejectedQuantity} {uom}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-amber-400">Pending QC</p>
-                <p className="text-xs font-bold text-amber-400">{pendingInspectionQuantity} {uom}</p>
-              </div>
-              <div>
-                <p className="text-[10px] text-indigo-400">Pass Rate</p>
-                <p className="text-xs font-bold text-indigo-400">
-                  {completedQuantity > 0 ? Math.round((acceptedQuantity / completedQuantity) * 100) : 0}%
-                </p>
-=======
         <Card title="Order Schedule & Execution Status" subtitle="Timeline, schedule dates, and priority">
           <div className="space-y-2.5 text-xs">
             <div className="flex justify-between items-center py-1.5 border-b border-[#1e2a4a]">
@@ -761,9 +688,8 @@ export default function WorkOrderDetailsPage() {
             </div>
             <div className="pt-2">
               <span className="text-[#94a3b8] block text-[11px] mb-1">Production Notes & Instructions:</span>
-              <div className="p-2.5 rounded-lg bg-[#080d1a] border border-[#1e2a4a] text-[#cbd5e1] text-[11px] min-h-[46px]">
+              <div className="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-700 text-[11px] min-h-[46px]">
                 {order.notes || "Standard earthing assembly procedures apply. Strict quality compliance required."}
->>>>>>> c86ebff984ce1fdf4d8651812651af2aaee223a6
               </div>
             </div>
           </div>
@@ -797,7 +723,7 @@ export default function WorkOrderDetailsPage() {
                         ? "bg-blue-600/20 border-blue-500/50 text-white shadow-sm"
                         : isPassed
                         ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300"
-                        : "bg-[#080d1a] border-[#1e2a4a] text-[#64748b]"
+                        : "bg-slate-50 border-slate-200 text-slate-500"
                     }`}
                   >
                     <div className="flex items-center justify-between mb-1">
@@ -805,7 +731,7 @@ export default function WorkOrderDetailsPage() {
                       {isPassed && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
                       {isCurrent && <Activity className="w-3.5 h-3.5 text-blue-400 animate-pulse" />}
                     </div>
-                    <div className="font-semibold text-xs text-white">{s.name}</div>
+                    <div className="font-semibold text-xs text-slate-800">{s.name}</div>
                     <div className="text-[10px] opacity-80 mt-0.5">{s.desc}</div>
                   </div>
                 );
@@ -823,7 +749,7 @@ export default function WorkOrderDetailsPage() {
                 </span>
                 <span className="font-bold text-blue-400 text-sm">{completionPercentage}% Completed</span>
               </div>
-              <div className="w-full bg-[#080d1a] border border-[#1e2a4a] h-3 rounded-full overflow-hidden flex">
+              <div className="w-full bg-slate-100 border border-slate-200 h-3 rounded-full overflow-hidden flex">
                 <div
                   className="bg-emerald-500 h-full transition-all duration-300"
                   style={{ width: `${completionPercentage}%` }}
@@ -873,14 +799,14 @@ export default function WorkOrderDetailsPage() {
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
                   <thead>
-                    <tr className="border-b border-[#1e2a4a] text-[#94a3b8] bg-[#0b1329]">
+                    <tr className="border-b border-slate-200 text-slate-600 bg-slate-100/80 font-bold uppercase text-[10px] tracking-wider">
                       <th className="py-2 px-3">Timestamp</th>
                       <th className="py-2 px-3">Machine / Line</th>
                       <th className="py-2 px-3">Reason / Details</th>
                       <th className="py-2 px-3 text-right">Logged By</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-[#1e2a4a]">
+                  <tbody className="divide-y divide-slate-200 bg-white">
                     {downtimeLogs.map((dt, idx) => (
                       <tr key={idx} className="hover:bg-slate-800/30">
                         <td className="py-2 px-3 text-[#94a3b8]">{formatDateTime(dt.createdAt)}</td>
@@ -913,33 +839,33 @@ export default function WorkOrderDetailsPage() {
           </div>
 
           <div className="p-3.5 rounded-xl bg-blue-500/10 border border-blue-500/30">
-            <span className="text-[10px] uppercase font-bold text-blue-400 block">Produced Good</span>
-            <span className="text-lg font-extrabold text-blue-300 mt-1 block font-mono">{completedQuantity}</span>
-            <span className="text-[10px] text-blue-400/80">{uom} ({completionPercentage}%)</span>
+            <span className="text-[10px] uppercase font-bold text-blue-600 block">Produced Good</span>
+            <span className="text-lg font-extrabold text-blue-700 mt-1 block font-mono">{completedQuantity}</span>
+            <span className="text-[10px] text-blue-600">{uom} ({completionPercentage}%)</span>
           </div>
 
           <div className="p-3.5 rounded-xl bg-indigo-500/10 border border-indigo-500/30">
-            <span className="text-[10px] uppercase font-bold text-indigo-400 block">QC Inspected</span>
-            <span className="text-lg font-extrabold text-indigo-300 mt-1 block font-mono">{inspectedTotal}</span>
-            <span className="text-[10px] text-indigo-400/80">{uom}</span>
+            <span className="text-[10px] uppercase font-bold text-indigo-600 block">QC Inspected</span>
+            <span className="text-lg font-extrabold text-indigo-700 mt-1 block font-mono">{inspectedTotal}</span>
+            <span className="text-[10px] text-indigo-600">{uom}</span>
           </div>
 
           <div className="p-3.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-            <span className="text-[10px] uppercase font-bold text-emerald-400 block">QC Accepted</span>
-            <span className="text-lg font-extrabold text-emerald-300 mt-1 block font-mono">{acceptedTotal}</span>
-            <span className="text-[10px] text-emerald-400/80">{uom}</span>
+            <span className="text-[10px] uppercase font-bold text-emerald-600 block">QC Accepted</span>
+            <span className="text-lg font-extrabold text-emerald-700 mt-1 block font-mono">{acceptedTotal}</span>
+            <span className="text-[10px] text-emerald-600">{uom}</span>
           </div>
 
           <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30">
-            <span className="text-[10px] uppercase font-bold text-rose-400 block">QC Rejected</span>
-            <span className="text-lg font-extrabold text-rose-300 mt-1 block font-mono">{rejectedTotal}</span>
-            <span className="text-[10px] text-rose-400/80">{uom}</span>
+            <span className="text-[10px] uppercase font-bold text-rose-600 block">QC Rejected</span>
+            <span className="text-lg font-extrabold text-rose-700 mt-1 block font-mono">{rejectedTotal}</span>
+            <span className="text-[10px] text-rose-600">{uom}</span>
           </div>
 
           <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30">
-            <span className="text-[10px] uppercase font-bold text-amber-400 block">Pending QC</span>
-            <span className="text-lg font-extrabold text-amber-300 mt-1 block font-mono">{pendingInspectionQty}</span>
-            <span className="text-[10px] text-amber-400/80">{uom}</span>
+            <span className="text-[10px] uppercase font-bold text-amber-600 block">Pending QC</span>
+            <span className="text-lg font-extrabold text-amber-700 mt-1 block font-mono">{pendingInspectionQty}</span>
+            <span className="text-[10px] text-amber-600">{uom}</span>
           </div>
         </div>
       </Card>
@@ -947,11 +873,11 @@ export default function WorkOrderDetailsPage() {
       {/* SECTION 4: QUALITY INSPECTION */}
       <Card title="4. Quality Inspection & Verification" subtitle="Quality assurance records, checklist, and testing measurements">
         {inspections.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-[#080d1a] border border-[#1e2a4a] text-center space-y-3">
-            <div className="w-12 h-12 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center mx-auto">
+          <div className="p-6 rounded-2xl bg-[#10182f] border border-[#1e2a4a] text-center space-y-3">
+            <div className="w-12 h-12 rounded-full bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center mx-auto">
               <Clock className="w-6 h-6" />
             </div>
-            <h4 className="text-base font-bold text-white">Quality inspection has not been completed for this work order.</h4>
+            <h4 className="text-base font-bold text-[#f1f5f9]">Quality inspection has not been completed for this work order.</h4>
             <p className="text-xs text-[#94a3b8] max-w-lg mx-auto">
               This manufactured batch has not yet undergone quality verification. Work order status must not be treated as passed until formal inspection is performed.
             </p>
@@ -966,7 +892,8 @@ export default function WorkOrderDetailsPage() {
         ) : (
           <div className="space-y-6">
             {inspections.map((insp, idx) => (
-              <div key={insp.id || idx} className="p-4 sm:p-5 rounded-xl bg-[#080d1a] border border-[#1e2a4a] space-y-4">
+              <div key={insp.id || idx} className="p-4 sm:p-5 rounded-xl bg-[#10182f] border border-[#1e2a4a] space-y-4">
+                {/* Inspection Summary Panel */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-[#1e2a4a]">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
@@ -974,11 +901,11 @@ export default function WorkOrderDetailsPage() {
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-white text-sm">{insp.inspectionNo}</span>
+                        <span className="font-mono font-bold text-[#f1f5f9] text-sm">{insp.inspectionNo}</span>
                         <StatusBadge status={insp.status} />
                       </div>
                       <p className="text-xs text-[#94a3b8] mt-0.5">
-                        Inspection Date: {formatDateTime(insp.inspectedAt || insp.createdAt)} • Inspector: <strong className="text-white">{insp.assignedInspector?.name || insp.decisionOfficer || "QA Inspector"}</strong>
+                        Inspection Date: {formatDateTime(insp.inspectedAt || insp.createdAt)} • Inspector: <strong className="text-[#f1f5f9]">{insp.assignedInspector?.name || insp.decisionOfficer || "QA Inspector"}</strong>
                       </p>
                     </div>
                   </div>
@@ -994,47 +921,47 @@ export default function WorkOrderDetailsPage() {
 
                 {/* Inspection Checklist & Measurements Table */}
                 <div className="space-y-2">
-                  <span className="text-xs font-semibold text-slate-300 block">Checklist & Measured Parameters:</span>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-left text-xs">
+                  <span className="text-xs font-semibold text-[#f1f5f9] block">Checklist & Measured Parameters:</span>
+                  <div className="overflow-x-auto rounded-lg border border-[#1e2a4a]">
+                    <table className="w-full text-left text-xs bg-[#10182f]">
                       <thead>
-                        <tr className="border-b border-[#1e2a4a] text-[#94a3b8] bg-[#0b1329]">
-                          <th className="py-2 px-3">Test Parameter</th>
-                          <th className="py-2 px-3">Specification / Tolerance</th>
-                          <th className="py-2 px-3">Measured Value</th>
-                          <th className="py-2 px-3 text-right">Result</th>
+                        <tr className="border-b border-[#1e2a4a] text-[#94a3b8] bg-[#0b1329] font-bold uppercase text-[10px] tracking-wider">
+                          <th className="py-2.5 px-3">Test Parameter</th>
+                          <th className="py-2.5 px-3">Specification / Tolerance</th>
+                          <th className="py-2.5 px-3">Measured Value</th>
+                          <th className="py-2.5 px-3 text-right">Result</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-[#1e2a4a]">
-                        <tr className="hover:bg-slate-800/30">
-                          <td className="py-2 px-3 font-medium text-white">Outer Diameter & Dimensions</td>
-                          <td className="py-2 px-3 text-slate-400">172.0 mm (± 0.5 mm)</td>
-                          <td className="py-2 px-3 font-mono text-emerald-400">172.15 mm</td>
-                          <td className="py-2 px-3 text-right">
+                        <tr className="hover:bg-slate-800/40 transition">
+                          <td className="py-2.5 px-3 font-medium text-[#f1f5f9]">Outer Diameter & Dimensions</td>
+                          <td className="py-2.5 px-3 text-[#94a3b8]">172.0 mm (± 0.5 mm)</td>
+                          <td className="py-2.5 px-3 font-mono font-semibold text-emerald-400">172.15 mm</td>
+                          <td className="py-2.5 px-3 text-right">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PASS</span>
                           </td>
                         </tr>
-                        <tr className="hover:bg-slate-800/30">
-                          <td className="py-2 px-3 font-medium text-white">Copper Coating Thickness</td>
-                          <td className="py-2 px-3 text-slate-400">≥ 250 µm (Electrolytic 99.9%)</td>
-                          <td className="py-2 px-3 font-mono text-emerald-400">264 µm</td>
-                          <td className="py-2 px-3 text-right">
+                        <tr className="hover:bg-slate-800/40 transition">
+                          <td className="py-2.5 px-3 font-medium text-[#f1f5f9]">Copper Coating Thickness</td>
+                          <td className="py-2.5 px-3 text-[#94a3b8]">≥ 250 µm (Electrolytic 99.9%)</td>
+                          <td className="py-2.5 px-3 font-mono font-semibold text-emerald-400">264 µm</td>
+                          <td className="py-2.5 px-3 text-right">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PASS</span>
                           </td>
                         </tr>
-                        <tr className="hover:bg-slate-800/30">
-                          <td className="py-2 px-3 font-medium text-white">Electrical Resistance & Bonding</td>
-                          <td className="py-2 px-3 text-slate-400">≤ 0.5 Ω / IS 3043 Compliant</td>
-                          <td className="py-2 px-3 font-mono text-emerald-400">0.08 Ω</td>
-                          <td className="py-2 px-3 text-right">
+                        <tr className="hover:bg-slate-800/40 transition">
+                          <td className="py-2.5 px-3 font-medium text-[#f1f5f9]">Electrical Resistance & Bonding</td>
+                          <td className="py-2.5 px-3 text-[#94a3b8]">≤ 0.5 Ω / IS 3043 Compliant</td>
+                          <td className="py-2.5 px-3 font-mono font-semibold text-emerald-400">0.08 Ω</td>
+                          <td className="py-2.5 px-3 text-right">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PASS</span>
                           </td>
                         </tr>
-                        <tr className="hover:bg-slate-800/30">
-                          <td className="py-2 px-3 font-medium text-white">Visual & Surface Finish</td>
-                          <td className="py-2 px-3 text-slate-400">Zero cracks, no blisters or voids</td>
-                          <td className="py-2 px-3 font-mono text-emerald-400">Clean / Smooth</td>
-                          <td className="py-2 px-3 text-right">
+                        <tr className="hover:bg-slate-800/40 transition">
+                          <td className="py-2.5 px-3 font-medium text-[#f1f5f9]">Visual & Surface Finish</td>
+                          <td className="py-2.5 px-3 text-[#94a3b8]">Zero cracks, no blisters or voids</td>
+                          <td className="py-2.5 px-3 font-mono font-semibold text-emerald-400">Clean / Smooth</td>
+                          <td className="py-2.5 px-3 text-right">
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">PASS</span>
                           </td>
                         </tr>
@@ -1043,13 +970,13 @@ export default function WorkOrderDetailsPage() {
                   </div>
                 </div>
 
-                {/* Inspector Decision Notes */}
+                {/* Inspector Decision Notes / Remarks */}
                 {(insp.decisionNotes || insp.evidenceNotes) && (
-                  <div className="p-3 rounded-lg bg-[#0e172a] border border-[#1e2a4a] text-xs">
+                  <div className="p-3.5 rounded-lg bg-[#0a1020] border border-[#1e2a4a] text-xs shadow-inner">
                     <span className="text-[#94a3b8] block text-[10px] uppercase font-bold mb-1">
                       Inspector Findings & Remarks:
                     </span>
-                    <p className="text-slate-200">{insp.decisionNotes || insp.evidenceNotes}</p>
+                    <p className="text-[#f1f5f9] font-medium leading-relaxed">{insp.decisionNotes || insp.evidenceNotes}</p>
                   </div>
                 )}
               </div>
@@ -1061,11 +988,11 @@ export default function WorkOrderDetailsPage() {
       {/* SECTION 5: DEFECTS AND REWORK INFORMATION */}
       <Card title="5. Defects, Non-Conformance & Rework Tracking" subtitle="Quality non-conformance reports, root cause, and rework status">
         {capaRecords.length === 0 ? (
-          <div className="p-6 rounded-2xl bg-[#080d1a] border border-[#1e2a4a] text-center space-y-2">
-            <div className="w-10 h-10 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center justify-center mx-auto">
-              <CheckCircle2 className="w-5 h-5" />
+          <div className="p-6 rounded-2xl bg-[#10182f] border border-[#1e2a4a] text-center space-y-2">
+            <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-[#2DD4BF] border border-emerald-500/30 flex items-center justify-center mx-auto">
+              <CheckCircle2 className="w-5 h-5 text-[#2DD4BF]" />
             </div>
-            <h4 className="text-sm font-bold text-white">No defects or rework recorded for this work order.</h4>
+            <h4 className="text-sm font-bold text-[#f1f5f9]">No defects or rework recorded for this work order.</h4>
             <p className="text-xs text-[#94a3b8] max-w-md mx-auto">
               All manufactured units conform to engineering tolerances. No non-conformances, scrap write-offs, or rework orders have been raised for this batch.
             </p>
@@ -1073,10 +1000,10 @@ export default function WorkOrderDetailsPage() {
         ) : (
           <div className="space-y-4">
             {capaRecords.map((capa, idx) => (
-              <div key={capa.id || idx} className="p-4 rounded-xl bg-[#080d1a] border border-[#1e2a4a] space-y-3">
+              <div key={capa.id || idx} className="p-4 rounded-xl bg-[#10182f] border border-[#1e2a4a] space-y-3">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2.5 border-b border-[#1e2a4a]">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-bold text-white text-xs">{capa.capaNo}</span>
+                    <span className="font-mono font-bold text-[#f1f5f9] text-xs">{capa.capaNo}</span>
                     <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/30">
                       {capa.status || "OPEN"}
                     </span>
@@ -1089,7 +1016,7 @@ export default function WorkOrderDetailsPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                   <div>
                     <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Defect Description</span>
-                    <p className="text-white mt-0.5 font-medium">{capa.defectDescription || "Non-conformance logged during inspection."}</p>
+                    <p className="text-[#f1f5f9] mt-0.5 font-medium">{capa.defectDescription || "Non-conformance logged during inspection."}</p>
                   </div>
                   <div>
                     <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Root Cause</span>
@@ -1097,7 +1024,7 @@ export default function WorkOrderDetailsPage() {
                   </div>
                   <div>
                     <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Corrective & Rework Action</span>
-                    <p className="text-emerald-300 mt-0.5">{capa.correctiveAction}</p>
+                    <p className="text-emerald-400 mt-0.5 font-medium">{capa.correctiveAction}</p>
                   </div>
                   <div>
                     <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Responsible Person</span>
@@ -1106,9 +1033,9 @@ export default function WorkOrderDetailsPage() {
                 </div>
 
                 {capa.resolutionNotes && (
-                  <div className="p-2.5 rounded-lg bg-[#0e172a] border border-[#1e2a4a] text-xs">
+                  <div className="p-2.5 rounded-lg bg-[#0a1020] border border-[#1e2a4a] text-xs shadow-inner">
                     <span className="text-[#94a3b8] block text-[10px] uppercase font-bold">Resolution Notes:</span>
-                    <p className="text-slate-200 mt-0.5">{capa.resolutionNotes}</p>
+                    <p className="text-[#f1f5f9] mt-0.5 font-medium">{capa.resolutionNotes}</p>
                   </div>
                 )}
               </div>
@@ -1204,18 +1131,18 @@ export default function WorkOrderDetailsPage() {
       {/* Audit History Timeline */}
       <Card title="6. Production & Quality Lifecycle History" subtitle="Immutable state change log">
         {history.length === 0 ? (
-          <div className="text-center py-6 text-xs text-[#94a3b8]">No lifecycle events recorded yet.</div>
+          <div className="text-center py-6 text-xs text-slate-500">No lifecycle events recorded yet.</div>
         ) : (
           <div className="space-y-3">
             {history.map((h, i) => (
-              <div key={h.id || i} className="flex items-start gap-3 text-xs border-b border-[#1e2a4a] pb-2.5">
+              <div key={h.id || i} className="flex items-start gap-3 text-xs border-b border-slate-200 pb-2.5">
                 <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0" />
                 <div className="flex-1">
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold text-[#f1f5f9]">{h.action}</span>
-                    <span className="text-[11px] text-[#94a3b8]">{formatDateTime(h.createdAt)}</span>
+                    <span className="font-semibold text-slate-900">{h.action}</span>
+                    <span className="text-[11px] text-slate-500">{formatDateTime(h.createdAt)}</span>
                   </div>
-                  <p className="text-[11px] text-[#94a3b8] mt-0.5">
+                  <p className="text-[11px] text-slate-500 mt-0.5">
                     User ID: {h.userId || "System"} · {h.ipAddress || "Internal"}
                   </p>
                 </div>

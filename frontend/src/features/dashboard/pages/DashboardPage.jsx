@@ -25,6 +25,7 @@ import {
 import productionService from "../../production_quality/services/productionService";
 import qualityService from "../../production_quality/services/qualityService";
 import QRLabelModal from "../../production_quality/components/qr/QRLabelModal";
+import ProductionQualitySubmoduleNav from "../../production_quality/components/shared/ProductionQualitySubmoduleNav";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Loader from "../../../components/common/Loader";
 import { formatDate } from "../../production_quality/utils/productionQualityHelpers";
@@ -245,7 +246,7 @@ export default function DashboardPage() {
       color: "from-blue-600 to-indigo-600",
       accent: "text-[#3B82F6]",
       bgAccent: "bg-[#3B82F6]/10",
-      link: "/production/work-orders",
+      link: "/production-quality/work-orders",
     },
     {
       id: "planned-prod",
@@ -256,7 +257,7 @@ export default function DashboardPage() {
       color: "from-indigo-600 to-purple-600",
       accent: "text-indigo-400",
       bgAccent: "bg-indigo-500/10",
-      link: "/production/planning",
+      link: "/production-quality/planning",
     },
     {
       id: "in-progress",
@@ -267,7 +268,7 @@ export default function DashboardPage() {
       color: "from-amber-600 to-yellow-600",
       accent: "text-[#FACC15]",
       bgAccent: "bg-[#FACC15]/10",
-      link: "/production/shop-floor",
+      link: "/production-quality/work-orders?status=IN_PROGRESS",
     },
     {
       id: "completed-wo",
@@ -278,7 +279,7 @@ export default function DashboardPage() {
       color: "from-emerald-600 to-teal-600",
       accent: "text-[#2DD4BF]",
       bgAccent: "bg-[#2DD4BF]/10",
-      link: "/production/work-orders",
+      link: "/production-quality/work-orders?status=COMPLETED",
     },
     {
       id: "pending-qa",
@@ -289,7 +290,7 @@ export default function DashboardPage() {
       color: "from-purple-600 to-pink-600",
       accent: "text-purple-400",
       bgAccent: "bg-purple-500/10",
-      link: "/production/quality-inspection",
+      link: "/production-quality/inspections?tab=PENDING_ASSIGNMENT",
     },
     {
       id: "rejected-qty",
@@ -311,7 +312,7 @@ export default function DashboardPage() {
       color: "from-teal-600 to-emerald-600",
       accent: "text-[#2DD4BF]",
       bgAccent: "bg-[#2DD4BF]/10",
-      link: "/production-quality/manufacturing",
+      link: "/production-quality/inspections?tab=COMPLETED",
     },
     {
       id: "prod-efficiency",
@@ -528,6 +529,9 @@ export default function DashboardPage() {
 
       </div>
 
+      {/* Production & Quality Submodule Navigation Bar */}
+      <ProductionQualitySubmoduleNav />
+
       {/* Error / Alert notice if any */}
       {error && (
         <div className="flex items-center gap-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-200 text-xs">
@@ -586,8 +590,16 @@ export default function DashboardPage() {
                 return (
                   <div
                     key={card.id}
+                    role="button"
+                    tabIndex={0}
                     onClick={() => navigate(card.link)}
-                    className="bg-[#10182f] border border-[#1e2a4a] hover:border-[#3b82f6]/60 rounded-xl p-4 flex flex-col justify-between shadow-xs hover:bg-slate-800/40 transition-all cursor-pointer group"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        navigate(card.link);
+                      }
+                    }}
+                    className="bg-[#10182f] border border-[#1e2a4a] hover:border-[#3b82f6]/60 rounded-xl p-4 flex flex-col justify-between shadow-xs hover:bg-slate-800/40 transition-all cursor-pointer group focus:outline-none focus:ring-1 focus:ring-[#3b82f6]"
                   >
                     <div className="flex items-start justify-between gap-2">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[#94a3b8] leading-tight">
@@ -638,8 +650,16 @@ export default function DashboardPage() {
           {workflowStages.map((stg) => (
             <div
               key={stg.id}
+              role="button"
+              tabIndex={0}
               onClick={() => navigate(stg.path)}
-              className="relative p-3.5 rounded-xl bg-[#0a1020] border border-[#1e2a4a] hover:border-[#3b82f6] hover:bg-slate-800/40 transition-all cursor-pointer group flex flex-col justify-between"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  navigate(stg.path);
+                }
+              }}
+              className="relative p-3.5 rounded-xl bg-[#0a1020] border border-[#1e2a4a] hover:border-[#3b82f6] hover:bg-slate-800/40 transition-all cursor-pointer group flex flex-col justify-between focus:outline-none focus:ring-1 focus:ring-[#3b82f6]"
             >
               <div>
                 <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#64748b] mb-1.5">
@@ -681,40 +701,112 @@ export default function DashboardPage() {
             </div>
 
             {/* Metrics Breakdown */}
-            <div className="space-y-3.5 mt-4 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Total Planned Quantity</span>
-                <span className="font-bold text-[#f1f5f9] font-mono">
+            <div className="space-y-3 mt-4 text-xs">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/planning")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/planning");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#3b82f6]"
+                title="View Planning & Scheduling"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Total Planned Quantity</span>
+                <span className="font-bold text-[#f1f5f9] font-mono group-hover:text-[#3b82f6] transition-colors">
                   {totalPlannedQty.toLocaleString("en-IN")} Nos
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Actual Production Quantity</span>
-                <span className="font-bold text-[#2DD4BF] font-mono">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/manufacturing")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/manufacturing");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#2DD4BF]"
+                title="View Shop Floor Tracking"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Actual Production Quantity</span>
+                <span className="font-bold text-[#2DD4BF] font-mono group-hover:brightness-125 transition">
                   {totalProducedQty.toLocaleString("en-IN")} Nos
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Remaining Production Quantity</span>
-                <span className="font-bold text-[#FACC15] font-mono">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/manufacturing")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/manufacturing");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#FACC15]"
+                title="View Shop Floor Tracking"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Remaining Production Quantity</span>
+                <span className="font-bold text-[#FACC15] font-mono group-hover:brightness-125 transition">
                   {totalRemainingQty.toLocaleString("en-IN")} Nos
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Work Orders In Progress</span>
-                <span className="font-bold text-[#3b82f6] font-mono">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/work-orders?status=IN_PROGRESS")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/work-orders?status=IN_PROGRESS");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#3b82f6]"
+                title="View In-Progress Work Orders"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Work Orders In Progress</span>
+                <span className="font-bold text-[#3b82f6] font-mono group-hover:text-blue-300 transition-colors">
                   {inProgressWorkOrdersCount} Active
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Completed Orders</span>
-                <span className="font-bold text-emerald-400 font-mono">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/work-orders?status=COMPLETED")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/work-orders?status=COMPLETED");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-emerald-400"
+                title="View Completed Work Orders"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Completed Orders</span>
+                <span className="font-bold text-emerald-400 font-mono group-hover:text-emerald-300 transition-colors">
                   {completedWorkOrdersCount} Released
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Delayed Work Orders</span>
-                <span className={`font-bold font-mono ${delayedWorkOrdersCount > 0 ? "text-[#F87171]" : "text-[#64748b]"}`}>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/work-orders?status=DELAYED")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/work-orders?status=DELAYED");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#F87171]"
+                title="View Delayed Work Orders"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Delayed Work Orders</span>
+                <span className={`font-bold font-mono transition-colors ${delayedWorkOrdersCount > 0 ? "text-[#F87171] group-hover:text-red-300" : "text-[#64748b]"}`}>
                   {delayedWorkOrdersCount} Flagged
                 </span>
               </div>
@@ -750,32 +842,104 @@ export default function DashboardPage() {
             </div>
 
             {/* Quality Metrics */}
-            <div className="space-y-3.5 mt-4 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Total Inspections Logged</span>
-                <span className="font-bold text-[#f1f5f9] font-mono">{totalInspectionsCount}</span>
+            <div className="space-y-3 mt-4 text-xs">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/inspections")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/inspections");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#2DD4BF]"
+                title="View All Quality Inspections"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Total Inspections Logged</span>
+                <span className="font-bold text-[#f1f5f9] font-mono group-hover:text-[#2DD4BF] transition-colors">{totalInspectionsCount}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Pending QA Inspections</span>
-                <span className="font-bold text-[#FACC15] font-mono">{pendingInspectionsCount} Pending</span>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/inspections?tab=PENDING_ASSIGNMENT")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/inspections?tab=PENDING_ASSIGNMENT");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#FACC15]"
+                title="View Pending QA Inspections"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Pending QA Inspections</span>
+                <span className="font-bold text-[#FACC15] font-mono group-hover:brightness-125 transition-colors">{pendingInspectionsCount} Pending</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Passed & Released Inspections</span>
-                <span className="font-bold text-[#2DD4BF] font-mono">{passedInspectionsCount} Passed</span>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/inspections?tab=COMPLETED")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/inspections?tab=COMPLETED");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#2DD4BF]"
+                title="View Passed & Released QA Inspections"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Passed & Released Inspections</span>
+                <span className="font-bold text-[#2DD4BF] font-mono group-hover:brightness-125 transition-colors">{passedInspectionsCount} Passed</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Failed / Rejected Audits</span>
-                <span className="font-bold text-[#F87171] font-mono">{failedInspectionsCount} Failed</span>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/non-conformance")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/non-conformance");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#F87171]"
+                title="View Non-Conformance (NCR) Records"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Failed / Rejected Audits</span>
+                <span className="font-bold text-[#F87171] font-mono group-hover:brightness-125 transition-colors">{failedInspectionsCount} Failed</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">Total Rejected Scrap Units</span>
-                <span className="font-bold text-[#F87171] font-mono">
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/non-conformance")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/non-conformance");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#F87171]"
+                title="View Defect & Rejection Management"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">Total Rejected Scrap Units</span>
+                <span className="font-bold text-[#F87171] font-mono group-hover:brightness-125 transition-colors">
                   {totalRejectedQty.toLocaleString("en-IN")} Nos
                 </span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-[#94a3b8]">First-Pass Yield (FPY)</span>
-                <span className="font-bold text-[#2DD4BF] font-mono">{firstPassYield}</span>
+              <div
+                role="button"
+                tabIndex={0}
+                onClick={() => navigate("/production-quality/quality")}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    navigate("/production-quality/quality");
+                  }
+                }}
+                className="flex items-center justify-between p-1.5 -mx-1.5 rounded-lg hover:bg-slate-800/40 cursor-pointer transition group focus:outline-none focus:ring-1 focus:ring-[#2DD4BF]"
+                title="View Quality Dashboard"
+              >
+                <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors">First-Pass Yield (FPY)</span>
+                <span className="font-bold text-[#2DD4BF] font-mono group-hover:brightness-125 transition-colors">{firstPassYield}</span>
               </div>
             </div>
           </div>
@@ -809,10 +973,23 @@ export default function DashboardPage() {
           <div className="space-y-2.5 text-xs">
             {lineWorkloads.length > 0 ? (
               lineWorkloads.map(({ line, count }) => (
-                <div key={line} className="p-2.5 rounded-xl bg-[#0a1020] border border-[#1e2a4a]">
-                  <div className="flex justify-between font-semibold text-[#f1f5f9]">
-                    <span>{line}</span>
-                    <span className="text-[#94a3b8]">{count} Work Orders</span>
+                <div
+                  key={line}
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => navigate(`/production-quality/manufacturing?line=${encodeURIComponent(line)}`)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      navigate(`/production-quality/manufacturing?line=${encodeURIComponent(line)}`);
+                    }
+                  }}
+                  className="p-2.5 rounded-xl bg-[#0a1020] border border-[#1e2a4a] hover:border-[#3b82f6] hover:bg-slate-800/40 transition-all cursor-pointer group focus:outline-none focus:ring-1 focus:ring-[#3b82f6]"
+                  title={`View Shop Floor Tracking for ${line}`}
+                >
+                  <div className="flex justify-between items-center font-semibold text-[#f1f5f9]">
+                    <span className="group-hover:text-[#3b82f6] transition-colors">{line}</span>
+                    <span className="text-[#94a3b8] group-hover:text-[#f1f5f9] transition-colors text-[11px] font-mono">{count} Work Orders →</span>
                   </div>
                 </div>
               ))

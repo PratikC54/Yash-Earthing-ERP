@@ -19,7 +19,8 @@ import Loader from "../../../components/common/Loader";
 import axiosInstance from "../../../services/axiosInstance";
 
 export default function WorkOrderReportPage() {
-  const { id } = useParams();
+  const { id: paramId } = useParams();
+  const id = paramId || (typeof window !== "undefined" ? window.location.pathname.match(/\/work-orders\/([^/?#]+)/)?.[1] : "");
   const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
@@ -30,6 +31,11 @@ export default function WorkOrderReportPage() {
   const iframeRef = useRef(null);
 
   const fetchPdfReport = async () => {
+    if (!id || id === "undefined" || id === "null") {
+      setLoading(false);
+      setError("No work order ID specified.");
+      return;
+    }
     try {
       setLoading(true);
       setError(null);
