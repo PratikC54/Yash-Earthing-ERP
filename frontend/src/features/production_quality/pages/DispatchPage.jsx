@@ -99,7 +99,11 @@ export default function DispatchPage() {
       setReadyInspections(ready);
     } catch (err) {
       console.error("Failed to load dispatch records:", err);
-      setError(err?.message || "Failed to load dispatch records from server.");
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Failed to load dispatch records from server."
+      );
     } finally {
       setLoading(false);
     }

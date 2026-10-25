@@ -262,7 +262,6 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
       )}
 
       {/* 4 KPI Cards */}
-      <KpiSection>
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-xs">
           <div className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">
@@ -536,8 +535,6 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
         </div>
       </div>
 
-      </div>
-
       {/* Create Sales Order Modal */}
       <CreateSalesOrderModal
         isOpen={isCreateModalOpen}
@@ -560,6 +557,7 @@ export default function OrdersPage({ onNavigate, globalSearch = "" }) {
         checkResult={inventoryCheckResult}
         onNavigate={onNavigate}
       />
+      </div>
     </div>
   );
 }
