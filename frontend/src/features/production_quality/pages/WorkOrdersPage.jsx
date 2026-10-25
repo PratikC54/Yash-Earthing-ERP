@@ -501,8 +501,8 @@ export default function WorkOrdersPage() {
 
       {/* Create Work Order Modal */}
       {isCreateModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-[#10182f] border border-[#1e2a4a] rounded-2xl shadow-2xl p-6 text-[#f1f5f9] space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-[#10182f] border border-[#1e2a4a] rounded-2xl shadow-2xl p-4 sm:p-6 text-[#f1f5f9] space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#1e2a4a] pb-3">
               <h3 className="text-base font-bold text-[#f1f5f9]">
                 Create Work Order
@@ -557,7 +557,7 @@ export default function WorkOrdersPage() {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[#94a3b8] font-semibold mb-1">
                     BOM Revision <span className="text-[#3b82f6] text-[10px]">(Existing BOM)</span>
@@ -645,7 +645,7 @@ export default function WorkOrdersPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[#94a3b8] font-semibold mb-1">
                     Planned Start Date
@@ -724,8 +724,8 @@ export default function WorkOrdersPage() {
 
       {/* Edit Work Order Modal */}
       {editingOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div className="w-full max-w-lg bg-[#10182f] border border-[#1e2a4a] rounded-2xl shadow-2xl p-6 text-[#f1f5f9] space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs">
+          <div className="w-full max-w-lg bg-[#10182f] border border-[#1e2a4a] rounded-2xl shadow-2xl p-4 sm:p-6 text-[#f1f5f9] space-y-4 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#1e2a4a] pb-3">
               <h3 className="text-base font-bold text-[#f1f5f9]">
                 Edit {editingOrder.workOrderNumber}
@@ -757,7 +757,7 @@ export default function WorkOrdersPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[#94a3b8] font-semibold mb-1">
                     Produced Quantity
@@ -851,8 +851,8 @@ export default function WorkOrdersPage() {
 
       {/* View Work Order Modal */}
       {viewedOrder && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-6 text-[#f1f5f9] space-y-4 shadow-2xl">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-4 sm:p-6 text-[#f1f5f9] space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#1e2a4a] pb-3">
               <div>
                 <span className="text-[10px] font-mono text-[#3b82f6] font-bold">

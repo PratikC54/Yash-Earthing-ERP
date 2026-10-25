@@ -461,7 +461,7 @@ export default function InspectionPage() {
       {/* Audit Detail Modal */}
       {viewedInspection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-          <div className="w-full max-w-md bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-6 text-[#f1f5f9] space-y-4 shadow-2xl">
+          <div className="w-full max-w-md bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-4 sm:p-6 text-[#f1f5f9] space-y-4 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div className="flex items-center justify-between border-b border-[#1e2a4a] pb-3">
               <div>
                 <span className="text-[10px] uppercase font-bold text-[#2DD4BF]">

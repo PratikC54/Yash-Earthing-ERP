@@ -310,7 +310,7 @@ export class ManufacturingService {
 
     const actualStart = data.actualStart ? new Date(data.actualStart) : new Date();
 
-    return await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const updated = await tx.workOrder.update({
         where: { id: Number(id) },
         data: {

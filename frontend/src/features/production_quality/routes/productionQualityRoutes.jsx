@@ -13,6 +13,7 @@ import ReworkTrackingPage from "../pages/ReworkTrackingPage";
 import ProductionCompletionPage from "../pages/ProductionCompletionPage";
 import DispatchPage from "../pages/DispatchPage";
 import QRWorkOrderPage from "../pages/QRWorkOrderPage";
+import WorkOrderReportPage from "../pages/WorkOrderReportPage";
 import NotificationHistoryPage from "../pages/NotificationHistoryPage";
 
 /**
@@ -54,6 +55,14 @@ export const productionQualityRoutes = [
       {
         path: "work-orders/:id/qr",
         element: <QRWorkOrderPage />,
+      },
+      {
+        path: "work-orders/:id/report.pdf",
+        element: <WorkOrderReportPage />,
+      },
+      {
+        path: "work-orders/:id/report",
+        element: <WorkOrderReportPage />,
       },
       {
         path: "material-issuance",

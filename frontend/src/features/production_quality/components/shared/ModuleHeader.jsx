@@ -22,7 +22,7 @@ export default function ModuleHeader({
     <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
       <div>
         {breadcrumbs.length > 0 && (
-          <nav className="flex items-center gap-1.5 text-xs text-[#94a3b8] mb-1.5">
+          <nav className="flex flex-wrap items-center gap-1.5 text-xs text-[#94a3b8] mb-1.5">
             {breadcrumbs.map((crumb, idx) => (
               <React.Fragment key={crumb.label || idx}>
                 {crumb.to ? (
@@ -54,7 +54,7 @@ export default function ModuleHeader({
         )}
       </div>
 
-      <div className="flex items-center gap-2.5 shrink-0">
+      <div className="flex flex-wrap items-center gap-2.5 shrink-0">
         {showQR && (
           <button
             type="button"

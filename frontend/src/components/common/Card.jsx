@@ -19,7 +19,7 @@ export default function Card({
     >
       {(title || subtitle || action) && (
         <div
-          className={`px-5 py-4 border-b border-[#1e2a4a] flex items-center justify-between gap-4 ${headerClassName}`}
+          className={`px-4 sm:px-5 py-3.5 sm:py-4 border-b border-[#1e2a4a] flex items-center justify-between gap-4 ${headerClassName}`}
         >
           <div>
             {title && (
@@ -35,10 +35,10 @@ export default function Card({
         </div>
       )}
 
-      <div className={`p-5 text-[#f1f5f9] ${bodyClassName}`}>{children}</div>
+      <div className={`p-4 sm:p-5 text-[#f1f5f9] ${bodyClassName}`}>{children}</div>
 
       {footer && (
-        <div className="px-5 py-3.5 bg-[#0a1020] border-t border-[#1e2a4a] text-xs text-[#94a3b8]">
+        <div className="px-4 sm:px-5 py-3 sm:py-3.5 bg-[#0a1020] border-t border-[#1e2a4a] text-xs text-[#94a3b8]">
           {footer}
         </div>
       )}

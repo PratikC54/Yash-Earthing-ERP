@@ -826,7 +826,7 @@ export default function ProductionPlanningPage() {
 
             {/* Navigation and Action buttons */}
             <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#1e2a4a]">
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
                 <Link
                   to={`/production-quality/work-orders/${selectedOrder.id}`}
                   className="inline-flex items-center justify-center gap-1.5 px-4 py-2 bg-[#3b82f6] hover:bg-blue-600 text-white rounded-lg font-semibold text-xs transition w-full sm:w-auto"

@@ -20,8 +20,16 @@ notificationRouter.use(authenticateUser);
 notificationRouter.get("/", listNotifications);
 notificationRouter.get("/unread-count", getUnreadCount);
 notificationRouter.get("/recent", getRecentNotifications);
+
+// Mark single notification as read
 notificationRouter.patch("/:id/read", markAsRead);
+notificationRouter.post("/:id/read", markAsRead);
+
+// Mark all notifications as read (supporting both REST conventions)
 notificationRouter.post("/mark-all-read", markAllAsRead);
+notificationRouter.patch("/mark-all-read", markAllAsRead);
+notificationRouter.post("/read-all", markAllAsRead);
+notificationRouter.patch("/read-all", markAllAsRead);
 
 // Escalation management
 notificationRouter.get("/escalation-rules", listEscalationRules);

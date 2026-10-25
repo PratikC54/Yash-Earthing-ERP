@@ -69,7 +69,22 @@ export default function QRWorkOrderPage() {
       setError(null);
       const res = await qrService.lookupQR(id);
       if (res?.success && res.data) {
-        setData(res.data);
+        const d = res.data;
+        setData({
+          ...d,
+          id: d.id || d.workOrder?.id,
+          workOrderNo: d.workOrderNo || d.workOrder?.workOrderNo,
+          productName: d.productName || d.product?.name,
+          productCode: d.productCode || d.product?.sku,
+          batchNumber: d.batchNumber || d.batch?.batchNumber,
+          plannedQuantity: d.plannedQuantity ?? d.workOrder?.plannedQuantity ?? 0,
+          producedQuantity: d.producedQuantity ?? d.workOrder?.goodQuantity ?? 0,
+          acceptedQuantity: d.acceptedQuantity ?? d.qualitySummary?.acceptedQuantity ?? 0,
+          rejectedQuantity: d.rejectedQuantity ?? d.workOrder?.rejectedQuantity ?? 0,
+          status: d.status || d.workOrder?.status,
+          priority: d.priority || d.workOrder?.priority || "MEDIUM",
+          userPermissions: d.userPermissions || d.permissions || {},
+        });
       } else {
         setError(res?.message || "Work order not found or inaccessible.");
       }
@@ -678,7 +693,7 @@ export default function QRWorkOrderPage() {
             )}
 
             <form onSubmit={handleReportDefect} className="space-y-4">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-medium text-[#94a3b8] mb-1">
                     Defect Category

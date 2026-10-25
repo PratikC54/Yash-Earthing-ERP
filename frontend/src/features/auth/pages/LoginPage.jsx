@@ -31,7 +31,7 @@ export default function LoginPage() {
 
     try {
       await authService.login(email.trim(), password);
-      const from = location.state?.from?.pathname || "/pq/dashboard";
+      const from = location.state?.from?.pathname ? `${location.state.from.pathname}${location.state.from.search || ""}` : (typeof location.state?.from === "string" ? location.state.from : "/pq/dashboard");
       navigate(from, { replace: true });
     } catch (err) {
       setError(

@@ -1,9 +1,29 @@
+import os from "os";
 import QRCode from "qrcode";
 import prisma from "../../../db/prisma.js";
 import { ApiError } from "../../../utils/apiResponse.js";
 import { WORK_ORDER_STATUS } from "../shared/productionQuality.constants.js";
+import { generateWorkOrderPdfReport } from "../reports/workOrderReport.pdf.js";
 
 export class QRService {
+  /**
+   * Detect local network IPv4 address for phone testing on the same Wi-Fi
+   */
+  static getLanIp() {
+    try {
+      const nets = os.networkInterfaces();
+      for (const name of Object.keys(nets)) {
+        for (const net of nets[name]) {
+          if (net.family === "IPv4" && !net.internal) {
+            return net.address;
+          }
+        }
+      }
+    } catch {
+      // Ignore network interface errors
+    }
+    return null;
+  }
   /**
    * Determine frontend base URL dynamically from request or environment variables.
    * Never hardcodes localhost in production.
@@ -82,7 +102,13 @@ export class QRService {
 
     const baseUrl = this.getBaseUrl(req);
     // Secure URL that opens the Work Order in the ERP router
-    const qrTargetUrl = `${baseUrl}/pq/work-orders/${workOrder.id}`;
+    // Secure URL that opens the Work Order Production & Quality PDF Report
+    const qrTargetUrl = `${baseUrl}/production/work-orders/${workOrder.id}/report.pdf`;
+    const lanIp = this.getLanIp();
+    const lanBaseUrl = lanIp ? `http://${lanIp}:5173` : baseUrl;
+    const lanTargetUrl = `${lanBaseUrl}/production/work-orders/${workOrder.id}/report.pdf`;
+    const detailsUrl = `${baseUrl}/production/work-orders/${workOrder.id}`;
+    const reportApiUrl = `${baseUrl}/api/production-quality/work-orders/${workOrder.id}/report.pdf`;
 
     // Ensure unique stable qrCode field in database
     const qrCodeKey = workOrder.qrCode || `QR-${workOrder.workOrderNo}`;
@@ -138,15 +164,26 @@ export class QRService {
       plannedStart: workOrder.plannedStart,
       plannedEnd: workOrder.plannedEnd,
       qrTargetUrl,
+      lanTargetUrl,
+      lanIp,
+      detailsUrl,
+      reportApiUrl,
+      reportPdfUrl: qrTargetUrl,
       qrCodeKey,
       generatedAt: new Date().toISOString(),
     };
 
     return {
+
       workOrderId: workOrder.id,
       workOrderNo: workOrder.workOrderNo,
       qrTargetUrl,
+      lanTargetUrl,
+      lanIp,
       targetUrl: qrTargetUrl,
+      detailsUrl,
+      reportApiUrl,
+      reportPdfUrl: qrTargetUrl,
       dataUrl,
       qrDataUrl: dataUrl,
       svg,
@@ -306,6 +343,19 @@ export class QRService {
     };
 
     return {
+
+      id: workOrder.id,
+      workOrderNo: workOrder.workOrderNo,
+      productName: product.name,
+      productCode: product.sku,
+      batchNumber,
+      plannedQuantity: plannedQty,
+      producedQuantity: goodQty,
+      acceptedQuantity: acceptedQtyTotal,
+      rejectedQuantity: rejectedQty,
+      status: workOrder.status,
+      priority: workOrder.priority,
+      userPermissions: permissions,
       workOrder: {
         id: workOrder.id,
         workOrderNo: workOrder.workOrderNo,
@@ -372,4 +422,89 @@ export class QRService {
       permissions,
     };
   }
-}
+
+  /**
+   * Generates official Production & Quality PDF Report for a Work Order
+   */
+  static async getWorkOrderReportPdf(workOrderId) {
+    const isNum = /^\d+$/.test(String(workOrderId).trim());
+    const where = isNum
+      ? { id: Number(workOrderId) }
+      : { workOrderNo: String(workOrderId).trim() };
+
+    const workOrder = await prisma.workOrder.findUnique({
+      where,
+      include: {
+        salesOrder: {
+          include: {
+            customer: true,
+            items: { include: { product: true } },
+          },
+        },
+        bomRevision: {
+          include: {
+            items: { include: { component: true } },
+            operations: { orderBy: { sequence: "asc" } },
+            product: {
+              include: {
+                productSpecifications: { orderBy: { id: "desc" }, take: 1 },
+              },
+            },
+          },
+        },
+        items: {
+          include: {
+            product: {
+              include: { inventory: true },
+            },
+          },
+        },
+        inspections: {
+          include: {
+            assignedInspector: {
+              select: { id: true, name: true, email: true, role: true },
+            },
+            assignedBy: {
+              select: { id: true, name: true, email: true, role: true },
+            },
+            capaRecords: true,
+            dispatchRecords: true,
+          },
+          orderBy: { createdAt: "desc" },
+        },
+        capaRecords: {
+          orderBy: { createdAt: "desc" },
+        },
+        dispatchRecords: {
+          orderBy: { createdAt: "desc" },
+        },
+        createdBy: {
+          select: { id: true, name: true, email: true, role: true },
+        },
+      },
+    });
+
+    if (!workOrder) {
+      throw ApiError.notFound(`Work Order with ID or Number "${workOrderId}" not found`);
+    }
+
+    const auditLogs = await prisma.auditLog.findMany({
+      where: {
+        entityId: String(workOrder.id),
+        entityType: {
+          in: ["WorkOrder", "ProductionCompletion", "MachineDowntime", "ProductionDelay", "ScrapRecord"],
+        },
+      },
+      include: {
+        user: { select: { id: true, name: true, role: true } },
+      },
+      orderBy: { createdAt: "desc" },
+      take: 25,
+    });
+
+    const pdfBuffer = await generateWorkOrderPdfReport({ workOrder, auditLogs });
+    const filename = `${workOrder.workOrderNo}-Production-Quality-Report.pdf`;
+
+    return { pdfBuffer, filename, workOrder };
+  }
+};

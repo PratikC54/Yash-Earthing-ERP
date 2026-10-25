@@ -177,7 +177,7 @@ export default function ERPNavbar({
           </button>
 
           {isUserMenuOpen && (
-            <div className="absolute right-0 top-full mt-2 w-64 bg-[#10182f] border border-[#1e2a4a] rounded-xl shadow-2xl py-1.5 z-50">
+            <div className="absolute right-0 top-full mt-2 w-64 max-w-[calc(100vw-1.5rem)] bg-[#10182f] border border-[#1e2a4a] rounded-xl shadow-2xl py-1.5 z-50">
               <div className="px-3.5 py-2.5 border-b border-[#1e2a4a] bg-[#0a1020]">
                 <div className="text-xs font-semibold text-[#f1f5f9]">{user?.name || "—"}</div>
                 {user?.email && (

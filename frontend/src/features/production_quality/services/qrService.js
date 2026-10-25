@@ -23,6 +23,16 @@ export const qrService = {
   },
 
   /**
+   * Fetch work order PDF report as blob
+   */
+  getWorkOrderReportPdf: async (workOrderId) => {
+    return await axiosInstance.get(
+      `/production-quality/work-orders/${workOrderId}/report.pdf`,
+      { responseType: "blob" }
+    );
+  },
+
+  /**
    * Look up work order details by scanned URL, QR token, Work Order Number, or ID
    */
   lookupQR: async (codeOrId) => {
