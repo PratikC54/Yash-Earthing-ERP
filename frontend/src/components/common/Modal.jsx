@@ -26,7 +26,7 @@ export default function Modal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 overflow-y-auto">
       {/* Backdrop */}
       <div
         onClick={onClose}
@@ -35,12 +35,10 @@ export default function Modal({
 
       {/* Modal Dialog */}
       <div
-        role="dialog"
-        aria-modal="true"
-        className={`relative w-full ${maxWidth} bg-white rounded-2xl shadow-2xl border border-slate-200 overflow-hidden z-10 animate-in zoom-in-95 duration-150 text-slate-900`}
+        className={`relative w-full ${maxWidth} bg-[#10182f] rounded-2xl shadow-2xl border border-[#1e2a4a] overflow-hidden z-10 animate-in zoom-in-95 duration-150 text-[#f1f5f9] max-h-[92vh] flex flex-col`}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4.5 border-b border-slate-200 bg-slate-50">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 sm:py-4.5 border-b border-[#1e2a4a] bg-[#0b172d] shrink-0">
           <div>
             <h3 className="text-base font-extrabold text-slate-900 tracking-tight">
               {title}
@@ -61,13 +59,13 @@ export default function Modal({
         </div>
 
         {/* Body */}
-        <div className="p-6 max-h-[calc(85vh-130px)] overflow-y-auto text-slate-800">
+        <div className="p-4 sm:p-6 overflow-y-auto text-[#f1f5f9] flex-1 min-h-0">
           {children}
         </div>
 
         {/* Footer */}
         {footer && (
-          <div className="flex items-center justify-end gap-3 px-6 py-4 bg-slate-50 border-t border-slate-200">
+          <div className="flex flex-wrap items-center justify-end gap-2 sm:gap-3 px-4 sm:px-6 py-3 sm:py-4 bg-[#0a1020] border-t border-[#1e2a4a] shrink-0">
             {footer}
           </div>
         )}

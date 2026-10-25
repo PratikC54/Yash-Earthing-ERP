@@ -1104,7 +1104,7 @@ export default function DashboardPage() {
       {/* 1. Work Order Detail Modal */}
       {selectedWorkOrder && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+          <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="p-4 sm:p-5 bg-[#0b172d] border-b border-[#1e2a4a] flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#3b82f6]">
@@ -1124,7 +1124,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="p-5 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-[#070e1e] border border-[#1e2a4a]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 p-3 rounded-xl bg-[#070e1e] border border-[#1e2a4a]">
                 <div>
                   <span className="text-[#94a3b8]">Product</span>
                   <p className="font-semibold text-[#f1f5f9] mt-0.5">{selectedWorkOrder.productName}</p>
@@ -1184,7 +1184,7 @@ export default function DashboardPage() {
       {/* 2. Quality Inspection Detail Modal */}
       {selectedInspection && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs animate-in fade-in duration-200">
-          <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+          <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden max-h-[90vh] overflow-y-auto">
             <div className="p-4 sm:p-5 bg-[#0b172d] border-b border-[#1e2a4a] flex items-center justify-between">
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#2DD4BF]">
@@ -1204,7 +1204,7 @@ export default function DashboardPage() {
             </div>
 
             <div className="p-5 space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-[#070e1e] border border-[#1e2a4a]">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 sm:gap-3 p-3 rounded-xl bg-[#070e1e] border border-[#1e2a4a]">
                 <div>
                   <span className="text-[#94a3b8]">Work Order</span>
                   <p className="font-mono font-bold text-[#3b82f6] mt-0.5">{selectedInspection.workOrderNo}</p>

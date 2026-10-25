@@ -1403,7 +1403,7 @@ export default function ShopFloorPage() {
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#94a3b8] font-medium mb-1">Good Quantity Produced</label>
               <input
@@ -1424,7 +1424,7 @@ export default function ShopFloorPage() {
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#94a3b8] font-medium mb-1">Shift</label>
               <select
@@ -1448,7 +1448,7 @@ export default function ShopFloorPage() {
               />
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#94a3b8] font-medium mb-1">Operator <span className="text-[#3b82f6] text-[10px]">(Existing Personnel)</span></label>
               <select
@@ -1814,7 +1814,7 @@ export default function ShopFloorPage() {
             </div>
 
             {/* Read-Only Planned & Previously Completed Quantities */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block font-medium mb-1 text-[#94a3b8]">Planned Quantity</label>
                 <input

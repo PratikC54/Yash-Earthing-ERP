@@ -590,7 +590,7 @@ export default function MaterialIssuancePage() {
               </optgroup>
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#94a3b8] font-medium mb-1">Quantity Issued</label>
               <input
@@ -618,7 +618,7 @@ export default function MaterialIssuancePage() {
               </select>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#94a3b8] font-medium mb-1">From Location</label>
               <select
@@ -712,7 +712,7 @@ export default function MaterialIssuancePage() {
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#94a3b8] font-medium mb-1">Quantity Consumed</label>
               <input
@@ -794,7 +794,7 @@ export default function MaterialIssuancePage() {
               ))}
             </select>
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-[#94a3b8] font-medium mb-1">Quantity Returned</label>
               <input

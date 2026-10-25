@@ -30,6 +30,7 @@ export default function NotificationHistoryPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [priorityFilter, setPriorityFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
   const [escalationRules, setEscalationRules] = useState([]);
   const [activeTab, setActiveTab] = useState("notifications"); // 'notifications' | 'escalation'
@@ -40,7 +41,7 @@ export default function NotificationHistoryPage() {
   useEffect(() => {
     loadNotifications(1);
     loadEscalationRules();
-  }, [statusFilter, priorityFilter, typeFilter]);
+  }, [statusFilter, priorityFilter, typeFilter, categoryFilter]);
 
   const loadNotifications = async (page = 1) => {
     try {
@@ -52,6 +53,7 @@ export default function NotificationHistoryPage() {
       if (statusFilter) params.status = statusFilter;
       if (priorityFilter) params.priority = priorityFilter;
       if (typeFilter) params.type = typeFilter;
+      if (categoryFilter) params.category = categoryFilter;
       if (searchTerm.trim()) params.search = searchTerm.trim();
 
       const res = await notificationService.listNotifications(params);
@@ -168,7 +170,7 @@ export default function NotificationHistoryPage() {
         {/* Header Section */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20">
                 <Bell className="w-6 h-6" />
               </div>
@@ -183,7 +185,7 @@ export default function NotificationHistoryPage() {
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2.5">
             <button
               type="button"
               onClick={() => setIsQRModalOpen(true)}
@@ -282,6 +284,17 @@ export default function NotificationHistoryPage() {
 
               {/* Dropdown Filters */}
               <div className="flex flex-wrap items-center gap-2">
+                                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value)}
+                  className="px-3 py-2 rounded-xl bg-[#080d1a] border border-[#1e2a4a] text-xs text-[#94a3b8] focus:text-white focus:outline-none focus:border-blue-500"
+                >
+                  <option value="">All Categories</option>
+                  <option value="WORK_ORDER">Production</option>
+                  <option value="QUALITY">Quality</option>
+                  <option value="MAINTENANCE">Machine Downtime</option>
+                  <option value="ESCALATION">Escalation</option>
+                </select>
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
@@ -459,14 +472,14 @@ export default function NotificationHistoryPage() {
                       </div>
                       <h3 className="text-sm font-bold text-white mb-1">{rule.name}</h3>
                       <p className="text-xs text-[#94a3b8] mb-4">
-                        Target Role: <strong className="text-white">{rule.targetRole}</strong>
+                        Target Role: <strong className="text-white">{Array.isArray(rule.targetRoles) ? rule.targetRoles.join(", ") : (rule.targetRoles || rule.targetRole || "MANAGEMENT")}</strong>
                       </p>
                     </div>
 
                     <div className="pt-3 border-t border-[#1e2a4a] space-y-1 text-xs">
                       <div className="flex items-center justify-between text-[#94a3b8]">
                         <span>Trigger Window:</span>
-                        <span className="font-mono text-white">After {rule.thresholdMinutes} mins</span>
+                        <span className="font-mono text-white">After {rule.thresholdHours || Math.round((rule.thresholdMinutes || 0)/60) || 24} hour(s)</span>
                       </div>
                       <div className="flex items-center justify-between text-[#94a3b8]">
                         <span>Notification Priority:</span>

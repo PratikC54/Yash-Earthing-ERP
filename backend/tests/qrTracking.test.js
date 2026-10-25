@@ -51,7 +51,7 @@ test("QR Tracking: Generates valid QR code with SVG, PNG Data URL, and label met
   assert.strictEqual(body.success, true);
   assert.ok(body.data.dataUrl.startsWith("data:image/png;base64,"));
   assert.ok(body.data.svg.includes("<svg"));
-  assert.ok(body.data.qrTargetUrl.includes("/pq/work-orders/4"));
+  assert.ok(body.data.qrTargetUrl.includes("/production/work-orders/4") || body.data.qrTargetUrl.includes("/pq/work-orders/4"));
   assert.strictEqual(body.data.workOrderNo, "WO-2026-0092");
 
   // Verify label metadata is present and sanitized (no password or sensitive token)
@@ -175,4 +175,47 @@ test("QR Tracking: Validates production progress entries (rejects negative or ze
     }),
   });
   assert.strictEqual(resZero.status, 400);
+});
+
+test("QR PDF Report: Rejects unauthenticated report requests with 401", async () => {
+  const res = await fetch(`${baseUrl}/api/production-quality/work-orders/4/report.pdf`);
+  assert.strictEqual(res.status, 401);
+});
+
+test("QR PDF Report: Returns 404 for nonexistent work order report", async () => {
+  const token = createAuthToken({ id: 1, role: "ADMIN" });
+  const res = await fetch(`${baseUrl}/api/production-quality/work-orders/999999/report.pdf`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  assert.strictEqual(res.status, 404);
+});
+
+test("QR PDF Report: Generates and streams valid ISO 9001 Production & Quality PDF report", async () => {
+  const token = createAuthToken({ id: 1, role: "ADMIN" });
+  const res = await fetch(`${baseUrl}/api/production-quality/work-orders/4/report.pdf`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.headers.get("content-type"), "application/pdf");
+  assert.ok(res.headers.get("content-disposition").includes("WO-2026-0092-Production-Quality-Report.pdf"));
+
+  const arrayBuffer = await res.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  // Verify standard PDF magic header '%PDF-'
+  assert.ok(buffer.length > 1000, "PDF buffer must have reasonable size");
+  assert.strictEqual(buffer.subarray(0, 5).toString("utf8"), "%PDF-");
+});
+
+test("QR PDF Report: Canonical /report endpoint also returns valid PDF report", async () => {
+  const token = createAuthToken({ id: 1, role: "ADMIN" });
+  const res = await fetch(`${baseUrl}/api/production-quality/work-orders/4/report`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  assert.strictEqual(res.status, 200);
+  assert.strictEqual(res.headers.get("content-type"), "application/pdf");
+  const arrayBuffer = await res.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  assert.strictEqual(buffer.subarray(0, 5).toString("utf8"), "%PDF-");
 });

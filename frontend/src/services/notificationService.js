@@ -7,7 +7,7 @@ import axiosInstance from "./axiosInstance";
 export const notificationService = {
   /**
    * List paginated notifications with filters
-   * params: { page, limit, status, priority, type, search }
+   * params: { page, limit, status, priority, type, category, search }
    */
   listNotifications: async (params = {}) => {
     return await axiosInstance.get("/notifications", { params });
@@ -38,7 +38,7 @@ export const notificationService = {
    * Mark all unread notifications for current user as READ
    */
   markAllAsRead: async () => {
-    return await axiosInstance.patch("/notifications/read-all");
+    return await axiosInstance.post("/notifications/mark-all-read");
   },
 
   /**
@@ -46,6 +46,13 @@ export const notificationService = {
    */
   getEscalationRules: async () => {
     return await axiosInstance.get("/notifications/escalation-rules");
+  },
+
+  /**
+   * Update an escalation rule (Admin only)
+   */
+  updateEscalationRule: async (id, data) => {
+    return await axiosInstance.patch(`/notifications/escalation-rules/${id}`, data);
   },
 
   /**

@@ -30,7 +30,7 @@ export const updateWorkOrderSchema = z.object({
 });
 
 export const workOrderIdParamSchema = z.object({
-  id: z.coerce.number().int().positive("Work Order ID must be a positive integer"),
+  id: z.union([z.coerce.number().int().positive("Work Order ID must be a positive integer"), z.string().min(1)]),
 });
 
 export const workOrderIdInParamsSchema = z.object({
