@@ -8,6 +8,7 @@ import {
   FileCheck,
   RefreshCw,
   QrCode,
+  Building2,
 } from "lucide-react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas-pro";
@@ -81,42 +82,7 @@ export default function QuotationModal({
       if (val < 100000) return convert(Math.floor(val / 1000)) + " Thousand " + convert(val % 1000);
       return val.toString();
     };
-
     return convert(n) + " Rupees only";
-  };
-
-  const handlePrint = () => {
-    if (!printableRef.current) {
-      window.print();
-      return;
-    }
-    const printContent = printableRef.current.innerHTML;
-    const printWindow = window.open("", "_blank", "width=900,height=800");
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>Commercial Quotation - ${quoteNo}</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 20px; color: #111; background: #fff; font-size: 11px; }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 10px; }
-            th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: left; }
-            th { background-color: #f2f2f2; font-weight: bold; }
-            .text-right { text-align: right; }
-            .font-mono { font-family: monospace; }
-            .font-bold { font-weight: bold; }
-            .signature-box { margin-top: 25px; border-top: 1px solid #ddd; padding-top: 15px; display: flex; justify-content: space-between; }
-          </style>
-        </head>
-        <body>
-          ${printContent}
-          <script>
-            window.onload = function() { window.print(); setTimeout(() => window.close(), 500); }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
   };
 
   const handleDownloadPDF = async () => {
@@ -127,20 +93,36 @@ export default function QuotationModal({
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        backgroundColor: "#0d1326",
+        backgroundColor: "#ffffff",
       });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-      pdf.save(`${quoteNo}_Rev${revision}.pdf`);
+      const imgWidth = 210;
+      const pageHeight = 295;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+      let heightLeft = imgHeight;
+      let position = 0;
+
+      pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+      pdf.save(`Quotation_${quoteNo}_Rev${revision}.pdf`);
     } catch (err) {
       console.error("PDF generation failed:", err);
-      window.print();
+      alert("Failed to export PDF. Please try again.");
     } finally {
       setIsExportingPDF(false);
     }
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   const handleEmailClient = async () => {
@@ -149,63 +131,51 @@ export default function QuotationModal({
     setEmailStatusMessage("Preparing quotation PDF and opening Gmail compose...");
 
     try {
-      // 1. Generate and trigger download of the official Quotation PDF
       if (printableRef.current) {
         try {
           const element = printableRef.current;
           const canvas = await html2canvas(element, {
             scale: 2,
             useCORS: true,
-            backgroundColor: "#0d1326",
+            backgroundColor: "#ffffff",
           });
           const imgData = canvas.toDataURL("image/png");
           const pdf = new jsPDF("p", "mm", "a4");
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-          pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-          const fileName = `${quoteNo}_Rev${revision}.pdf`;
-          pdf.save(fileName);
+          const imgWidth = 210;
+          const imgHeight = (canvas.height * imgWidth) / canvas.width;
+          pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
+          pdf.save(`Quotation_${quoteNo}.pdf`);
         } catch (pdfErr) {
-          console.warn("Auto PDF download notice:", pdfErr);
+          console.warn("Could not auto-download PDF before compose:", pdfErr);
         }
       }
 
-      // 2. Also record quotation as SENT_TO_CLIENT in backend database
-      await module1Service.sendQuotationEmail(quotation.id, {
-        email: email || "pratik.fundsaudit@gmail.com",
-        recipientName: customerName,
-      }).catch(() => null);
+      await module1Service.sendQuotationEmail(quotation.id);
 
-      // 3. Construct professional email draft
-      const subject = `Commercial Quotation ${quoteNo} (Rev-${revision}) - Yash Earthing Solutions Pvt Ltd`;
+      const subject = `Official Commercial Quotation - ${quoteNo} (Rev-${revision}) | Yash Earthing Solutions Pvt Ltd`;
       const body = `Dear ${customerName},
 
 Greetings from Yash Earthing Solutions Pvt Ltd!
 
-We appreciate your interest in our advanced Earthing & Lightning Protection Systems.
+Thank you for contacting us regarding your earthing and lightning protection requirements. Please find our official commercial quotation details below:
 
-Please find our official Commercial Estimate & Quotation details below:
---------------------------------------------------
-• Quotation Reference: ${quoteNo} (Revision: Rev-${revision})
-• Total Quoted Value : INR ${grandTotal.toFixed(2)} (Inclusive of GST)
-• Payment Terms      : ${quotation.paymentTerms || "100% Advance against PI"}
-• Delivery Terms     : ${quotation.deliveryTerms || "Ex-Works Pune / Road Transport"}
-• Bank Remittance    : State Bank of India | A/c: 42706903179 | IFSC: SBIN0004726
---------------------------------------------------
+Quotation No: ${quoteNo} (Revision: Rev-${revision})
+Total Commercial Amount: INR ${grandTotal.toFixed(2)} (Incl. 18% GST)
+Payment Terms: 100% Advance against Proforma Invoice (PI)
+Delivery: Ex-Works Pune / Road Transport
 
-Please let us know if you require any technical clarifications or adjustments. We look forward to partnering with your esteemed organization.
+The complete PDF quotation has been downloaded to your computer and can be attached to this email.
+
+Please let us know if you require any technical clarifications or adjustments.
 
 Warm regards,
-${quotation.preparedBy?.split("(")[0]?.trim() || "Commercial Sales Team"}
+Commercial Sales Team
 Yash Earthing Solutions Pvt Ltd
 Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
 
-      // 4. Open Gmail Compose directly in a new tab with to, subject, and body prefilled
       const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      
       const openedWindow = window.open(gmailUrl, "_blank");
-      
-      // Fallback to mailto if popup blocker prevented window.open
+
       if (!openedWindow || openedWindow.closed || typeof openedWindow.closed === "undefined") {
         const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.location.href = mailtoUrl;
@@ -232,17 +202,16 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-[#0b1329] border border-[#1e2a4a] w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[95vh]">
-        
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-200">
+      <div className="bg-white border border-slate-200 w-full max-w-5xl rounded-2xl shadow-2xl overflow-hidden flex flex-col my-auto max-h-[95vh]">
         {/* Top Title Bar */}
-        <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-[#0e1732] shrink-0">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50/90 shrink-0">
           <div className="flex items-center space-x-3">
-            <h2 className="text-base sm:text-lg font-bold text-white tracking-tight">
-              Quotation: {quoteNo} (Revision: Rev-{revision})
+            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight">
+              Quotation: {quoteNo} <span className="text-blue-700 font-mono">(Rev-{revision})</span>
             </h2>
             {quotation.proformaInvoiceNumber && (
-              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/30">
+              <span className="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-300">
                 PI: {quotation.proformaInvoiceNumber}
               </span>
             )}
@@ -250,48 +219,48 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800 transition cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-200/60 transition cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* 5-Step Process Indicator */}
-        <div className="px-6 py-3.5 bg-[#0a1024] border-b border-slate-800/80 overflow-x-auto shrink-0">
+        <div className="px-6 py-3 bg-slate-50 border-b border-slate-200 overflow-x-auto shrink-0">
           <div className="flex items-center justify-between min-w-[650px] gap-2">
             {steps.map((step, idx) => (
               <div
                 key={step.num}
-                className={`flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-xl border transition ${
+                className={`flex items-center space-x-2 text-xs font-bold px-3 py-1.5 rounded-xl border transition ${
                   step.active
-                    ? "bg-blue-600/20 border-blue-500/40 text-blue-300"
-                    : "bg-slate-900/60 border-slate-800 text-slate-500"
+                    ? "bg-blue-50 border-blue-200 text-blue-700"
+                    : "bg-white border-slate-200 text-slate-400"
                 }`}
               >
                 <span
-                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold ${
-                    step.active ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400"
+                  className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
+                    step.active ? "bg-blue-600 text-white" : "bg-slate-200 text-slate-500"
                   }`}
                 >
                   {step.num}
                 </span>
                 <span>{step.label}</span>
-                {idx < steps.length - 1 && <span className="text-slate-600 ml-1">→</span>}
+                {idx < steps.length - 1 && <span className="text-slate-300 ml-1">→</span>}
               </div>
             ))}
           </div>
         </div>
 
         {/* Actions Toolbar */}
-        <div className="px-6 py-3 bg-[#0e1732] border-b border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+        <div className="px-6 py-3 bg-white border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 shrink-0">
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={() => setActiveTab("preview")}
-              className={`px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                 activeTab === "preview"
-                  ? "bg-blue-600 text-white border-blue-500"
-                  : "bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700"
+                  ? "bg-blue-600 text-white border-blue-600 shadow-2xs"
+                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
               }`}
             >
               Official Estimate
@@ -299,20 +268,20 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
             <button
               type="button"
               onClick={() => setActiveTab("revise")}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold border transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border transition cursor-pointer ${
                 activeTab === "revise"
-                  ? "bg-amber-600 text-white border-amber-500"
-                  : "bg-slate-800/80 text-slate-300 border-slate-700 hover:bg-slate-700"
+                  ? "bg-amber-600 text-white border-amber-600 shadow-2xs"
+                  : "bg-white text-slate-700 border-slate-300 hover:bg-slate-50"
               }`}
             >
-              <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+              <RefreshCw className="w-3.5 h-3.5 text-amber-500" />
               <span>Negotiate / Revise</span>
             </button>
             {!quotation.proformaInvoiceNumber && onFinalizePI && (
               <button
                 type="button"
                 onClick={() => onFinalizePI(quotation.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
               >
                 <FileCheck className="w-3.5 h-3.5" />
                 <span>Mark as PI</span>
@@ -322,7 +291,7 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
               <button
                 type="button"
                 onClick={() => onIssueCustomerPO(quotation.id)}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-semibold transition cursor-pointer shadow-sm"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs"
               >
                 <span>Record Customer PO</span>
               </button>
@@ -334,24 +303,24 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
               type="button"
               onClick={handleDownloadPDF}
               disabled={isExportingPDF}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 transition cursor-pointer shadow-2xs"
             >
-              <Download className="w-3.5 h-3.5 text-blue-400" />
+              <Download className="w-3.5 h-3.5 text-blue-600" />
               <span>{isExportingPDF ? "Generating..." : "Download PDF"}</span>
             </button>
             <button
               type="button"
               onClick={handlePrint}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl text-xs font-semibold border border-slate-700 transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white hover:bg-slate-50 text-slate-700 rounded-xl text-xs font-bold border border-slate-300 transition cursor-pointer shadow-2xs"
             >
-              <Printer className="w-3.5 h-3.5 text-slate-400" />
+              <Printer className="w-3.5 h-3.5 text-slate-500" />
               <span>Print</span>
             </button>
             {onDelete && (
               <button
                 type="button"
                 onClick={() => onDelete(quotation.id)}
-                className="p-1.5 bg-slate-800/80 hover:bg-red-500/20 text-slate-400 hover:text-red-400 rounded-xl text-xs border border-slate-700 transition cursor-pointer"
+                className="p-1.5 bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-xl text-xs border border-slate-300 transition cursor-pointer shadow-2xs"
                 title="Delete Quotation"
               >
                 <Trash2 className="w-3.5 h-3.5" />
@@ -361,22 +330,22 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
               type="button"
               onClick={handleEmailClient}
               disabled={sendingEmail}
-              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-semibold shadow-md transition cursor-pointer"
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition cursor-pointer shadow-xs disabled:opacity-50"
             >
               <Mail className="w-3.5 h-3.5" />
-              <span>{sendingEmail ? "Preparing..." : "Email to Client (Gmail Compose)"}</span>
+              <span>{sendingEmail ? "Opening..." : "Email Estimate"}</span>
             </button>
           </div>
         </div>
 
-        {/* Optional status banner for email */}
+        {/* Status notification toast */}
         {emailStatusMessage && (
-          <div className="px-6 py-2 bg-emerald-950/80 border-b border-emerald-500/40 text-emerald-300 text-xs font-medium flex items-center justify-between">
+          <div className="mx-6 mt-3 px-4 py-2.5 bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold rounded-xl flex items-center justify-between shadow-2xs">
             <span>{emailStatusMessage}</span>
             <button
               type="button"
               onClick={() => setEmailStatusMessage(null)}
-              className="text-emerald-400 hover:text-white"
+              className="text-emerald-700 hover:text-emerald-950 font-black ml-2 cursor-pointer"
             >
               ×
             </button>
@@ -384,15 +353,15 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
         )}
 
         {/* Content Body */}
-        <div className="p-6 overflow-y-auto flex-1 bg-[#080d1e]">
+        <div className="p-6 overflow-y-auto flex-1 bg-slate-100">
           {activeTab === "revise" ? (
             /* Revision & Negotiation Panel */
-            <div className="bg-[#10182f] border border-[#1e2a4a] rounded-2xl p-6 max-w-xl mx-auto shadow-xl">
-              <div className="flex items-center space-x-3 mb-4 pb-3 border-b border-slate-800">
-                <RefreshCw className="w-5 h-5 text-amber-400" />
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 max-w-xl mx-auto shadow-md">
+              <div className="flex items-center space-x-3 mb-4 pb-3 border-b border-slate-200">
+                <RefreshCw className="w-5 h-5 text-amber-500" />
                 <div>
-                  <h3 className="text-sm font-bold text-white">Client Negotiation / Revision</h3>
-                  <p className="text-xs text-slate-400">
+                  <h3 className="text-sm font-black text-slate-900">Client Negotiation / Revision</h3>
+                  <p className="text-xs text-slate-500 font-medium">
                     Create Revision Rev-{(revision + 1)} with negotiated rates or discount
                   </p>
                 </div>
@@ -400,7 +369,7 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Special Negotiated Discount (INR)
                   </label>
                   <input
@@ -408,20 +377,20 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
                     value={revisedDiscount}
                     onChange={(e) => setRevisedDiscount(e.target.value)}
                     placeholder="e.g. 200"
-                    className="w-full bg-[#0a1020] text-slate-100 text-sm px-3.5 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+                    className="w-full bg-white text-slate-900 text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 shadow-2xs"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
                     Negotiation Notes / Client Requirement
                   </label>
                   <textarea
                     rows={3}
                     value={negotiationNotes}
                     onChange={(e) => setNegotiationNotes(e.target.value)}
-                    placeholder="Client requested 5% commercial concession for immediate PO release..."
-                    className="w-full bg-[#0a1020] text-slate-100 text-sm px-3.5 py-2.5 rounded-xl border border-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-inner"
+                    placeholder="Client requested commercial concession for immediate PO release..."
+                    className="w-full bg-white text-slate-900 text-sm px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:border-blue-600 shadow-2xs"
                   />
                 </div>
 
@@ -429,14 +398,14 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
                   <button
                     type="button"
                     onClick={() => setActiveTab("preview")}
-                    className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium cursor-pointer"
+                    className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
                   >
                     Cancel
                   </button>
                   <button
                     type="button"
                     onClick={handleNegotiateSubmit}
-                    className="px-4 py-2 bg-amber-600 hover:bg-amber-500 text-white rounded-xl text-xs font-bold transition shadow-md cursor-pointer"
+                    className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer"
                   >
                     Issue Rev-{(revision + 1)}
                   </button>
@@ -444,47 +413,47 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
               </div>
             </div>
           ) : (
-            /* Rendered HTML Document matching Image 2 */
+            /* Rendered Clean Light Document */
             <div
               ref={printableRef}
-              className="bg-[#0b1329] border border-[#1a243e] rounded-xl p-6 sm:p-8 text-slate-200 text-xs shadow-2xl max-w-4xl mx-auto font-sans"
+              className="bg-white border border-slate-200 rounded-xl p-6 sm:p-8 text-slate-800 text-xs shadow-md max-w-4xl mx-auto font-sans"
             >
               {/* Header Box */}
-              <div className="flex flex-col sm:flex-row items-start justify-between pb-6 border-b border-slate-700/80 gap-4">
+              <div className="flex flex-col sm:flex-row items-start justify-between pb-6 border-b border-slate-200 gap-4">
                 <div className="flex items-start space-x-3.5">
-                  <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-cyan-500 flex items-center justify-center text-white font-black text-xl shadow-lg shrink-0">
+                  <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-blue-700 to-indigo-600 flex items-center justify-center text-white font-black text-xl shadow-md shrink-0">
                     Y
                   </div>
                   <div>
-                    <h1 className="text-base sm:text-lg font-black text-white tracking-tight uppercase">
+                    <h1 className="text-base sm:text-lg font-black text-slate-900 tracking-tight uppercase">
                       Yash Earthing Solutions Pvt Ltd
                     </h1>
-                    <p className="text-[10px] text-slate-400 leading-relaxed mt-0.5">
+                    <p className="text-[10px] text-slate-500 leading-relaxed mt-0.5">
                       Regd. Office: Shop No. 2, Basement Rajdhani Complex, Satara Road, Pune - 411043<br />
                       Plant / Works: Gate No. 118, Uruli Devachi, Handewadi Road, Haveli, Pune - 412308<br />
-                      GSTIN: <span className="font-mono text-slate-300">27AABCY2449P1ZP</span> | PAN: <span className="font-mono text-slate-300">AABCY2449P</span> | CIN: <span className="font-mono text-slate-300">U31909PN2021PTC199842</span><br />
+                      GSTIN: <span className="font-mono font-bold text-slate-800">27AABCY2449P1ZP</span> | PAN: <span className="font-mono font-bold text-slate-800">AABCY2449P</span> | CIN: <span className="font-mono font-bold text-slate-800">U31909PN2021PTC199842</span><br />
                       Email: sales@yashearthing.com | Tel: +91 9370335298 / +91 (020) 2437-8890
                     </p>
                   </div>
                 </div>
 
                 <div className="text-right flex flex-col items-end shrink-0">
-                  <div className="text-slate-400 text-[10px] font-semibold mb-1">
-                    QUOTE REF: <span className="text-white font-mono">{quoteNo}</span>
+                  <div className="text-slate-500 text-[10px] font-bold mb-1">
+                    QUOTE REF: <span className="text-blue-700 font-mono font-black">{quoteNo}</span>
                   </div>
-                  <div className="px-3 py-1.5 rounded-lg border border-cyan-500/30 bg-cyan-950/30 text-right">
-                    <div className="text-[10px] font-bold text-cyan-300">ESTIMATE ISSUED</div>
-                    <div className="text-[9px] text-slate-400 font-mono">Status: {status}</div>
+                  <div className="px-3 py-1.5 rounded-lg border border-blue-200 bg-blue-50 text-right">
+                    <div className="text-[10px] font-black text-blue-800">ESTIMATE ISSUED</div>
+                    <div className="text-[9px] text-slate-500 font-mono">Status: {status}</div>
                   </div>
                 </div>
               </div>
 
               {/* Title Ribbon */}
-              <div className="py-2.5 my-4 bg-[#101935] border-y border-slate-700/60 flex items-center justify-between px-3">
-                <span className="text-xs font-black text-cyan-400 uppercase tracking-widest">
+              <div className="py-2.5 my-4 bg-slate-50 border-y border-slate-200 flex items-center justify-between px-3">
+                <span className="text-xs font-black text-blue-900 uppercase tracking-widest">
                   COMMERCIAL ESTIMATE & QUOTATION
                 </span>
-                <span className="text-[11px] font-mono text-slate-400">
+                <span className="text-[11px] font-mono font-bold text-slate-600">
                   Revision: Rev-{revision}
                 </span>
               </div>
@@ -492,77 +461,77 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
               {/* Reference Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 py-2 text-[11px]">
                 {/* 1. QUOTATION & COMMERCIAL REFERENCE */}
-                <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-3 space-y-1">
-                  <div className="font-bold text-cyan-400 uppercase text-[10px] tracking-wider mb-1.5">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
+                  <div className="font-black text-blue-800 uppercase text-[10px] tracking-wider mb-1.5">
                     QUOTATION & COMMERCIAL REFERENCE
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Estimate / Quote No:</span>
-                    <span className="font-mono text-white font-semibold">{quoteNo}</span>
+                    <span className="text-slate-500">Estimate / Quote No:</span>
+                    <span className="font-mono text-slate-900 font-bold">{quoteNo}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Estimate Date:</span>
-                    <span className="text-slate-200">22/10/2026</span>
+                    <span className="text-slate-500">Estimate Date:</span>
+                    <span className="text-slate-800 font-medium">22/10/2026</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Validity Period:</span>
-                    <span className="text-slate-200">15 Days from date of issue</span>
+                    <span className="text-slate-500">Validity Period:</span>
+                    <span className="text-slate-800 font-medium">15 Days from date of issue</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Payment Terms:</span>
-                    <span className="text-slate-200">100% Advance against PI</span>
+                    <span className="text-slate-500">Payment Terms:</span>
+                    <span className="text-slate-800 font-medium">100% Advance against PI</span>
                   </div>
                 </div>
 
                 {/* 2. TECHNICAL & DELIVERY SCOPE */}
-                <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-3 space-y-1">
-                  <div className="font-bold text-cyan-400 uppercase text-[10px] tracking-wider mb-1.5">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
+                  <div className="font-black text-blue-800 uppercase text-[10px] tracking-wider mb-1.5">
                     TECHNICAL & DELIVERY SCOPE
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Delivery Terms:</span>
-                    <span className="text-slate-200">Ex-Works Pune / Road Transport</span>
+                    <span className="text-slate-500">Delivery Terms:</span>
+                    <span className="text-slate-800 font-medium">Ex-Works Pune / Road Transport</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Compliance & Approvals:</span>
-                    <span className="text-slate-200">IS 3043:2018 / IEEE 80 / NABL / MSEB</span>
+                    <span className="text-slate-500">Compliance & Approvals:</span>
+                    <span className="text-slate-800 font-medium">IS 3043:2018 / IEEE 80 / NABL / MSEB</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Place of Supply:</span>
-                    <span className="text-slate-200">27-Maharashtra</span>
+                    <span className="text-slate-500">Place of Supply:</span>
+                    <span className="text-slate-800 font-medium">27-Maharashtra</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-slate-400">Sales Consultant:</span>
-                    <span className="text-slate-200 font-semibold">{quotation.salesRepresentative?.name || "Mr/Ms. RUKHSAR SHAIKH"}</span>
+                    <span className="text-slate-500">Sales Consultant:</span>
+                    <span className="text-slate-800 font-bold">{quotation.salesRepresentative?.name || "Mr/Ms. RUKHSAR SHAIKH"}</span>
                   </div>
                 </div>
 
-                {/* 3. QUOTED TO (CLIENT / ORGANIZATION) */}
-                <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-3 space-y-1">
-                  <div className="font-bold text-cyan-400 uppercase text-[10px] tracking-wider mb-1.5">
+                {/* 3. QUOTED TO */}
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
+                  <div className="font-black text-blue-800 uppercase text-[10px] tracking-wider mb-1.5">
                     QUOTED TO (CLIENT / ORGANIZATION)
                   </div>
-                  <div className="font-bold text-white text-xs">{customerName}</div>
-                  <div className="text-slate-400">Commercial Tower, Senapati Bapat Road, Pune</div>
-                  <div className="text-slate-400">GSTIN: <span className="font-mono text-slate-300">27AAACT2727Q1ZR</span> | State: 27-Maharashtra</div>
+                  <div className="font-black text-slate-900 text-xs">{customerName}</div>
+                  <div className="text-slate-600">Commercial Tower, Senapati Bapat Road, Pune</div>
+                  <div className="text-slate-500">GSTIN: <span className="font-mono font-bold text-slate-800">27AAACT2727Q1ZR</span> | State: 27-Maharashtra</div>
                 </div>
 
                 {/* 4. PROJECT / SITE DESTINATION */}
-                <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-3 space-y-1">
-                  <div className="font-bold text-cyan-400 uppercase text-[10px] tracking-wider mb-1.5">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 space-y-1">
+                  <div className="font-black text-blue-800 uppercase text-[10px] tracking-wider mb-1.5">
                     PROJECT / SITE DESTINATION
                   </div>
-                  <div className="font-bold text-white text-xs">{customerName} (SITE WORKS)</div>
-                  <div className="text-slate-400">Pune Solar & Substation Complex, Chakan MIDC</div>
-                  <div className="text-slate-400">Supply Mode: Direct Factory Dispatch / Road Transport</div>
+                  <div className="font-black text-slate-900 text-xs">{customerName} (SITE WORKS)</div>
+                  <div className="text-slate-600">Pune Solar & Substation Complex, Chakan MIDC</div>
+                  <div className="text-slate-500">Supply Mode: Direct Factory Dispatch / Road Transport</div>
                 </div>
               </div>
 
               {/* Items Table */}
-              <div className="mt-4 border border-slate-700/80 rounded-lg overflow-hidden">
+              <div className="mt-4 border border-slate-200 rounded-lg overflow-hidden">
                 <table className="w-full text-left border-collapse text-[11px]">
                   <thead>
-                    <tr className="bg-[#121c38] text-slate-300 border-b border-slate-700 font-bold uppercase text-[10px]">
+                    <tr className="bg-slate-50 text-slate-700 border-b border-slate-200 font-extrabold uppercase text-[10px]">
                       <th className="py-2.5 px-3">#</th>
                       <th className="py-2.5 px-3">ITEM CODE</th>
                       <th className="py-2.5 px-3">DESCRIPTION OF GOODS & SPECIFICATIONS</th>
@@ -575,28 +544,28 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
                       <th className="py-2.5 px-3 text-right">AMOUNT (₹)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
+                  <tbody className="divide-y divide-slate-100">
                     {items.map((it, idx) => (
-                      <tr key={it.id || idx} className="hover:bg-slate-800/40">
+                      <tr key={it.id || idx} className="hover:bg-slate-50/80">
                         <td className="py-2.5 px-3 font-mono">{idx + 1}</td>
-                        <td className="py-2.5 px-3 font-mono font-semibold text-cyan-300">
+                        <td className="py-2.5 px-3 font-mono font-bold text-blue-700">
                           {it.product?.sku || "YGGI501F"}
                         </td>
                         <td className="py-2.5 px-3">
-                          <div className="font-semibold text-white">
+                          <div className="font-bold text-slate-900">
                             {it.product?.name || "GI Earthing Electrode"}
                           </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5 leading-snug">
+                          <div className="text-[10px] text-slate-500 mt-0.5 leading-snug">
                             {it.description}
                           </div>
                         </td>
-                        <td className="py-2.5 px-3 font-bold text-emerald-400">YASH</td>
+                        <td className="py-2.5 px-3 font-black text-emerald-700">YASH</td>
                         <td className="py-2.5 px-3 font-mono">{it.product?.hsnCode || "8538"}</td>
-                        <td className="py-2.5 px-3 font-mono font-semibold">{Number(it.quantity || 1)}</td>
+                        <td className="py-2.5 px-3 font-mono font-bold">{Number(it.quantity || 1)}</td>
                         <td className="py-2.5 px-3">NOS</td>
                         <td className="py-2.5 px-3 font-mono">{Number(it.unitPrice || 2150).toFixed(2)}</td>
                         <td className="py-2.5 px-3 font-mono">18%</td>
-                        <td className="py-2.5 px-3 font-mono font-bold text-right text-white">
+                        <td className="py-2.5 px-3 font-mono font-black text-right text-slate-900">
                           {Number(it.subtotal || 2150).toFixed(2)}
                         </td>
                       </tr>
@@ -608,45 +577,45 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
               {/* Subtotals & Bank Remittance Box */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4 pt-2">
                 <div className="space-y-3">
-                  <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-3">
-                    <span className="text-[10px] text-slate-400 uppercase font-bold block mb-1">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+                    <span className="text-[10px] text-slate-500 uppercase font-black block mb-1">
                       AMOUNT IN WORDS:
                     </span>
-                    <span className="font-bold text-white text-xs">{inWords(grandTotal)}</span>
+                    <span className="font-black text-slate-900 text-xs">{inWords(grandTotal)}</span>
                   </div>
 
-                  <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-3 text-[11px] space-y-1">
-                    <span className="text-[10px] text-cyan-400 uppercase font-bold block mb-1">
+                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-3 text-[11px] space-y-1">
+                    <span className="text-[10px] text-blue-800 uppercase font-black block mb-1">
                       DIRECT BANK REMITTANCE:
                     </span>
-                    <div className="text-slate-300">Bank: <span className="font-semibold text-white">STATE BANK OF INDIA</span></div>
-                    <div className="text-slate-300">A/c No: <span className="font-mono text-white">42706903179</span> | IFSC Code: <span className="font-mono text-white">SBIN0004726</span> (Branch: SIB PUNE)</div>
+                    <div className="text-slate-700">Bank: <span className="font-bold text-slate-900">STATE BANK OF INDIA</span></div>
+                    <div className="text-slate-700">A/c No: <span className="font-mono font-bold text-slate-900">42706903179</span> | IFSC Code: <span className="font-mono font-bold text-slate-900">SBIN0004726</span> (Branch: SIB PUNE)</div>
                   </div>
                 </div>
 
-                <div className="bg-[#0f172a] border border-slate-800 rounded-lg p-4 space-y-2 text-[11px]">
-                  <div className="flex justify-between text-slate-300">
+                <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 space-y-2 text-[11px]">
+                  <div className="flex justify-between text-slate-700">
                     <span>Taxable Subtotal:</span>
-                    <span className="font-mono font-semibold">₹ {taxableAmount.toFixed(2)}</span>
+                    <span className="font-mono font-bold">₹ {taxableAmount.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-slate-300">
+                  <div className="flex justify-between text-slate-700">
                     <span>Central Tax (CGST 9%):</span>
                     <span className="font-mono">₹ {cgst.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-slate-300">
+                  <div className="flex justify-between text-slate-700">
                     <span>State Tax (SGST 9%):</span>
                     <span className="font-mono">₹ {sgst.toFixed(2)}</span>
                   </div>
-                  <div className="pt-2 border-t border-slate-700 flex justify-between items-center text-sm">
-                    <span className="font-black text-white uppercase">GRAND TOTAL (INR):</span>
-                    <span className="font-mono font-black text-cyan-400 text-base">₹ {grandTotal.toFixed(2)}</span>
+                  <div className="pt-2 border-t border-slate-300 flex justify-between items-center text-sm">
+                    <span className="font-black text-slate-900 uppercase">GRAND TOTAL (INR):</span>
+                    <span className="font-mono font-black text-blue-700 text-base">₹ {grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
               </div>
 
               {/* Commercial Terms & Conditions */}
-              <div className="mt-4 pt-3 border-t border-slate-800/80 text-[10px] text-slate-400 space-y-1">
-                <span className="font-bold text-slate-300 uppercase block mb-1">
+              <div className="mt-4 pt-3 border-t border-slate-200 text-[10px] text-slate-500 space-y-1">
+                <span className="font-black text-slate-700 uppercase block mb-1">
                   Commercial Terms & Conditions:
                 </span>
                 <p>1. Taxation: GST extra as applicable at actuals.</p>
@@ -656,27 +625,27 @@ Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
               </div>
 
               {/* Stamp & Authorized Signature */}
-              <div className="mt-6 pt-4 border-t border-slate-800 flex justify-between items-end">
-                <div className="text-[10px] text-slate-500">
+              <div className="mt-6 pt-4 border-t border-slate-200 flex justify-between items-end">
+                <div className="text-[10px] text-slate-400">
                   Computer-generated authenticated commercial document.<br />
                   Yash Earthing ERP v3 Cloud Edition.
                 </div>
 
                 <div className="text-right">
-                  <div className="text-[10px] font-bold text-slate-300 mb-1">
+                  <div className="text-[10px] font-bold text-slate-700 mb-1">
                     For YASH EARTHING SOLUTIONS PVT LTD
                   </div>
-                  <div className="p-2 border border-blue-500/30 rounded bg-blue-950/30 text-right">
-                    <div className="text-[11px] font-bold text-cyan-300">
+                  <div className="p-2 border border-blue-200 rounded-lg bg-blue-50 text-right">
+                    <div className="text-[11px] font-bold text-blue-800">
                       {quotation.preparedBy?.split("(")[0]?.trim() || "Back Officer"}
                     </div>
-                    <div className="text-[9px] text-slate-400 font-mono">
+                    <div className="text-[9px] text-slate-500 font-mono">
                       {quotation.preparedBy?.includes("(")
                         ? quotation.preparedBy.split("(")[1]?.replace(")", "")
                         : "BACK_OFFICER"}
                     </div>
                   </div>
-                  <div className="text-[10px] text-slate-400 mt-1">
+                  <div className="text-[10px] text-slate-500 mt-1">
                     Authorised Signatory / Commercial & Engineering
                   </div>
                 </div>
