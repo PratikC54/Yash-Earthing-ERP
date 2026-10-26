@@ -192,7 +192,12 @@ export async function awardRfq(req, res, next) {
       });
     }
 
-    const result = await requisitionService.awardRfq(id, parsed.data.vendorId);
+    const result = await requisitionService.awardRfq(id, parsed.data.vendorId, {
+      expectedDate: parsed.data.expectedDate,
+      justification: parsed.data.justification,
+      notes: parsed.data.notes,
+      user: req.user,
+    });
     res.status(200).json({ success: true, ...result });
   } catch (error) {
     next(error);

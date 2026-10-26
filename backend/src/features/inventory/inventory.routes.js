@@ -13,7 +13,7 @@ export function createInventoryRouter({ authenticate, authorizeRoles } = {}) {
 
   const maybeRole = (allowedRoles) => (req, res, next) => {
     if (typeof authorizeRoles === "function") {
-      return authorizeRoles(allowedRoles)(req, res, next);
+      return authorizeRoles(...(Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]))(req, res, next);
     }
     return next();
   };
@@ -25,7 +25,7 @@ export function createInventoryRouter({ authenticate, authorizeRoles } = {}) {
   router.post(
     "/inventory/adjustments",
     maybeAuth,
-    maybeRole(["ADMIN", "STORE_MANAGER"]),
+    maybeRole(["ADMIN", "FACTORY_INWARD_OFFICER", "PROCUREMENT_OFFICER"]),
     inventoryController.recordInventoryAdjustment
   );
 

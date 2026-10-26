@@ -18,11 +18,17 @@ import {
 } from "lucide-react";
 import * as api from "../api/procurementApi";
 import { LoadingSkeleton, ErrorAlert } from "../components/common/StateFeedback";
+import KpiDetailDrawer from "../components/dashboard/KpiDetailDrawer";
+import ProcurementActionCentre from "../components/dashboard/ProcurementActionCentre";
+import RestockModal from "../components/inventory/RestockModal";
 
 export default function Module2Dashboard({ onNavigate }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeKpiDrawer, setActiveKpiDrawer] = useState(null);
+  const [restockItem, setRestockItem] = useState(null);
+  const [restockSuccess, setRestockSuccess] = useState(null);
 
   const fetchDashboardMetrics = useCallback(async () => {
     try {
@@ -155,15 +161,16 @@ export default function Module2Dashboard({ onNavigate }) {
       {/* 1. Procurement KPIs (5-card grid) */}
       <KpiSection title="Procurement & Inventory KPIs">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+        {/* Card 1: Open PRs */}
         <div
-          onClick={() => onNavigate && onNavigate("purchase-requests")}
-          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-blue-500/50 transition-all cursor-pointer flex flex-col justify-between"
+          onClick={() => setActiveKpiDrawer("open-prs")}
+          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-blue-500/50 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               Open PRs
             </span>
-            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-cyan-400 flex items-center justify-center border border-blue-500/20 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-blue-500/10 text-cyan-400 flex items-center justify-center border border-blue-500/20 shadow-2xs group-hover:scale-105 transition-transform">
               <ShoppingCart className="w-4 h-4" />
             </div>
           </div>
@@ -172,20 +179,22 @@ export default function Module2Dashboard({ onNavigate }) {
               {p.openRequisitions ?? 0}
             </div>
           </div>
-          <div className="flex items-center space-x-1 text-[11px] text-slate-400">
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>Requisitions in pipeline</span>
+            <span className="text-cyan-400 font-semibold group-hover:underline">Inspect →</span>
           </div>
         </div>
 
+        {/* Card 2: Active RFQs */}
         <div
-          onClick={() => onNavigate && onNavigate("purchase-requests")}
-          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-indigo-500/50 transition-all cursor-pointer flex flex-col justify-between"
+          onClick={() => setActiveKpiDrawer("active-rfqs")}
+          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-indigo-500/50 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               Active RFQs
             </span>
-            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 shadow-2xs group-hover:scale-105 transition-transform">
               <Layers className="w-4 h-4" />
             </div>
           </div>
@@ -194,20 +203,22 @@ export default function Module2Dashboard({ onNavigate }) {
               {p.activeRfqs ?? 0}
             </div>
           </div>
-          <div className="flex items-center space-x-1 text-[11px] text-slate-400">
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>Supplier bids in progress</span>
+            <span className="text-indigo-400 font-semibold group-hover:underline">Inspect →</span>
           </div>
         </div>
 
+        {/* Card 3: Pending Approvals */}
         <div
-          onClick={() => onNavigate && onNavigate("purchase-orders")}
-          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-amber-500/50 transition-all cursor-pointer flex flex-col justify-between"
+          onClick={() => setActiveKpiDrawer("pending-approvals")}
+          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-amber-500/50 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               Pending Approvals
             </span>
-            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center border border-amber-500/20 shadow-2xs group-hover:scale-105 transition-transform">
               <Clock className="w-4 h-4" />
             </div>
           </div>
@@ -216,20 +227,22 @@ export default function Module2Dashboard({ onNavigate }) {
               {p.pendingApprovals ?? 0}
             </div>
           </div>
-          <div className="flex items-center space-x-1 text-[11px] text-slate-400">
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>POs waiting sign-off</span>
+            <span className="text-amber-400 font-semibold group-hover:underline">Inspect →</span>
           </div>
         </div>
 
+        {/* Card 4: Open PO Value */}
         <div
-          onClick={() => onNavigate && onNavigate("purchase-orders")}
-          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-emerald-500/50 transition-all cursor-pointer flex flex-col justify-between"
+          onClick={() => setActiveKpiDrawer("open-po-value")}
+          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-emerald-500/50 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               Open PO Value
             </span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 shadow-2xs group-hover:scale-105 transition-transform">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
@@ -238,20 +251,22 @@ export default function Module2Dashboard({ onNavigate }) {
               ₹{(p.openPoValue || 0).toLocaleString()}
             </div>
           </div>
-          <div className="flex items-center space-x-1 text-[11px] text-slate-400">
-            <span>Committed purchasing spend</span>
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
+            <span>Committed spend</span>
+            <span className="text-emerald-400 font-semibold group-hover:underline">Inspect →</span>
           </div>
         </div>
 
+        {/* Card 5: Overdue POs */}
         <div
-          onClick={() => onNavigate && onNavigate("purchase-orders")}
-          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-rose-500/50 transition-all cursor-pointer flex flex-col justify-between"
+          onClick={() => setActiveKpiDrawer("overdue-pos")}
+          className="bg-[#10182f] rounded-2xl p-4 sm:p-5 border border-[#1e2a4a] shadow-lg hover:border-rose-500/50 transition-all cursor-pointer flex flex-col justify-between group"
         >
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold tracking-wider text-slate-400 uppercase">
               Overdue POs
             </span>
-            <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20 shadow-2xs">
+            <div className="w-8 h-8 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20 shadow-2xs group-hover:scale-105 transition-transform">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
@@ -260,63 +275,27 @@ export default function Module2Dashboard({ onNavigate }) {
               {p.overduePurchases ?? 0}
             </div>
           </div>
-          <div className="flex items-center space-x-1 text-[11px] text-slate-400">
+          <div className="flex items-center justify-between text-[11px] text-slate-400">
             <span>Expected date passed</span>
+            <span className="text-rose-400 font-semibold group-hover:underline">Inspect →</span>
           </div>
         </div>
         </div>
       </KpiSection>
 
-      {/* 2. Action Centre & Low-Stock Alerts */}
-      <div className="bg-[#10182f] rounded-2xl p-5 border border-[#1e2a4a] shadow-lg">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-            <h3 className="text-sm font-bold text-white tracking-tight">
-              Action Centre (Requires Employee Attention)
-            </h3>
-          </div>
-          <span className="text-xs text-slate-400 font-medium">
-            {allActionItems.length} actionable triggers
-          </span>
+      {restockSuccess && (
+        <div className="p-3.5 rounded-xl bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 text-xs font-semibold flex items-center space-x-2">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{restockSuccess}</span>
         </div>
+      )}
 
-        {allActionItems.length === 0 ? (
-          <div className="text-center py-6 text-xs text-slate-400 font-medium">
-            All procurement workflows and stock thresholds are currently in optimal state.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {allActionItems.map((item, idx) => (
-              <div
-                key={idx}
-                onClick={() => onNavigate && onNavigate(item.targetModule)}
-                className="p-3 rounded-xl bg-[#0a1020] hover:bg-slate-800/60 transition-colors border border-slate-800 flex items-center justify-between cursor-pointer group"
-              >
-                <div className="flex items-center space-x-3 min-w-0">
-                  <span
-                    className={`px-2 py-0.5 rounded-md font-bold text-[10px] shrink-0 ${
-                      item.urgency === "CRITICAL"
-                        ? "bg-rose-500/20 text-rose-300 border border-rose-500/30"
-                        : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
-                    }`}
-                  >
-                    {item.urgency}
-                  </span>
-                  <span className="text-xs font-medium text-slate-200 truncate">
-                    {item.title}
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-1 text-cyan-400 text-xs font-semibold shrink-0 group-hover:translate-x-0.5 transition-transform">
-                  <span>Take Action</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* 2. Procurement Action Centre */}
+      <ProcurementActionCentre
+        actionCentreData={actionCentre}
+        onNavigate={onNavigate}
+        onOpenRestock={(item) => setRestockItem(item)}
+      />
 
       {/* 3. Two-Column Operational Analytics */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -437,8 +416,15 @@ export default function Module2Dashboard({ onNavigate }) {
                 <span className="text-[10px] text-slate-400">Production Hold</span>
               </div>
 
-              <div className="p-3 rounded-xl bg-blue-950/40 border border-blue-500/30">
-                <span className="text-[10px] text-cyan-400 font-bold uppercase block">Available</span>
+              <div
+                onClick={() => setActiveKpiDrawer("low-stock")}
+                className="p-3 rounded-xl bg-blue-950/40 border border-blue-500/30 hover:border-cyan-400 cursor-pointer transition group"
+                title="Click to inspect Free Stock & Low Stock Items"
+              >
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-cyan-400 font-bold uppercase block">Available</span>
+                  <span className="text-[9px] text-cyan-300 font-semibold group-hover:underline">Inspect →</span>
+                </div>
                 <span className="text-lg font-bold text-cyan-300 font-mono mt-0.5 block">
                   {inv.derivedAvailableQuantity?.toLocaleString() || 0}
                 </span>
@@ -479,6 +465,27 @@ export default function Module2Dashboard({ onNavigate }) {
           </div>
         </div>
       </div>
+
+      {/* KPI Detail Slide-Out Drawer */}
+      <KpiDetailDrawer
+        isOpen={Boolean(activeKpiDrawer)}
+        kpiKey={activeKpiDrawer}
+        onClose={() => setActiveKpiDrawer(null)}
+        onNavigate={onNavigate}
+        dashboardMetrics={data}
+      />
+
+      {/* ⚡ Restock Modal */}
+      <RestockModal
+        isOpen={Boolean(restockItem)}
+        item={restockItem}
+        onClose={() => setRestockItem(null)}
+        onSuccess={(msg) => {
+          setRestockSuccess(msg);
+          fetchDashboardMetrics();
+        }}
+        onNavigate={onNavigate}
+      />
     </div>
   );
 }

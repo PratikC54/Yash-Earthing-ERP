@@ -243,26 +243,133 @@ export async function updateTaskStatus(taskId, status) {
 }
 
 export async function getProjectDashboardMetrics() {
-  const [totalProjects, activeProjects, completedProjects, onHoldProjects, totalInstallations, pendingHandover, serviceTicketsOpen] =
-    await Promise.all([
-      prisma.project.count(),
-      prisma.project.count({ where: { status: { in: ["PLANNED", "IN_PROGRESS", "SURVEY_PENDING"] } } }),
-      prisma.project.count({ where: { status: "COMPLETED" } }),
-      prisma.project.count({ where: { status: "ON_HOLD" } }),
-      prisma.installation.count(),
-      prisma.installation.count({ where: { status: { in: ["TESTING", "HANDOVER_PENDING"] } } }),
-      prisma.serviceTicket.count({ where: { status: { in: ["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_PARTS"] } } }),
-    ]);
+  const [
+    totalProjects,
+    activeProjects,
+    completedProjects,
+    onHoldProjects,
+    totalInstallations,
+    scheduledInstallations,
+    testingInstallations,
+    completedInstallations,
+    pendingHandover,
+    serviceTicketsOpen,
+    inProgressTickets,
+    unassignedTickets,
+    recentProjects,
+    actionRequiredInstallations,
+    actionRequiredTickets
+  ] = await Promise.all([
+    prisma.project.count(),
+    prisma.project.count({ where: { status: { in: ["PLANNED", "IN_PROGRESS", "SURVEY_PENDING"] } } }),
+    prisma.project.count({ where: { status: "COMPLETED" } }),
+    prisma.project.count({ where: { status: "ON_HOLD" } }),
+    prisma.installation.count(),
+    prisma.installation.count({ where: { status: "SCHEDULED" } }),
+    prisma.installation.count({ where: { status: "TESTING" } }),
+    prisma.installation.count({ where: { status: "COMPLETED" } }),
+    prisma.installation.count({ where: { status: { in: ["TESTING", "HANDOVER_PENDING"] } } }),
+    prisma.serviceTicket.count({ where: { status: { in: ["OPEN", "ASSIGNED", "IN_PROGRESS", "WAITING_PARTS"] } } }),
+    prisma.serviceTicket.count({ where: { status: "IN_PROGRESS" } }),
+    prisma.serviceTicket.count({ where: { status: "OPEN", assignedToId: null } }),
+    prisma.project.findMany({
+      take: 6,
+      orderBy: { createdAt: "desc" },
+      include: {
+        customer: { select: { name: true } },
+        salesOrder: { select: { orderNumber: true } },
+        owner: { select: { name: true } },
+      },
+    }),
+    prisma.installation.findMany({
+      where: { status: { in: ["SURVEY_DUE", "SCHEDULED", "TESTING", "HANDOVER_PENDING", "BLOCKED"] } },
+      take: 6,
+      orderBy: { createdAt: "desc" },
+      include: {
+        project: { select: { projectCode: true, name: true, customer: { select: { name: true } } } },
+      },
+    }),
+    prisma.serviceTicket.findMany({
+      where: { status: { in: ["OPEN", "ASSIGNED", "WAITING_PARTS"] } },
+      take: 6,
+      orderBy: { reportedAt: "desc" },
+      include: {
+        customer: { select: { name: true, phone: true } },
+        assignedTo: { select: { name: true } },
+      },
+    }),
+  ]);
 
-  const recentProjects = await prisma.project.findMany({
-    take: 5,
-    orderBy: { createdAt: "desc" },
-    include: {
-      customer: { select: { name: true } },
-      salesOrder: { select: { orderNumber: true } },
-      owner: { select: { name: true } },
-    },
-  });
+  // Operational Action Center dynamic task compilation
+  const operationsActionCentre = [];
+
+  for (const inst of actionRequiredInstallations) {
+    if (inst.status === "TESTING" || inst.status === "SCHEDULED" || inst.status === "SURVEY_DUE") {
+      operationsActionCentre.push({
+        id: `inst-test-${inst.id}`,
+        type: inst.status === "SCHEDULED" ? "SITE_WORK_SCHEDULED" : "RESISTANCE_TEST_DUE",
+        title: inst.status === "SCHEDULED" ? `Site Work Scheduled: ${inst.installationNo}` : `Earth Resistance Test Due: ${inst.installationNo}`,
+        subtitle: `Project: ${inst.project?.name} (${inst.project?.projectCode}) | Client: ${inst.project?.customer?.name || "Client Site"}`,
+        urgency: inst.status === "TESTING" ? "HIGH" : "MEDIUM",
+        role: "ENGINEER",
+        targetModule: "installations",
+        targetId: inst.id,
+        actionLabel: inst.status === "SCHEDULED" ? "View & Update Site Work" : "Conduct QC Test (≤ 2.0 Ω)",
+      });
+    } else if (inst.status === "HANDOVER_PENDING") {
+      operationsActionCentre.push({
+        id: `inst-handover-${inst.id}`,
+        type: "HANDOVER_SIGN_OFF_DUE",
+        title: `Customer Handover Sign-off Pending: ${inst.installationNo}`,
+        subtitle: `Client: ${inst.project?.customer?.name} | Certified ≤ 2.0 Ω`,
+        urgency: "CRITICAL",
+        role: "PROJECT_MANAGER",
+        targetModule: "installations",
+        targetId: inst.id,
+        actionLabel: "Collect Client Sign-Off",
+      });
+    } else if (inst.status === "BLOCKED") {
+      operationsActionCentre.push({
+        id: `inst-blocked-${inst.id}`,
+        type: "INSTALLATION_BLOCKED",
+        title: `Site Installation Non-Compliant / Blocked: ${inst.installationNo}`,
+        subtitle: `Earth test exceeded limit (> 2.0 Ω) or safety checklist failed`,
+        urgency: "CRITICAL",
+        role: "ENGINEER",
+        targetModule: "installations",
+        targetId: inst.id,
+        actionLabel: "Retest & Correct Pit",
+      });
+    }
+  }
+
+  for (const ticket of actionRequiredTickets) {
+    if (ticket.status === "OPEN" && !ticket.assignedTo) {
+      operationsActionCentre.push({
+        id: `ticket-unassigned-${ticket.id}`,
+        type: "TICKET_UNASSIGNED",
+        title: `Unassigned Service Ticket: ${ticket.ticketNo}`,
+        subtitle: `Customer: ${ticket.customer?.name} | Issue: ${ticket.issue}`,
+        urgency: "HIGH",
+        role: "SERVICE_EXECUTIVE",
+        targetModule: "service",
+        targetId: ticket.id,
+        actionLabel: "Assign Field Engineer",
+      });
+    } else if (ticket.status === "WAITING_PARTS") {
+      operationsActionCentre.push({
+        id: `ticket-parts-${ticket.id}`,
+        type: "TICKET_WAITING_PARTS",
+        title: `Service Ticket Waiting for Spare Parts: ${ticket.ticketNo}`,
+        subtitle: `Customer: ${ticket.customer?.name} | Assigned: ${ticket.assignedTo?.name || "Field Team"}`,
+        urgency: "MEDIUM",
+        role: "SERVICE_EXECUTIVE",
+        targetModule: "service",
+        targetId: ticket.id,
+        actionLabel: "Check Stores & Resolve",
+      });
+    }
+  }
 
   return {
     totalProjects,
@@ -270,19 +377,28 @@ export async function getProjectDashboardMetrics() {
     completedProjects,
     onHoldProjects,
     totalInstallations,
-    totalTickets: serviceTicketsOpen,
+    scheduledInstallations,
+    testingInstallations,
+    completedInstallations,
     pendingHandover,
     serviceTicketsOpen,
     openTickets: serviceTicketsOpen,
+    totalTickets: serviceTicketsOpen,
+    inProgressTickets,
+    unassignedTickets,
     kpis: {
       totalProjects,
       activeProjects,
       completedProjects,
       onHoldProjects,
       totalInstallations,
+      scheduledInstallations,
+      testingInstallations,
+      completedInstallations,
       pendingHandover,
       serviceTicketsOpen,
     },
+    operationsActionCentre,
     recentProjects,
   };
 }

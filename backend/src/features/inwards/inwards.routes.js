@@ -13,7 +13,7 @@ export function createInwardsRouter({ authenticate, authorizeRoles } = {}) {
 
   const maybeRole = (allowedRoles) => (req, res, next) => {
     if (typeof authorizeRoles === "function") {
-      return authorizeRoles(allowedRoles)(req, res, next);
+      return authorizeRoles(...(Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]))(req, res, next);
     }
     return next();
   };
@@ -25,37 +25,37 @@ export function createInwardsRouter({ authenticate, authorizeRoles } = {}) {
   router.post(
     "/goods-receipts",
     maybeAuth,
-    maybeRole(["ADMIN", "STORE_MANAGER", "PROCUREMENT"]),
+    maybeRole(["ADMIN", "FACTORY_INWARD_OFFICER", "PROCUREMENT_OFFICER"]),
     inwardsController.createGoodsReceipt
   );
   router.post(
     "/inwards",
     maybeAuth,
-    maybeRole(["ADMIN", "STORE_MANAGER", "PROCUREMENT"]),
+    maybeRole(["ADMIN", "FACTORY_INWARD_OFFICER", "PROCUREMENT_OFFICER"]),
     inwardsController.createGoodsReceipt
   );
   router.post(
     "/inwards/receipts",
     maybeAuth,
-    maybeRole(["ADMIN", "STORE_MANAGER", "PROCUREMENT"]),
+    maybeRole(["ADMIN", "FACTORY_INWARD_OFFICER", "PROCUREMENT_OFFICER"]),
     inwardsController.createGoodsReceipt
   );
   router.post(
     "/goods-receipts/:id/inspect",
     maybeAuth,
-    maybeRole(["ADMIN", "QUALITY_INSPECTOR", "STORE_MANAGER"]),
+    maybeRole(["ADMIN", "QUALITY_INSPECTOR"]),
     inwardsController.inspectAndPostGoodsReceipt
   );
   router.post(
     "/inwards/:id/inspect",
     maybeAuth,
-    maybeRole(["ADMIN", "QUALITY_INSPECTOR", "STORE_MANAGER"]),
+    maybeRole(["ADMIN", "QUALITY_INSPECTOR"]),
     inwardsController.inspectAndPostGoodsReceipt
   );
   router.post(
     "/inwards/receipts/:id/inspect",
     maybeAuth,
-    maybeRole(["ADMIN", "QUALITY_INSPECTOR", "STORE_MANAGER"]),
+    maybeRole(["ADMIN", "QUALITY_INSPECTOR"]),
     inwardsController.inspectAndPostGoodsReceipt
   );
 

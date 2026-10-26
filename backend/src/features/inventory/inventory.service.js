@@ -1,4 +1,6 @@
 import { prisma } from "../../db/prisma.js";
+import { NotificationService } from "../notifications/notification.service.js";
+import { NOTIFICATION_TYPES, NOTIFICATION_PRIORITY } from "../notifications/notification.constants.js";
 
 export async function listInventory({
   page = 1,
@@ -265,7 +267,7 @@ export async function recordInventoryAdjustment({ productId, movementType, quant
       },
     });
 
-    return {
+    const result = {
       message: `Inventory updated successfully with movement ${movementType}`,
       inventory: {
         ...updatedInv,
@@ -273,6 +275,62 @@ export async function recordInventoryAdjustment({ productId, movementType, quant
       },
       movement,
     };
+
+    // Concurrency-safe immediate post-movement low stock detection & recovery trigger
+    const finalPhysical = Number(updatedInv.physicalQuantity) || 0;
+    const finalReserved = Number(updatedInv.reservedQuantity) || 0;
+    const finalAvailable = finalPhysical - finalReserved;
+    const reorder = Number(updatedInv.reorderLevel) || 0;
+
+    if (finalAvailable <= reorder) {
+      const existingActive = await tx.notification.findFirst({
+        where: {
+          entityType: "Product",
+          entityId: productId,
+          type: NOTIFICATION_TYPES.LOW_STOCK_ALERT,
+          status: { in: ["UNREAD", "READ"] },
+        },
+      });
+
+      if (!existingActive) {
+        const timestampKey = `LOW_STOCK:${productId}:${Date.now()}`;
+        // Non-blocking notification dispatch
+        NotificationService.notifyRoles(["PROCUREMENT_OFFICER", "ADMIN"], {
+          type: NOTIFICATION_TYPES.LOW_STOCK_ALERT,
+          title: `LOW STOCK ALERT: ${product.name} (${product.sku})`,
+          message: `Available stock for ${product.name} (${finalAvailable} ${product.unitOfMeasure || "UOM"}) is at or below reorder level (${reorder}).`,
+          priority: finalAvailable <= 0 ? NOTIFICATION_PRIORITY.CRITICAL : NOTIFICATION_PRIORITY.HIGH,
+          link: `/inventory?search=${encodeURIComponent(product.sku)}`,
+          entityType: "Product",
+          entityId: productId,
+          dedupKey: timestampKey,
+          metadata: {
+            productId,
+            sku: product.sku,
+            physical: finalPhysical,
+            reserved: finalReserved,
+            available: finalAvailable,
+            reorderLevel: reorder,
+          },
+        }).catch((err) => console.error("Post-adjustment low-stock notification error:", err));
+      }
+    } else {
+      // Stock recovered above threshold: auto-archive active notifications
+      await tx.notification.updateMany({
+        where: {
+          entityType: "Product",
+          entityId: productId,
+          type: NOTIFICATION_TYPES.LOW_STOCK_ALERT,
+          status: { in: ["UNREAD", "READ"] },
+        },
+        data: {
+          status: "ARCHIVED",
+          readAt: new Date(),
+        },
+      });
+    }
+
+    return result;
   });
 }
 

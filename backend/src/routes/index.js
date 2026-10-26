@@ -10,12 +10,19 @@ import engineeringRouter from "../features/engineering/engineering.routes.js";
 import financeRouter from "../features/finance/finance.routes.js";
 
 // Module 2 Routers
-import vendorRouter from "../features/vendors/vendor.routes.js";
-import requisitionRouter from "../features/requisitions/requisition.routes.js";
-import purchaseOrderRouter from "../features/purchase-orders/purchaseOrder.routes.js";
-import inwardsRouter from "../features/inwards/inwards.routes.js";
-import inventoryRouter from "../features/inventory/inventory.routes.js";
+import { createInwardsRouter } from "../features/inwards/inwards.routes.js";
+import { createInventoryRouter } from "../features/inventory/inventory.routes.js";
+import { createOrderRouter } from "../features/purchase-orders/purchaseOrder.routes.js";
+import { createRequisitionRouter } from "../features/requisitions/requisition.routes.js";
+import { createVendorRouter } from "../features/vendors/vendor.routes.js";
 import dashboardRouter from "../features/procurement-dashboard/procurementDashboard.routes.js";
+import { authenticate, requireRoles } from "../features/auth/auth.middleware.js";
+
+const inwardsRouter = createInwardsRouter({ authenticate, authorizeRoles: requireRoles });
+const inventoryRouter = createInventoryRouter({ authenticate, authorizeRoles: requireRoles });
+const purchaseOrderRouter = createOrderRouter({ authenticate, authorizeRoles: requireRoles });
+const requisitionRouter = createRequisitionRouter({ authenticate, authorizeRoles: requireRoles });
+const vendorRouter = createVendorRouter({ authenticate, authorizeRoles: (roles) => requireRoles(...roles) });
 
 const apiRouter = Router();
 

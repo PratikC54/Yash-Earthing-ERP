@@ -102,94 +102,128 @@ export async function getGoodsReceiptById(id) {
   return receipt;
 }
 
-export async function createGoodsReceipt({ purchaseOrderId, notes, items }) {
-  const po = await prisma.purchaseOrder.findUnique({
-    where: { id: purchaseOrderId },
-    include: { items: true },
-  });
-
-  if (!po) {
-    const error = new Error(`Purchase Order with ID ${purchaseOrderId} not found`);
-    error.statusCode = 404;
-    throw error;
-  }
-
-  if (po.status !== "SENT" && po.status !== "PARTIALLY_RECEIVED" && po.status !== "APPROVED") {
-    const error = new Error(`Cannot receive goods for Purchase Order in ${po.status} status`);
-    error.statusCode = 400;
-    throw error;
-  }
-
-  // Validate items against PO items and quantities
-  const itemsToCreate = [];
-  for (const item of items) {
-    const poItem = po.items.find((p) => p.productId === item.productId);
-    if (!poItem) {
-      const error = new Error(`Product ID ${item.productId} is not on Purchase Order ${po.poNumber}`);
-      error.statusCode = 400;
-      throw error;
-    }
-
-    const outstanding = Number(poItem.quantity) - Number(poItem.receivedQuantity);
-    if (item.receivedQuantity > outstanding + 0.0001) {
-      const error = new Error(
-        `Received quantity (${item.receivedQuantity}) exceeds remaining ordered quantity (${outstanding}) for Product ID ${item.productId}`
-      );
-      error.statusCode = 400;
-      throw error;
-    }
-
-    itemsToCreate.push({
-      productId: item.productId,
-      orderedQuantity: poItem.quantity,
-      receivedQuantity: item.receivedQuantity,
-      acceptedQuantity: 0,
-      rejectedQuantity: 0,
-      batchNumber: item.batchNumber || null,
+export async function createGoodsReceipt({
+  purchaseOrderId,
+  transporterName,
+  vehicleNumber,
+  challanNumber,
+  notes,
+  items,
+}) {
+  return await prisma.$transaction(async (tx) => {
+    // 1. Fetch fresh PO inside transaction to lock and prevent concurrent over-receipt
+    const po = await tx.purchaseOrder.findUnique({
+      where: { id: purchaseOrderId },
+      include: { items: true },
     });
-  }
 
-  const grnNumber = `GRN-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+    if (!po) {
+      const error = new Error(`Purchase Order with ID ${purchaseOrderId} not found`);
+      error.statusCode = 404;
+      throw error;
+    }
 
-  const createdGrn = await prisma.goodsReceipt.create({
-    data: {
-      grnNumber,
-      purchaseOrderId,
-      status: "UNDER_INSPECTION",
-      notes: notes || null,
-      items: {
-        create: itemsToCreate,
-      },
-    },
-    include: {
-      items: {
-        include: {
-          product: {
-            select: { id: true, sku: true, name: true, unitOfMeasure: true },
-          },
+    if (po.status !== "SENT" && po.status !== "PARTIALLY_RECEIVED" && po.status !== "APPROVED") {
+      const error = new Error(`Cannot receive goods for Purchase Order in ${po.status} status`);
+      error.statusCode = 400;
+      throw error;
+    }
+
+    // 2. Validate items against PO items and real-time outstanding quantities
+    const itemsToCreate = [];
+    for (const item of items) {
+      const poItem = po.items.find((p) => p.productId === item.productId);
+      if (!poItem) {
+        const error = new Error(`Product ID ${item.productId} is not on Purchase Order ${po.poNumber}`);
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const outstanding = Number(poItem.quantity) - Number(poItem.receivedQuantity);
+      if (item.receivedQuantity > outstanding + 0.0001) {
+        const error = new Error(
+          `Received quantity (${item.receivedQuantity}) exceeds remaining ordered quantity (${outstanding}) for Product ID ${item.productId}`
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      itemsToCreate.push({
+        productId: item.productId,
+        orderedQuantity: poItem.quantity,
+        receivedQuantity: item.receivedQuantity,
+        acceptedQuantity: 0,
+        rejectedQuantity: 0,
+        batchNumber: item.batchNumber || null,
+      });
+    }
+
+    const grnNumber = `GRN-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+
+    // Build structured gate pass details in notes
+    const gatePassParts = [];
+    if (transporterName) gatePassParts.push(`Transporter: ${transporterName}`);
+    if (vehicleNumber) gatePassParts.push(`Truck: ${vehicleNumber}`);
+    if (challanNumber) gatePassParts.push(`Challan: ${challanNumber}`);
+    if (notes) gatePassParts.push(notes);
+    const combinedNotes = gatePassParts.length > 0 ? gatePassParts.join(" | ") : null;
+
+    const createdGrn = await tx.goodsReceipt.create({
+      data: {
+        grnNumber,
+        purchaseOrderId,
+        status: "UNDER_INSPECTION",
+        notes: combinedNotes,
+        items: {
+          create: itemsToCreate,
         },
       },
-      purchaseOrder: {
-        select: { id: true, poNumber: true, status: true },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: { id: true, sku: true, name: true, unitOfMeasure: true },
+            },
+          },
+        },
+        purchaseOrder: {
+          select: { id: true, poNumber: true, status: true },
+        },
       },
-    },
-  });
+    });
 
-  return createdGrn;
+    return createdGrn;
+  });
 }
 
 export async function inspectAndPostGoodsReceipt(id, { status, notes, items, userId }) {
-  const grn = await getGoodsReceiptById(id);
-
-  if (grn.status === "ACCEPTED" || grn.status === "REJECTED" || grn.status === "PARTIALLY_ACCEPTED") {
-    const error = new Error(`Goods Receipt ${grn.grnNumber} has already been inspected and posted (Status: ${grn.status})`);
-    error.statusCode = 400;
-    throw error;
-  }
-
   return await prisma.$transaction(async (tx) => {
+    // 1. Fetch fresh GRN inside transaction to prevent concurrent duplicate inspection
+    const grn = await tx.goodsReceipt.findUnique({
+      where: { id },
+      include: {
+        purchaseOrder: {
+          include: { items: true },
+        },
+        items: true,
+      },
+    });
+
+    if (!grn) {
+      const error = new Error(`Goods Receipt with ID ${id} not found`);
+      error.statusCode = 404;
+      throw error;
+    }
+
+    if (grn.status === "ACCEPTED" || grn.status === "REJECTED" || grn.status === "PARTIALLY_ACCEPTED") {
+      const error = new Error(`Goods Receipt ${grn.grnNumber} has already been inspected and posted (Status: ${grn.status})`);
+      error.statusCode = 409;
+      throw error;
+    }
+
     let totalAccepted = 0;
     let totalRejected = 0;
+    const rejectionLogs = [];
 
     for (const inspection of items) {
       const existingItem = grn.items.find((i) => i.id === inspection.itemId);
@@ -203,18 +237,32 @@ export async function inspectAndPostGoodsReceipt(id, { status, notes, items, use
       const accepted = Number(inspection.acceptedQuantity);
       const rejected = Number(inspection.rejectedQuantity);
 
-      if (accepted + rejected > received + 0.0001) {
+      // Enforce strict quantity reconciliation: accepted + rejected must equal received quantity
+      if (Math.abs(accepted + rejected - received) > 0.0001) {
         const error = new Error(
-          `Sum of accepted (${accepted}) and rejected (${rejected}) cannot exceed received quantity (${received}) for item ID ${inspection.itemId}`
+          `Reconciliation failed for item #${inspection.itemId}: Accepted (${accepted}) + Rejected (${rejected}) must equal Received quantity (${received}).`
         );
         error.statusCode = 400;
         throw error;
       }
 
+      // Enforce mandatory rejection reason if rejected > 0
+      if (rejected > 0 && (!inspection.rejectionReason || !inspection.rejectionReason.trim())) {
+        const error = new Error(
+          `Rejection reason is mandatory when rejected quantity is greater than 0 for item #${inspection.itemId}`
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (rejected > 0) {
+        rejectionLogs.push(`Item #${existingItem.productId}: ${rejected} units rejected (${inspection.rejectionReason.trim()})`);
+      }
+
       totalAccepted += accepted;
       totalRejected += rejected;
 
-      // Update GoodsReceiptItem
+      // Update GoodsReceiptItem with batchNumber
       await tx.goodsReceiptItem.update({
         where: { id: inspection.itemId },
         data: {
@@ -224,9 +272,8 @@ export async function inspectAndPostGoodsReceipt(id, { status, notes, items, use
         },
       });
 
-      // Post to Inventory & InventoryMovement if accepted > 0
+      // Post to Usable Inventory & Movement only if accepted > 0
       if (accepted > 0) {
-        // Upsert Inventory
         const inventory = await tx.inventory.upsert({
           where: { productId: existingItem.productId },
           create: {
@@ -243,7 +290,6 @@ export async function inspectAndPostGoodsReceipt(id, { status, notes, items, use
           },
         });
 
-        // Create InventoryMovement ledger record
         await tx.inventoryMovement.create({
           data: {
             productId: existingItem.productId,
@@ -284,12 +330,20 @@ export async function inspectAndPostGoodsReceipt(id, { status, notes, items, use
       finalGrnStatus = "REJECTED";
     }
 
-    // Update GRN
+    // Build combined audit notes with item-level rejection reasons
+    const auditNotes = [
+      notes || grn.notes,
+      rejectionLogs.length > 0 ? `[QC REJECTIONS]: ${rejectionLogs.join(" | ")}` : null,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    // Update GRN status and audit notes
     const updatedGrn = await tx.goodsReceipt.update({
       where: { id },
       data: {
         status: finalGrnStatus,
-        notes: notes !== undefined ? notes : grn.notes,
+        notes: auditNotes,
         receivedById: userId || grn.receivedById,
       },
       include: {
@@ -297,7 +351,7 @@ export async function inspectAndPostGoodsReceipt(id, { status, notes, items, use
       },
     });
 
-    // Check PO completion status
+    // Check PO completion status consistently from all its line items
     const allPoItems = await tx.purchaseOrderItem.findMany({
       where: { purchaseOrderId: grn.purchaseOrderId },
     });
@@ -309,7 +363,7 @@ export async function inspectAndPostGoodsReceipt(id, { status, notes, items, use
       if (Number(poItem.receivedQuantity) > 0) {
         anyReceived = true;
       }
-      if (Number(poItem.receivedQuantity) < Number(poItem.quantity)) {
+      if (Number(poItem.receivedQuantity) < Number(poItem.quantity) - 0.0001) {
         allComplete = false;
       }
     }
@@ -329,10 +383,9 @@ export async function inspectAndPostGoodsReceipt(id, { status, notes, items, use
     }
 
     return {
-      message: `Goods receipt ${grn.grnNumber} successfully inspected and stock posted`,
+      message: `Goods Receipt ${grn.grnNumber} inspected and posted as ${finalGrnStatus}. Accepted: ${totalAccepted}, Rejected: ${totalRejected}.`,
       goodsReceipt: updatedGrn,
-      postedStockItemsCount: grn.items.length,
-      updatedPurchaseOrderStatus: poStatus,
+      poStatus,
     };
   });
 }

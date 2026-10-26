@@ -67,7 +67,8 @@ export async function assignServiceEngineer(req, res, next) {
 export async function resolveServiceTicket(req, res, next) {
   try {
     const validated = resolveServiceTicketSchema.parse(req.body);
-    const updated = await serviceTicketService.resolveServiceTicket(req.params.id, validated);
+    const userId = req.user?.id || 1;
+    const updated = await serviceTicketService.resolveServiceTicket(req.params.id, { ...validated, userId });
     res.status(200).json({
       success: true,
       message: `Service ticket ${updated.ticketNo} marked resolved`,

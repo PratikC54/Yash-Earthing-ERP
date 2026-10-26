@@ -13,10 +13,12 @@ import {
   Layers,
   ArrowUpRight,
   ArrowDownLeft,
+  Zap,
 } from "lucide-react";
 import * as api from "../api/procurementApi";
 import StatusBadge from "../components/common/StatusBadge";
 import { LoadingSkeleton, EmptyState, ErrorAlert } from "../components/common/StateFeedback";
+import RestockModal from "../components/inventory/RestockModal";
 
 export default function InventoryPage({ globalSearch = "" }) {
   const [activeTab, setActiveTab] = useState("stock"); // "stock" | "movements"
@@ -37,6 +39,7 @@ export default function InventoryPage({ globalSearch = "" }) {
   // Reservation / Adjustment Modal
   const [adjustmentModal, setAdjustmentModal] = useState(null);
   const [submittingAdj, setSubmittingAdj] = useState(false);
+  const [restockModalItem, setRestockModalItem] = useState(null);
 
   const fetchInventory = useCallback(async () => {
     try {
@@ -345,13 +348,26 @@ export default function InventoryPage({ globalSearch = "" }) {
                         )}
                       </td>
                       <td className="py-3 px-4 text-right">
-                        <button
-                          type="button"
-                          onClick={() => setAdjustmentModal(item)}
-                          className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 font-semibold transition cursor-pointer text-[11px]"
-                        >
-                          Manage Stock
-                        </button>
+                        <div className="flex items-center justify-end space-x-2">
+                          {item.isLowStock && (
+                            <button
+                              type="button"
+                              onClick={() => setRestockModalItem(item)}
+                              className="px-2.5 py-1 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition cursor-pointer text-[11px] inline-flex items-center space-x-1 shadow-xs"
+                              title="1-Click Create Draft Purchase Request"
+                            >
+                              <Zap className="w-3 h-3 fill-current" />
+                              <span>⚡ Restock</span>
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => setAdjustmentModal(item)}
+                            className="px-2.5 py-1 rounded-xl bg-slate-800 text-slate-200 hover:bg-slate-700 border border-slate-700 font-semibold transition cursor-pointer text-[11px]"
+                          >
+                            Manage Stock
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -523,6 +539,17 @@ export default function InventoryPage({ globalSearch = "" }) {
           </div>
         </div>
       )}
+
+      {/* ⚡ Restock Modal */}
+      <RestockModal
+        isOpen={Boolean(restockModalItem)}
+        item={restockModalItem}
+        onClose={() => setRestockModalItem(null)}
+        onSuccess={(msg) => {
+          setActionSuccess(msg);
+          fetchInventory();
+        }}
+      />
     </div>
   );
 }
