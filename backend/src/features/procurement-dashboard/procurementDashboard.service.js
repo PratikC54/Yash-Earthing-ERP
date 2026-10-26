@@ -32,6 +32,7 @@ export async function getProcurementDashboardMetrics() {
     overdueRfqs,
     pendingApprovalPos,
     underInspectionReceipts,
+    openRequisitionsList,
   ] = await Promise.all([
     // Open PRs
     prisma.purchaseRequest.count({
@@ -164,6 +165,17 @@ export async function getProcurementDashboardMetrics() {
       orderBy: { receivedAt: "asc" },
       select: { id: true, grnNumber: true, receivedAt: true, purchaseOrder: { select: { poNumber: true } } },
     }),
+
+    // Action Centre: Open Requisitions for cross-referencing low stock items (duplicate protection)
+    prisma.purchaseRequest.findMany({
+      where: { status: { in: ["DRAFT", "SUBMITTED", "APPROVED"] } },
+      select: {
+        id: true,
+        requestNo: true,
+        status: true,
+        items: { select: { productId: true, quantity: true } },
+      },
+    }),
   ]);
 
   // Derived inventory calculations
@@ -287,14 +299,28 @@ export async function getProcurementDashboardMetrics() {
         targetId: grn.id,
         urgency: "MEDIUM",
       })),
-      criticalLowStockWarnings: criticalLowStockItems.map((item) => ({
-        id: item.productId,
-        title: `Low Stock: ${item.name} (${item.availableQuantity} available vs reorder level ${item.reorderLevel})`,
-        type: "LOW_STOCK_ALERT",
-        targetModule: "inventory",
-        targetId: item.productId,
-        urgency: "CRITICAL",
-      })),
+      criticalLowStockWarnings: criticalLowStockItems.map((item) => {
+        // Cross-reference with openRequisitionsList to detect existing open PR for this SKU
+        const existingPr = openRequisitionsList.find((pr) =>
+          pr.items?.some((i) => i.productId === item.productId)
+        );
+
+        return {
+          id: item.productId,
+          title: `Low Stock: ${item.name} (${item.availableQuantity} available vs reorder level ${item.reorderLevel})`,
+          type: "LOW_STOCK_ALERT",
+          targetModule: "inventory",
+          targetId: item.productId,
+          urgency: "CRITICAL",
+          role: "PROCUREMENT_OFFICER",
+          productId: item.productId,
+          sku: item.sku,
+          name: item.name,
+          availableQuantity: item.availableQuantity,
+          reorderLevel: item.reorderLevel,
+          existingPr: existingPr ? { id: existingPr.id, requestNo: existingPr.requestNo, status: existingPr.status } : null,
+        };
+      }),
     },
   };
 }

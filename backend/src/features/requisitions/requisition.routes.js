@@ -13,7 +13,7 @@ export function createRequisitionRouter({ authenticate, authorizeRoles } = {}) {
 
   const maybeRole = (allowedRoles) => (req, res, next) => {
     if (typeof authorizeRoles === "function") {
-      return authorizeRoles(allowedRoles)(req, res, next);
+      return authorizeRoles(...(Array.isArray(allowedRoles) ? allowedRoles : [allowedRoles]))(req, res, next);
     }
     return next();
   };
@@ -26,25 +26,25 @@ export function createRequisitionRouter({ authenticate, authorizeRoles } = {}) {
   router.post(
     "/purchase-requests",
     maybeAuth,
-    maybeRole(["ADMIN", "PROCUREMENT", "ENGINEER", "STORE_MANAGER"]),
+    maybeRole(["ADMIN", "PROCUREMENT_OFFICER", "ENGINEER"]),
     requisitionController.createPurchaseRequest
   );
   router.post(
     "/requisitions",
     maybeAuth,
-    maybeRole(["ADMIN", "PROCUREMENT", "ENGINEER", "STORE_MANAGER"]),
+    maybeRole(["ADMIN", "PROCUREMENT_OFFICER", "ENGINEER"]),
     requisitionController.createPurchaseRequest
   );
   router.patch(
     "/purchase-requests/:id",
     maybeAuth,
-    maybeRole(["ADMIN", "PROCUREMENT", "STORE_MANAGER"]),
+    maybeRole(["ADMIN", "PROCUREMENT_OFFICER"]),
     requisitionController.updatePurchaseRequest
   );
   router.patch(
     "/requisitions/:id",
     maybeAuth,
-    maybeRole(["ADMIN", "PROCUREMENT", "STORE_MANAGER"]),
+    maybeRole(["ADMIN", "PROCUREMENT_OFFICER"]),
     requisitionController.updatePurchaseRequest
   );
 
@@ -54,26 +54,26 @@ export function createRequisitionRouter({ authenticate, authorizeRoles } = {}) {
   router.post(
     "/rfqs",
     maybeAuth,
-    maybeRole(["ADMIN", "PROCUREMENT"]),
+    maybeRole(["ADMIN", "PROCUREMENT_OFFICER"]),
     requisitionController.createRfq
   );
   router.patch(
     "/rfqs/:id/status",
     maybeAuth,
-    maybeRole(["ADMIN", "PROCUREMENT"]),
+    maybeRole(["ADMIN", "PROCUREMENT_OFFICER"]),
     requisitionController.updateRfqStatus
   );
   router.post(
     "/rfqs/responses",
     maybeAuth,
-    maybeRole(["ADMIN", "PROCUREMENT"]),
+    maybeRole(["ADMIN", "PROCUREMENT_OFFICER"]),
     requisitionController.recordRfqResponse
   );
   router.get("/rfqs/:id/comparison", maybeAuth, requisitionController.compareRfqQuotes);
   router.post(
     "/rfqs/:id/award",
     maybeAuth,
-    maybeRole(["ADMIN", "PROCUREMENT"]),
+    maybeRole(["ADMIN", "PROCUREMENT_OFFICER"]),
     requisitionController.awardRfq
   );
 

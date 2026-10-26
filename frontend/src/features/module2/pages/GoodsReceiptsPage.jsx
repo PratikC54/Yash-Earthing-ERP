@@ -24,11 +24,15 @@ export default function GoodsReceiptsPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [actionSuccess, setActionSuccess] = useState(null);
 
-  // Create GRN Modal
+  // Create GRN Modal (Stage 1: Gate Entry)
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [openPos, setOpenPos] = useState([]);
   const [selectedPoForGrn, setSelectedPoForGrn] = useState(null);
   const [grnItems, setGrnItems] = useState([]);
+  const [transporterName, setTransporterName] = useState("");
+  const [vehicleNumber, setVehicleNumber] = useState("");
+  const [challanNumber, setChallanNumber] = useState("");
+  const [gateNotes, setGateNotes] = useState("");
 
   // Inspection Modal
   const [inspectingGrn, setInspectingGrn] = useState(null);
@@ -58,8 +62,12 @@ export default function GoodsReceiptsPage() {
     fetchReceipts();
   }, [fetchReceipts]);
 
-  // Open Create GRN Modal
+  // Open Create GRN Modal (Stage 1: Gate Entry)
   const openCreateModal = async () => {
+    setTransporterName("");
+    setVehicleNumber("");
+    setChallanNumber("");
+    setGateNotes("");
     try {
       const res = await api.getPurchaseOrders();
       if (res.success) {
@@ -100,6 +108,10 @@ export default function GoodsReceiptsPage() {
     try {
       const res = await api.createGoodsReceipt({
         purchaseOrderId: selectedPoForGrn.id,
+        transporterName: transporterName.trim() || undefined,
+        vehicleNumber: vehicleNumber.trim() || undefined,
+        challanNumber: challanNumber.trim() || undefined,
+        notes: gateNotes.trim() || undefined,
         items: grnItems.map((item) => ({
           productId: item.productId,
           receivedQuantity: Number(item.receivedQuantity),
@@ -108,17 +120,17 @@ export default function GoodsReceiptsPage() {
       });
 
       if (res.success) {
-        setActionSuccess(`GRN ${res.data.grnNumber} generated. Ready for Quality Inspection.`);
+        setActionSuccess(`GRN ${res.data.grnNumber} generated at gate. Material quarantined for Quality Inspection.`);
         setIsCreateOpen(false);
         fetchReceipts();
-        setTimeout(() => setActionSuccess(null), 3000);
+        setTimeout(() => setActionSuccess(null), 4000);
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to create Goods Receipt");
     }
   };
 
-  // Open Inspection Modal
+  // Open Inspection Modal (Stage 2: QC Inspection)
   const openInspectionModal = (grn) => {
     setInspectingGrn(grn);
     if (grn.items) {
@@ -129,6 +141,7 @@ export default function GoodsReceiptsPage() {
           receivedQuantity: Number(it.receivedQuantity),
           acceptedQuantity: Number(it.receivedQuantity), // Default all accepted
           rejectedQuantity: 0,
+          rejectionReason: "",
           batchNumber: it.batchNumber || `LOT-${Date.now().toString().slice(-4)}`,
         }))
       );
@@ -140,14 +153,28 @@ export default function GoodsReceiptsPage() {
     e.preventDefault();
     if (!inspectingGrn) return;
 
+    // Check mandatory rejection reason
+    for (const item of inspectionItems) {
+      if (item.rejectedQuantity > 0 && (!item.rejectionReason || !item.rejectionReason.trim())) {
+        setError(`Please specify a rejection reason for ${item.productName}`);
+        return;
+      }
+      if (Math.abs(item.acceptedQuantity + item.rejectedQuantity - item.receivedQuantity) > 0.0001) {
+        setError(`Accepted + Rejected must equal Received (${item.receivedQuantity}) for ${item.productName}`);
+        return;
+      }
+    }
+
     try {
       setSubmittingInspection(true);
+      setError(null);
       const res = await api.inspectAndPostGoodsReceipt(inspectingGrn.id, {
         status: "ACCEPTED",
         items: inspectionItems.map((it) => ({
           itemId: it.itemId,
           acceptedQuantity: Number(it.acceptedQuantity),
           rejectedQuantity: Number(it.rejectedQuantity),
+          rejectionReason: it.rejectionReason?.trim() || undefined,
           batchNumber: it.batchNumber || null,
         })),
       });
@@ -156,7 +183,7 @@ export default function GoodsReceiptsPage() {
         setActionSuccess(res.message);
         setInspectingGrn(null);
         fetchReceipts();
-        setTimeout(() => setActionSuccess(null), 3500);
+        setTimeout(() => setActionSuccess(null), 4000);
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to post inspection and stock update");
@@ -257,8 +284,13 @@ export default function GoodsReceiptsPage() {
               <tbody className="divide-y divide-slate-800">
                 {receipts.map((grn) => (
                   <tr key={grn.id} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-cyan-300">
-                      {grn.grnNumber}
+                    <td className="py-3 px-4 font-mono text-xs">
+                      <div className="font-bold text-cyan-300">{grn.grnNumber}</div>
+                      {grn.notes && (
+                        <div className="text-[10px] text-slate-400 font-sans truncate max-w-xs" title={grn.notes}>
+                          {grn.notes}
+                        </div>
+                      )}
                     </td>
                     <td className="py-3 px-4 font-mono font-bold text-cyan-300">
                       {grn.purchaseOrder?.poNumber}
@@ -332,6 +364,64 @@ export default function GoodsReceiptsPage() {
                   ))}
                 </select>
               </div>
+
+              {selectedPoForGrn && (
+                <div className="bg-[#0a1020] p-3 rounded-xl border border-slate-800 space-y-3">
+                  <div className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">
+                    Stage 1 — Gate Entry Details
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                    <div>
+                      <label className="block text-[10px] text-slate-400 font-medium mb-1">
+                        Transporter Name
+                      </label>
+                      <input
+                        type="text"
+                        value={transporterName}
+                        onChange={(e) => setTransporterName(e.target.value)}
+                        placeholder="e.g. VRL Logistics"
+                        className="w-full bg-[#10182f] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 font-medium mb-1">
+                        Vehicle / Truck No
+                      </label>
+                      <input
+                        type="text"
+                        value={vehicleNumber}
+                        onChange={(e) => setVehicleNumber(e.target.value)}
+                        placeholder="e.g. MH-12-AB-1234"
+                        className="w-full bg-[#10182f] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] text-slate-400 font-medium mb-1">
+                        Delivery Challan No
+                      </label>
+                      <input
+                        type="text"
+                        value={challanNumber}
+                        onChange={(e) => setChallanNumber(e.target.value)}
+                        placeholder="e.g. DC-9872"
+                        className="w-full bg-[#10182f] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs font-mono text-cyan-300 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-[10px] text-slate-400 font-medium mb-1">
+                      Gate Notes (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={gateNotes}
+                      onChange={(e) => setGateNotes(e.target.value)}
+                      placeholder="e.g. Seal intact, unloaded at Bay 2"
+                      className="w-full bg-[#10182f] border border-slate-700 rounded-lg px-2.5 py-1.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-cyan-500"
+                    />
+                  </div>
+                </div>
+              )}
 
               {selectedPoForGrn && (
                 <div>
@@ -484,10 +574,38 @@ export default function GoodsReceiptsPage() {
                             copy[idx].batchNumber = e.target.value;
                             setInspectionItems(copy);
                           }}
+                          placeholder="e.g. BATCH-2026-X"
                           className="w-full bg-[#10182f] border border-slate-700 rounded-lg px-2 py-1 font-mono text-cyan-300 font-bold"
                         />
                       </div>
                     </div>
+
+                    {item.rejectedQuantity > 0 && (
+                      <div className="pt-2 border-t border-slate-800/80">
+                        <label className="block text-[10px] font-semibold text-rose-400 mb-1">
+                          Rejection Reason <span className="text-rose-500">* (Mandatory)</span>
+                        </label>
+                        <select
+                          required
+                          value={item.rejectionReason || ""}
+                          onChange={(e) => {
+                            const copy = [...inspectionItems];
+                            copy[idx].rejectionReason = e.target.value;
+                            setInspectionItems(copy);
+                          }}
+                          className="w-full bg-[#10182f] border border-rose-500/50 rounded-lg px-2 py-1.5 text-xs text-rose-200 focus:outline-none focus:border-rose-400 cursor-pointer"
+                        >
+                          <option value="">Select rejection reason...</option>
+                          <option value="Damaged in transit / Broken packaging">Damaged in transit / Broken packaging</option>
+                          <option value="Dimension or tolerance mismatch">Dimension or tolerance mismatch</option>
+                          <option value="Substandard material / Failed purity test">Substandard material / Failed purity test</option>
+                          <option value="Expired / Surface oxidation & corrosion">Expired / Surface oxidation & corrosion</option>
+                          <option value="Incorrect specification supplied">Incorrect specification supplied</option>
+                          <option value="Missing mill test certificate / documentation">Missing mill test certificate / documentation</option>
+                          <option value="Other non-conformance">Other non-conformance</option>
+                        </select>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

@@ -202,6 +202,14 @@ export async function completeHandover(id, handoverData) {
           actualEnd: new Date(),
         },
       });
+
+      // Synchronize SalesOrder status if linked
+      if (installation.project?.salesOrderId) {
+        await tx.salesOrder.update({
+          where: { id: installation.project.salesOrderId },
+          data: { status: "DELIVERED", deliveredAt: new Date() },
+        });
+      }
     }
 
     return updatedInstallation;

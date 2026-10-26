@@ -86,8 +86,8 @@ export async function compareRfqQuotes(id) {
   return response.data;
 }
 
-export async function awardRfq(id, vendorId) {
-  const response = await api.post(`/rfqs/${id}/award`, { vendorId });
+export async function awardRfq(id, vendorId, options = {}) {
+  const response = await api.post(`/rfqs/${id}/award`, { vendorId, ...options });
   return response.data;
 }
 

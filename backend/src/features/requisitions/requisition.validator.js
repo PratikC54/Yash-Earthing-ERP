@@ -70,4 +70,7 @@ export const recordRfqResponseSchema = z.object({
 
 export const awardRfqSchema = z.object({
   vendorId: z.number().int().positive("Awarded Vendor ID must be a positive integer"),
+  expectedDate: z.string().datetime({ offset: true }).or(z.string().date()).optional().nullable(),
+  justification: z.string().trim().max(1000).optional().nullable(),
+  notes: z.string().trim().max(1000).optional().nullable(),
 });

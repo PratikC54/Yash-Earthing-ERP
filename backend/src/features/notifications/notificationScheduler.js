@@ -220,6 +220,88 @@ export class NotificationScheduler {
   }
 
   /**
+   * Check inventory records for low-stock conditions against configured reorder levels.
+   * Available = physicalQuantity - reservedQuantity <= reorderLevel
+   */
+  static async checkLowStockThresholds() {
+    const allInventory = await prisma.inventory.findMany({
+      include: {
+        product: {
+          select: { id: true, sku: true, name: true, unitOfMeasure: true },
+        },
+      },
+    });
+
+    let alertsSent = 0;
+    let itemsRecovered = 0;
+
+    for (const inv of allInventory) {
+      const physical = Number(inv.physicalQuantity) || 0;
+      const reserved = Number(inv.reservedQuantity) || 0;
+      const available = physical - reserved;
+      const reorder = Number(inv.reorderLevel) || 0;
+
+      if (available <= reorder) {
+        // Active low stock check: find if an unread notification already exists for this product
+        const existingActiveNotif = await prisma.notification.findFirst({
+          where: {
+            entityType: "Product",
+            entityId: inv.productId,
+            type: NOTIFICATION_TYPES.LOW_STOCK_ALERT,
+            status: { in: ["UNREAD", "READ"] },
+          },
+        });
+
+        // Only dispatch if no active unread/read alert currently exists
+        if (!existingActiveNotif) {
+          const timestampKey = `LOW_STOCK:${inv.productId}:${Date.now()}`;
+          const notifs = await NotificationService.notifyRoles(
+            ["PROCUREMENT_OFFICER", "ADMIN"],
+            {
+              type: NOTIFICATION_TYPES.LOW_STOCK_ALERT,
+              title: `LOW STOCK ALERT: ${inv.product.name} (${inv.product.sku})`,
+              message: `Available stock for ${inv.product.name} (${available} ${inv.product.unitOfMeasure || "UOM"}) is at or below reorder level (${reorder}). Physical: ${physical}, Reserved: ${reserved}.`,
+              priority: available <= 0 ? NOTIFICATION_PRIORITY.CRITICAL : NOTIFICATION_PRIORITY.HIGH,
+              link: `/inventory?search=${encodeURIComponent(inv.product.sku)}`,
+              entityType: "Product",
+              entityId: inv.productId,
+              dedupKey: timestampKey,
+              metadata: {
+                productId: inv.productId,
+                sku: inv.product.sku,
+                physical,
+                reserved,
+                available,
+                reorderLevel: reorder,
+              },
+            }
+          );
+          alertsSent += notifs.length;
+        }
+      } else {
+        // Stock has recovered above reorderLevel: auto-archive active alerts
+        const updated = await prisma.notification.updateMany({
+          where: {
+            entityType: "Product",
+            entityId: inv.productId,
+            type: NOTIFICATION_TYPES.LOW_STOCK_ALERT,
+            status: { in: ["UNREAD", "READ"] },
+          },
+          data: {
+            status: "ARCHIVED",
+            readAt: new Date(),
+          },
+        });
+        if (updated.count > 0) {
+          itemsRecovered += 1;
+        }
+      }
+    }
+
+    return { processedItems: allInventory.length, alertsSent, itemsRecovered };
+  }
+
+  /**
    * Run all checks in a single batch.
    */
   static async runAllChecks() {
@@ -227,6 +309,7 @@ export class NotificationScheduler {
       const deadlineStats = await this.checkApproachingDeadlines();
       const overdueStats = await this.checkOverdueWorkOrders();
       const inspectionStats = await this.checkOverdueInspections();
+      const lowStockStats = await this.checkLowStockThresholds();
 
       return {
         timestamp: new Date().toISOString(),
@@ -234,6 +317,7 @@ export class NotificationScheduler {
         deadlineStats,
         overdueStats,
         inspectionStats,
+        lowStockStats,
       };
     } catch (error) {
       console.error("Error during scheduled notification execution:", error);

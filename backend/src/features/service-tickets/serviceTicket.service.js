@@ -168,29 +168,92 @@ export async function assignServiceEngineer(id, assignedToId) {
   });
 }
 
-export async function resolveServiceTicket(id, { resolution, partsUsed }) {
-  await getServiceTicketById(id);
+export async function resolveServiceTicket(id, { resolution, partsUsed, userId }) {
+  const ticket = await getServiceTicketById(id);
 
-  let formattedResolution = resolution;
-  if (partsUsed && Array.isArray(partsUsed) && partsUsed.length > 0) {
-    const partsSummary = partsUsed
-      .map((p) => `Product #${p.productId} (Qty: ${p.quantity})`)
-      .join(", ");
-    formattedResolution = `${resolution} | [Parts Consumed: ${partsSummary}]`;
+  if (ticket.status === "RESOLVED" || ticket.status === "CLOSED") {
+    const error = new Error(`Service ticket #${id} is already ${ticket.status}`);
+    error.statusCode = 409;
+    throw error;
   }
 
-  return prisma.serviceTicket.update({
-    where: { id: Number(id) },
-    data: {
-      resolution: formattedResolution,
-      status: "RESOLVED",
-      resolvedAt: new Date(),
-    },
-    include: {
-      customer: true,
-      product: true,
-      assignedTo: true,
-    },
+  return prisma.$transaction(async (tx) => {
+    let formattedResolution = resolution;
+
+    // Atomic Stock Deduction and InventoryMovement recording for spare parts
+    if (partsUsed && Array.isArray(partsUsed) && partsUsed.length > 0) {
+      const partsSummary = [];
+
+      for (const part of partsUsed) {
+        const prodId = Number(part.productId);
+        const qty = Number(part.quantity);
+
+        if (qty <= 0) continue;
+
+        // Verify available stock in stores respecting reservations (Available = Physical - Reserved)
+        const inv = await tx.inventory.findUnique({
+          where: { productId: prodId },
+        });
+
+        const physical = Number(inv?.physicalQuantity || 0);
+        const reserved = Number(inv?.reservedQuantity || 0);
+        const available = physical - reserved;
+
+        if (!inv || available < qty) {
+          const prod = await tx.product.findUnique({ where: { id: prodId } });
+          const prodName = prod?.name || `Product #${prodId}`;
+          const error = new Error(
+            `Insufficient available stock for spare part "${prodName}". Physical: ${physical}, Reserved: ${reserved}, Usable Available: ${available}, Required: ${qty}.`
+          );
+          error.statusCode = 400;
+          throw error;
+        }
+
+        // Deduct physical inventory
+        await tx.inventory.update({
+          where: { productId: prodId },
+          data: {
+            physicalQuantity: {
+              decrement: qty,
+            },
+          },
+        });
+
+        // Record stock movement audit trail
+        await tx.inventoryMovement.create({
+          data: {
+            productId: prodId,
+            movementType: "STOCK_OUT",
+            referenceType: "MANUAL",
+            referenceId: Number(id),
+            quantity: qty,
+            locationCode: inv.warehouseLocation || "RM Store",
+            notes: `Consumed for Service Ticket ${ticket.ticketNo}: ${part.notes || resolution}`,
+            createdById: userId ? Number(userId) : null,
+          },
+        });
+
+        partsSummary.push(`Product #${prodId} (Qty: ${qty})`);
+      }
+
+      if (partsSummary.length > 0) {
+        formattedResolution = `${resolution} | [Parts Consumed & Deducted from Stock: ${partsSummary.join(", ")}]`;
+      }
+    }
+
+    return tx.serviceTicket.update({
+      where: { id: Number(id) },
+      data: {
+        resolution: formattedResolution,
+        status: "RESOLVED",
+        resolvedAt: new Date(),
+      },
+      include: {
+        customer: true,
+        product: true,
+        assignedTo: true,
+      },
+    });
   });
 }
 

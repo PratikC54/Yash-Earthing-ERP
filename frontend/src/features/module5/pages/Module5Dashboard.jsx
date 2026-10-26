@@ -11,12 +11,16 @@ import {
   AlertTriangle,
   Layers,
   ArrowUpRight,
+  Sparkles,
 } from 'lucide-react';
+import M5KpiDetailDrawer from "../components/dashboard/M5KpiDetailDrawer";
+import M5OperationsActionCentre from "../components/dashboard/M5OperationsActionCentre";
 
 export default function Module5Dashboard({ onNavigate }) {
   const [metrics, setMetrics] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [activeDrawerKpi, setActiveDrawerKpi] = useState(null);
 
   useEffect(() => {
     fetchMetrics();
@@ -80,7 +84,7 @@ export default function Module5Dashboard({ onNavigate }) {
       <KpiSection title="Projects & Services Overview">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Total Projects */}
-        <CyberCard className="relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+        <CyberCard onClick={() => setActiveDrawerKpi("projects")} className="relative overflow-hidden group hover:border-cyan-500/40 transition-all cursor-pointer">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
               Total Projects
@@ -111,7 +115,7 @@ export default function Module5Dashboard({ onNavigate }) {
         </CyberCard>
 
         {/* Installations Scheduled */}
-        <CyberCard className="relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+        <CyberCard onClick={() => setActiveDrawerKpi("scheduled-sites")} className="relative overflow-hidden group hover:border-cyan-500/40 transition-all cursor-pointer">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
               Scheduled Sites
@@ -142,7 +146,7 @@ export default function Module5Dashboard({ onNavigate }) {
         </CyberCard>
 
         {/* Successful Handovers */}
-        <CyberCard className="relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+        <CyberCard onClick={() => setActiveDrawerKpi("completed-handovers")} className="relative overflow-hidden group hover:border-cyan-500/40 transition-all cursor-pointer">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
               Handovers Completed
@@ -166,7 +170,7 @@ export default function Module5Dashboard({ onNavigate }) {
         </CyberCard>
 
         {/* Active Support Tickets */}
-        <CyberCard className="relative overflow-hidden group hover:border-cyan-500/40 transition-all">
+        <CyberCard onClick={() => setActiveDrawerKpi("open-tickets")} className="relative overflow-hidden group hover:border-cyan-500/40 transition-all cursor-pointer">
           <div className="flex items-center justify-between">
             <span className="text-xs font-medium uppercase tracking-wider text-slate-400">
               Open Service Tickets
@@ -197,6 +201,12 @@ export default function Module5Dashboard({ onNavigate }) {
         </CyberCard>
         </div>
       </KpiSection>
+
+      {/* Module 5 Operations Action Centre */}
+      <M5OperationsActionCentre
+        tasks={metrics?.operationsActionCentre || []}
+        onNavigate={onNavigate}
+      />
 
       {/* Operational Workflow Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -270,6 +280,13 @@ export default function Module5Dashboard({ onNavigate }) {
           </div>
         </CyberCard>
       </div>
+      {/* KPI Detail Drawer */}
+      <M5KpiDetailDrawer
+        isOpen={Boolean(activeDrawerKpi)}
+        kpiKey={activeDrawerKpi}
+        onClose={() => setActiveDrawerKpi(null)}
+        onNavigate={onNavigate}
+      />
     </div>
   );
 }

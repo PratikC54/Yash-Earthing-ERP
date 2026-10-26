@@ -17,6 +17,9 @@ export const createGoodsReceiptItemSchema = z.object({
 
 export const createGoodsReceiptSchema = z.object({
   purchaseOrderId: z.number().int().positive("Purchase Order ID must be a positive integer"),
+  transporterName: z.string().trim().max(150).optional().nullable(),
+  vehicleNumber: z.string().trim().max(50).optional().nullable(),
+  challanNumber: z.string().trim().max(100).optional().nullable(),
   notes: z.string().trim().max(1000).optional().nullable(),
   items: z.array(createGoodsReceiptItemSchema).min(1, "At least one item is required in the GRN"),
 });
@@ -25,6 +28,7 @@ export const inspectionItemSchema = z.object({
   itemId: z.number().int().positive("Item ID must be a positive integer"),
   acceptedQuantity: z.number().min(0, "Accepted quantity cannot be negative"),
   rejectedQuantity: z.number().min(0, "Rejected quantity cannot be negative"),
+  rejectionReason: z.string().trim().max(500).optional().nullable(),
   batchNumber: z.string().trim().max(100).optional().nullable(),
 });
 

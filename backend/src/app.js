@@ -1,3 +1,8 @@
+// Support BigInt serialization for Prisma models (e.g. MediaAsset.fileSize)
+BigInt.prototype.toJSON = function () {
+  return this.toString();
+};
+
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express from "express";

@@ -38,6 +38,10 @@ export default function PurchaseRequestsAndRfqsPage() {
   const [comparisonModalRfqId, setComparisonModalRfqId] = useState(null);
   const [comparisonData, setComparisonData] = useState(null);
   const [loadingComparison, setLoadingComparison] = useState(false);
+  const [submittingAward, setSubmittingAward] = useState(false);
+  const [awardPromptVendor, setAwardPromptVendor] = useState(null); // When selecting non-L1 or capturing expected delivery
+  const [awardJustification, setAwardJustification] = useState("");
+  const [awardExpectedDate, setAwardExpectedDate] = useState("");
 
   // Record quotation modal state
   const [quoteModalRfq, setQuoteModalRfq] = useState(null);
@@ -214,17 +218,43 @@ export default function PurchaseRequestsAndRfqsPage() {
   };
 
   // Award RFQ
-  const handleAwardRfq = async (rfqId, vendorId) => {
+  const handleInitiateAward = (rfqId, vendor) => {
+    const isL1 = comparisonData?.lowestBidder?.vendorId === vendor.vendorId;
+    setAwardPromptVendor({ ...vendor, rfqId, isL1 });
+    setAwardJustification("");
+    const in5Days = new Date();
+    in5Days.setDate(in5Days.getDate() + 5);
+    setAwardExpectedDate(in5Days.toISOString().split("T")[0]);
+  };
+
+  const handleConfirmAward = async (e) => {
+    e?.preventDefault();
+    if (!awardPromptVendor) return;
+
+    if (!awardPromptVendor.isL1 && !awardJustification.trim()) {
+      setError("Please provide a commercial or technical justification for awarding to a non-L1 vendor.");
+      return;
+    }
+
     try {
-      const res = await api.awardRfq(rfqId, vendorId);
+      setSubmittingAward(true);
+      setError(null);
+      const res = await api.awardRfq(awardPromptVendor.rfqId, awardPromptVendor.vendorId, {
+        justification: awardJustification.trim() || undefined,
+        expectedDate: awardExpectedDate ? new Date(awardExpectedDate).toISOString() : undefined,
+      });
+
       if (res.success) {
         setActionSuccess(res.message);
+        setAwardPromptVendor(null);
         setComparisonModalRfqId(null);
         fetchRfqs();
-        setTimeout(() => setActionSuccess(null), 3000);
+        setTimeout(() => setActionSuccess(null), 5000);
       }
     } catch (err) {
       setError(err.response?.data?.message || "Failed to award RFQ");
+    } finally {
+      setSubmittingAward(false);
     }
   };
 
@@ -742,83 +772,185 @@ export default function PurchaseRequestsAndRfqsPage() {
                   </div>
                 )}
 
-                {/* Comparison Grid */}
+                {/* Comparison Grid sorted by Landed Cost (L1, L2, L3) */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {comparisonData.comparisons.map((c) => {
-                    const isLowest = comparisonData.lowestBidder?.vendorId === c.vendorId;
+                  {[...comparisonData.comparisons]
+                    .sort((a, b) => (Number(a.totalAmount) || 0) - (Number(b.totalAmount) || 0))
+                    .map((c, index) => {
+                      const isL1 = index === 0;
+                      const rankLabel = `L${index + 1}`;
 
-                    return (
-                      <div
-                        key={c.responseId}
-                        className={`p-4 rounded-2xl border transition flex flex-col justify-between ${
-                          isLowest
-                            ? "bg-blue-950/30 border-blue-500/50 shadow-md shadow-blue-500/10"
-                            : "bg-[#0a1020] border-slate-800"
-                        }`}
-                      >
-                        <div>
-                          <div className="flex items-center justify-between mb-2">
-                            <span className="font-bold text-sm text-white">{c.vendorName}</span>
-                            {isLowest && (
-                              <span className="px-2 py-0.5 rounded-md bg-emerald-600/20 text-emerald-300 border border-emerald-500/40 font-bold text-[10px]">
-                                L1 Bidder
+                      return (
+                        <div
+                          key={c.responseId}
+                          className={`p-4 rounded-2xl border transition flex flex-col justify-between ${
+                            isL1
+                              ? "bg-blue-950/40 border-cyan-400/60 shadow-lg shadow-cyan-500/10"
+                              : "bg-[#0a1020] border-slate-800"
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center justify-between mb-1.5">
+                              <span className="font-bold text-sm text-white">{c.vendorName}</span>
+                              <span
+                                className={`px-2 py-0.5 rounded-md font-bold text-[10px] border ${
+                                  isL1
+                                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                                    : "bg-slate-800 text-slate-300 border-slate-700"
+                                }`}
+                              >
+                                {isL1 ? "🏆 Best Value (L1)" : rankLabel}
                               </span>
+                            </div>
+                            <span className="font-mono text-xs font-bold text-cyan-300">{c.vendorCode}</span>
+
+                            {/* Vendor stats */}
+                            <div className="grid grid-cols-2 gap-2 my-3 text-[11px] bg-[#10182f] p-2.5 rounded-xl border border-slate-800">
+                              <div>
+                                <span className="text-slate-400 block">On-Time %</span>
+                                <span className="font-semibold text-slate-200">
+                                  {c.onTimeDeliveryPercent ? `${c.onTimeDeliveryPercent}%` : "—"}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-slate-400 block">Quality</span>
+                                <span className="font-semibold text-emerald-400">
+                                  {c.qualityScore ? `${c.qualityScore}%` : "—"}
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Line item breakdown */}
+                            <div className="space-y-1.5 text-xs border-t border-slate-800 pt-2">
+                              {c.items.map((it, idx) => (
+                                <div key={idx} className="flex justify-between text-slate-300 text-[11px]">
+                                  <span>{it.quantity} {it.unitOfMeasure || "UOM"} @ ₹{it.unitPrice} (+{it.taxPercent}% GST)</span>
+                                  <span className="font-mono font-medium text-cyan-300">₹{it.lineTotal.toLocaleString()}</span>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
+                            <div>
+                              <span className="text-[10px] text-slate-400 block">Landed Total</span>
+                              <span className="text-base font-bold text-white font-mono">
+                                ₹{c.totalAmount.toLocaleString()}
+                              </span>
+                            </div>
+
+                            {comparisonData.rfqStatus !== "AWARDED" && (
+                              <button
+                                type="button"
+                                onClick={() => handleInitiateAward(comparisonData.rfqId, c)}
+                                className={`inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl font-bold text-xs transition cursor-pointer shadow-md ${
+                                  isL1
+                                    ? "bg-emerald-500 hover:bg-emerald-400 text-slate-950"
+                                    : "bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700"
+                                }`}
+                              >
+                                <Award className="w-3.5 h-3.5" />
+                                <span>⚡ Award PO</span>
+                              </button>
                             )}
                           </div>
-                          <span className="font-mono text-xs font-bold text-cyan-300">{c.vendorCode}</span>
-
-                          {/* Vendor stats */}
-                          <div className="grid grid-cols-2 gap-2 my-3 text-[11px] bg-[#10182f] p-2.5 rounded-xl border border-slate-800">
-                            <div>
-                              <span className="text-slate-400 block">On-Time %</span>
-                              <span className="font-semibold text-slate-200">
-                                {c.onTimeDeliveryPercent ? `${c.onTimeDeliveryPercent}%` : "—"}
-                              </span>
-                            </div>
-                            <div>
-                              <span className="text-slate-400 block">Quality</span>
-                              <span className="font-semibold text-slate-200">
-                                {c.qualityScore ? `${c.qualityScore}%` : "—"}
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* Line item breakdown */}
-                          <div className="space-y-1.5 text-xs border-t border-slate-800 pt-2">
-                            {c.items.map((it, idx) => (
-                              <div key={idx} className="flex justify-between text-slate-300 text-[11px]">
-                                <span>{it.quantity} units @ ₹{it.unitPrice}</span>
-                                <span className="font-mono font-medium text-cyan-300">₹{it.lineTotal.toLocaleString()}</span>
-                              </div>
-                            ))}
-                          </div>
                         </div>
-
-                        <div className="mt-4 pt-3 border-t border-slate-800 flex items-center justify-between">
-                          <div>
-                            <span className="text-[10px] text-slate-400 block">Total Quoted</span>
-                            <span className="text-base font-bold text-white font-mono">
-                              ₹{c.totalAmount.toLocaleString()}
-                            </span>
-                          </div>
-
-                          {comparisonData.rfqStatus !== "AWARDED" && (
-                            <button
-                              type="button"
-                              onClick={() => handleAwardRfq(comparisonData.rfqId, c.vendorId)}
-                              className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs transition cursor-pointer shadow-md shadow-blue-600/30"
-                            >
-                              <Award className="w-3.5 h-3.5" />
-                              <span>Award PO</span>
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirmation & Non-L1 Justification Award Modal */}
+      {awardPromptVendor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-2xs p-4">
+          <div className="bg-[#10182f] border border-[#1e2a4a] w-full max-w-md rounded-2xl shadow-2xl p-6 text-slate-100 animate-in fade-in zoom-in-95">
+            <div className="flex items-center justify-between pb-3.5 border-b border-slate-800">
+              <div className="flex items-center space-x-2">
+                <Award className="w-5 h-5 text-amber-400" />
+                <h3 className="text-base font-bold text-white">Confirm Vendor Award & Generate PO</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setAwardPromptVendor(null)}
+                className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleConfirmAward} className="mt-4 space-y-4 text-xs">
+              <div className="p-3 rounded-xl bg-[#0a1020] border border-slate-800 space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="font-bold text-white text-sm">{awardPromptVendor.vendorName}</span>
+                  <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${awardPromptVendor.isL1 ? "bg-emerald-500/20 text-emerald-300" : "bg-amber-500/20 text-amber-300"}`}>
+                    {awardPromptVendor.isL1 ? "L1 WINNER" : "NON-L1 BIDDER"}
+                  </span>
+                </div>
+                <div className="flex justify-between text-slate-300 pt-1 border-t border-slate-800/80">
+                  <span>Quoted Landed Total:</span>
+                  <span className="font-mono font-bold text-cyan-300 text-sm">₹{awardPromptVendor.totalAmount?.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Non-L1 Mandatory Justification */}
+              {!awardPromptVendor.isL1 && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <label className="font-bold text-amber-300">Award Justification Reason (Required for Non-L1)</label>
+                    <span className="text-[10px] text-rose-400 font-semibold">*Mandatory</span>
+                  </div>
+                  <select
+                    value={awardJustification}
+                    onChange={(e) => setAwardJustification(e.target.value)}
+                    required
+                    className="w-full bg-[#0a1020] border border-amber-500/40 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-amber-400 cursor-pointer"
+                  >
+                    <option value="">Select justification...</option>
+                    <option value="Faster Delivery / Urgent Site Requirement">Faster Delivery / Urgent Site Requirement</option>
+                    <option value="Superior Technical Quality & Inspection Score">Superior Technical Quality & Inspection Score</option>
+                    <option value="Preferred Credit / Payment Terms">Preferred Credit / Payment Terms</option>
+                    <option value="L1 Vendor capacity bottleneck / past delivery default">L1 Vendor capacity bottleneck / past delivery default</option>
+                  </select>
+                </div>
+              )}
+
+              {/* Expected Delivery Date */}
+              <div className="space-y-1.5">
+                <label className="text-slate-300 font-semibold block">Expected Delivery Date at Factory / Site</label>
+                <input
+                  type="date"
+                  value={awardExpectedDate}
+                  onChange={(e) => setAwardExpectedDate(e.target.value)}
+                  className="w-full bg-[#0a1020] border border-slate-700 rounded-xl px-3 py-2 text-slate-100 focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              {/* ₹1,00,000 Rule Notice */}
+              <div className="p-3 rounded-xl bg-blue-950/30 border border-blue-500/20 text-[11px] text-cyan-300/90 leading-relaxed">
+                ℹ️ <strong>Governance Rule:</strong> If PO Total exceeds ₹1,00,000, it will be placed in <code>PENDING_APPROVAL</code> status requiring <code>ADMIN</code> authorization.
+              </div>
+
+              <div className="pt-3 border-t border-slate-800 flex items-center justify-end space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setAwardPromptVendor(null)}
+                  className="px-4 py-2 rounded-xl border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700 font-medium transition cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingAward}
+                  className="px-5 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition cursor-pointer shadow-md shadow-emerald-500/20 disabled:opacity-50"
+                >
+                  {submittingAward ? "Generating PO..." : "Confirm & Generate PO"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

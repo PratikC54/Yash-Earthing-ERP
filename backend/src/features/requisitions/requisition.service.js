@@ -489,8 +489,14 @@ export async function compareRfqQuotes(rfqId) {
   };
 }
 
-export async function awardRfq(rfqId, vendorId) {
+export async function awardRfq(rfqId, vendorId, { expectedDate, justification, notes, user } = {}) {
   const rfq = await getRfqById(rfqId);
+
+  if (rfq.status === "AWARDED") {
+    const error = new Error(`RFQ ${rfq.rfqNo} has already been awarded. Duplicate award rejected.`);
+    error.statusCode = 400;
+    throw error;
+  }
 
   if (rfq.status !== "QUOTATIONS_RECEIVED" && rfq.status !== "EVALUATED") {
     const error = new Error(`RFQ must be in QUOTATIONS_RECEIVED or EVALUATED status to be awarded. Current: ${rfq.status}`);
@@ -506,11 +512,25 @@ export async function awardRfq(rfqId, vendorId) {
   }
 
   return await prisma.$transaction(async (tx) => {
+    // 1. Double-check concurrent award lock inside transaction
+    const freshRfq = await tx.rFQ.findUnique({
+      where: { id: rfqId },
+      include: { purchaseOrders: true },
+    });
+
+    if (freshRfq.status === "AWARDED" || freshRfq.purchaseOrders?.length > 0) {
+      const error = new Error(`RFQ ${freshRfq.rfqNo} was already awarded or converted to a PO.`);
+      error.statusCode = 409;
+      throw error;
+    }
+
+    // 2. Mark RFQ as AWARDED
     const updatedRfq = await tx.rFQ.update({
       where: { id: rfqId },
       data: { status: "AWARDED" },
     });
 
+    // 3. Mark linked PR as CONVERTED
     if (rfq.purchaseRequestId) {
       await tx.purchaseRequest.update({
         where: { id: rfq.purchaseRequestId },
@@ -518,9 +538,73 @@ export async function awardRfq(rfqId, vendorId) {
       });
     }
 
+    // 4. Calculate Subtotal, Tax, and Landed Total from winning response
+    let subtotal = 0;
+    let taxAmount = 0;
+
+    selectedResponse.items.forEach((item) => {
+      const lineSubtotal = Number((Number(item.quantity) * Number(item.unitPrice)).toFixed(2));
+      const lineTax = Number((lineSubtotal * (Number(item.taxPercent || 0) / 100)).toFixed(2));
+      subtotal += lineSubtotal;
+      taxAmount += lineTax;
+    });
+
+    subtotal = Number(subtotal.toFixed(2));
+    taxAmount = Number(taxAmount.toFixed(2));
+    const total = Number((subtotal + taxAmount).toFixed(2));
+
+    // 5. Enforce ₹1,00,000 threshold for status:
+    // If total > ₹1,00,000 -> PENDING_APPROVAL (Admin signoff required)
+    // If total <= ₹1,00,000 -> DRAFT (Procurement Officer can advance)
+    const initialPoStatus = total > 100000 ? "PENDING_APPROVAL" : "DRAFT";
+
+    const poNumber = `PO-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`;
+    const poNotes = [
+      justification ? `[AWARD JUSTIFICATION]: ${justification}` : null,
+      notes || `Awarded from RFQ ${rfq.rfqNo}`,
+    ]
+      .filter(Boolean)
+      .join(" | ");
+
+    // 6. Create Purchase Order with winning vendor's quoted lines
+    const createdPo = await tx.purchaseOrder.create({
+      data: {
+        poNumber,
+        vendorId,
+        rfqId,
+        status: initialPoStatus,
+        expectedDate: expectedDate ? new Date(expectedDate) : null,
+        subtotal,
+        taxAmount,
+        total,
+        notes: poNotes,
+        items: {
+          create: selectedResponse.items.map((it) => ({
+            productId: it.productId,
+            quantity: Number(it.quantity),
+            unitPrice: Number(it.unitPrice),
+            taxPercent: Number(it.taxPercent || 0),
+          })),
+        },
+      },
+      include: {
+        vendor: {
+          select: { id: true, code: true, name: true, phone: true },
+        },
+        items: {
+          include: {
+            product: {
+              select: { id: true, sku: true, name: true, unitOfMeasure: true },
+            },
+          },
+        },
+      },
+    });
+
     return {
-      message: `RFQ ${rfq.rfqNo} successfully awarded to vendor ${selectedResponse.vendor.name}`,
+      message: `RFQ ${rfq.rfqNo} successfully awarded to vendor ${selectedResponse.vendor.name}. Purchase Order ${createdPo.poNumber} generated.`,
       rfq: updatedRfq,
+      purchaseOrder: createdPo,
       awardedVendor: selectedResponse.vendor,
       quotedTotal: selectedResponse.totalAmount,
     };
