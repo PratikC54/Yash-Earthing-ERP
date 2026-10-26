@@ -482,7 +482,7 @@ export default function AppLayout() {
     switch (activeModuleId) {
       // Module 1 & Overview
       case 'overview':
-        return isSuperUser ? (
+        return (isSuperUser || ['ADMIN', 'SALES_MANAGER', 'MANAGING_DIRECTOR', 'CEO', 'BACK_OFFICER'].includes(userRole)) ? (
           <OverviewDashboard onNavigate={handleNavigate} onSelectPage={handleNavigate} />
         ) : (
           <LeadsPage onNavigateToQuotation={() => handleNavigate('quotations')} globalSearch={globalSearch} />
