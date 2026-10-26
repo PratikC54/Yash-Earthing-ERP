@@ -59,7 +59,7 @@ async function getTransporter() {
 }
 
 export async function sendEmail({ to, subject, html, text, attachments = [] }) {
-  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || "sales@yashearthing.com";
+  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || "pratik@fundsaudit.com";
   const fromName = process.env.SMTP_FROM_NAME || "Yash Earthing Solutions Pvt Ltd";
   const transporter = await getTransporter();
 
