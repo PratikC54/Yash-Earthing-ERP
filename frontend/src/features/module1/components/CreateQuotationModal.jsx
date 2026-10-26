@@ -579,7 +579,7 @@ export default function CreateQuotationModal({ isOpen, onClose, leads = [], onSu
               type="submit"
               className="px-5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-blue-600/30 transition cursor-pointer"
             >
-              Generate Quotation & Render HTML
+              Generate Quotation
             </button>
           </div>
         </form>
