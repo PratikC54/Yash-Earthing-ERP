@@ -4,10 +4,26 @@ let testAccount = null;
 
 async function getTransporter() {
   if (process.env.SMTP_USER && process.env.SMTP_PASS) {
+    const isGmail =
+      process.env.SMTP_SERVICE?.toLowerCase() === "gmail" ||
+      process.env.SMTP_HOST?.includes("gmail.com") ||
+      process.env.SMTP_USER?.includes("@gmail.com");
+
+    if (isGmail) {
+      return nodemailer.createTransport({
+        service: "gmail",
+        auth: {
+          user: process.env.SMTP_USER,
+          // Strip any whitespaces from Google App Password
+          pass: process.env.SMTP_PASS.replace(/\s+/g, ""),
+        },
+      });
+    }
+
     return nodemailer.createTransport({
       host: process.env.SMTP_HOST || "smtp.gmail.com",
       port: Number(process.env.SMTP_PORT || 587),
-      secure: false,
+      secure: Number(process.env.SMTP_PORT) === 465,
       auth: {
         user: process.env.SMTP_USER,
         pass: process.env.SMTP_PASS,
@@ -15,7 +31,7 @@ async function getTransporter() {
     });
   }
 
-  // Free ethereal test SMTP
+  // Free ethereal test SMTP for development
   if (!testAccount) {
     try {
       testAccount = await nodemailer.createTestAccount();
@@ -42,17 +58,19 @@ async function getTransporter() {
   });
 }
 
-export async function sendEmail({ to, subject, html, text }) {
-  const fromEmail = "pratik.fundsaudit@gmail.com";
+export async function sendEmail({ to, subject, html, text, attachments = [] }) {
+  const fromEmail = process.env.SMTP_FROM_EMAIL || process.env.SMTP_USER || "sales@yashearthing.com";
+  const fromName = process.env.SMTP_FROM_NAME || "Yash Earthing Solutions Pvt Ltd";
   const transporter = await getTransporter();
 
   const mailOptions = {
-    from: `"Yash Group ERP Commercial" <${fromEmail}>`,
+    from: `"${fromName}" <${fromEmail}>`,
     to,
     replyTo: fromEmail,
     subject,
     text: text || "Please find the commercial document attached.",
     html,
+    attachments,
   };
 
   const info = await transporter.sendMail(mailOptions);

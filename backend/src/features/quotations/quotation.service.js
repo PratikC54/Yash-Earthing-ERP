@@ -1,5 +1,6 @@
 import prisma from "../../db/prisma.js";
 import { sendEmail } from "../../services/mailer.service.js";
+import { generateQuotationPdf } from "./quotationPdf.service.js";
 
 // Helper to auto-generate quotation number (e.g. QT-261022-457)
 export async function generateQuotationNo() {
@@ -375,11 +376,25 @@ export async function sendQuotationEmail(id, { email, recipientName }) {
     </div>
   `;
 
+  // Generate official PDF buffer to attach directly in background email
+  let attachments = [];
+  try {
+    const pdfBuffer = await generateQuotationPdf(quotation);
+    attachments.push({
+      filename: `Quotation_${quotation.quotationNo}_Rev${quotation.revision || 0}.pdf`,
+      content: pdfBuffer,
+      contentType: "application/pdf",
+    });
+  } catch (pdfErr) {
+    console.warn("Could not generate PDF attachment for email:", pdfErr.message);
+  }
+
   const mailResult = await sendEmail({
     to: targetEmail,
     subject: `Commercial Quotation ${quotation.quotationNo} (Rev-${quotation.revision || 0}) - Yash Earthing Solutions`,
     html: emailHtml,
-    text: `Quotation ${quotation.quotationNo} for amount INR ${Number(quotation.total).toFixed(2)} has been released for ${recipientName || targetEmail}.`,
+    text: `Quotation ${quotation.quotationNo} for amount INR ${Number(quotation.total).toFixed(2)} has been released for ${recipientName || targetEmail}. Please find the official PDF quotation attached.`,
+    attachments,
   });
 
   await prisma.quotation.update({
@@ -393,7 +408,7 @@ export async function sendQuotationEmail(id, { email, recipientName }) {
 
   return {
     success: true,
-    message: `Quotation successfully sent to ${targetEmail} from pratik.fundsaudit@gmail.com`,
+    message: `Quotation successfully sent to ${targetEmail} with PDF attached!`,
     mailResult,
   };
 }
