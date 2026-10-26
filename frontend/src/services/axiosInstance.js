@@ -1,11 +1,31 @@
 import axios from "axios";
 
-const rawBaseUrl =
-  import.meta.env.VITE_API_URL ||
-  import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:5000/api/v1";
+function resolveBaseUrl() {
+  const envUrl =
+    import.meta.env.VITE_API_URL ||
+    import.meta.env.VITE_API_BASE_URL ||
+    "";
 
-const baseURL = rawBaseUrl.replace(/\/+$/, "");
+  if (typeof window !== "undefined") {
+    const isClientLocal =
+      window.location.hostname === "localhost" ||
+      window.location.hostname === "127.0.0.1";
+
+    // If client connects from mobile phone / external LAN device and envUrl points to localhost,
+    // use relative /api so Vite's proxy (or production reverse proxy) forwards it seamlessly.
+    if (!isClientLocal && (!envUrl || envUrl.includes("localhost") || envUrl.includes("127.0.0.1"))) {
+      return "/api";
+    }
+  }
+
+  if (envUrl) {
+    return envUrl.replace(/\/+$/, "");
+  }
+
+  return "/api";
+}
+
+const baseURL = resolveBaseUrl();
 
 const axiosInstance = axios.create({
   baseURL,

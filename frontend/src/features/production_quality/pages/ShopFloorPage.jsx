@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Play,
   Plus,
@@ -113,9 +113,24 @@ export default function ShopFloorPage() {
     }
     fetchRef();
   }, []);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [searchParams] = useSearchParams();
+  const initialLine = searchParams.get("line") || searchParams.get("search") || "";
+  const initialStatus = searchParams.get("status") || "ALL";
+
+  const [searchTerm, setSearchTerm] = useState(initialLine);
+  const [statusFilter, setStatusFilter] = useState(initialStatus);
   const searchInputRef = useRef(null);
+
+  useEffect(() => {
+    const lineParam = searchParams.get("line") || searchParams.get("search");
+    if (lineParam !== null) {
+      setSearchTerm(lineParam);
+    }
+    const statParam = searchParams.get("status");
+    if (statParam !== null) {
+      setStatusFilter(statParam);
+    }
+  }, [searchParams]);
 
   // Production Completion Modal State
   const [completionOrder, setCompletionOrder] = useState(null);
@@ -253,7 +268,7 @@ export default function ShopFloorPage() {
       }
       const q = searchTerm.toLowerCase().trim();
       const matchWo = (line.workOrderNo || "").toLowerCase().includes(q);
-      const matchStation = (line.station || "").toLowerCase().includes(q);
+      const matchStation = (line.station || "").toLowerCase().includes(q) || q.includes((line.station || "").toLowerCase());
       const matchProduct = (line.product || "").toLowerCase().includes(q);
       const matchSku = (line.productSku || "").toLowerCase().includes(q);
       const matchOperator = (line.operator || "").toLowerCase().includes(q);

@@ -28,6 +28,23 @@ app.use(
       if (!origin || env.CORS_ORIGIN.includes(origin)) {
         return callback(null, true);
       }
+      // In development, permit local private LAN network IP addresses for mobile device scanning
+      if (env.NODE_ENV === "development") {
+        try {
+          const parsed = new URL(origin);
+          if (
+            parsed.hostname === "localhost" ||
+            parsed.hostname === "127.0.0.1" ||
+            /^192\.168\.\d+\.\d+$/.test(parsed.hostname) ||
+            /^10\.\d+\.\d+\.\d+$/.test(parsed.hostname) ||
+            /^172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+$/.test(parsed.hostname)
+          ) {
+            return callback(null, true);
+          }
+        } catch {
+          // Fall through
+        }
+      }
       return callback(new Error("Origin not allowed by CORS"));
     },
     credentials: true,

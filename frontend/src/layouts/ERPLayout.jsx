@@ -2,7 +2,6 @@ import React, { useEffect, useState } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import ERPSidebar from "./components/ERPSidebar";
 import ERPNavbar from "./components/ERPNavbar";
-import ModuleTabs from "../features/production_quality/components/shared/ModuleTabs";
 import authService from "../services/authService";
 
 export default function ERPLayout() {
@@ -91,10 +90,7 @@ export default function ERPLayout() {
 
         {/* Dynamic Main Content Workspace */}
         <main className="flex-1 min-h-0 min-w-0 w-full overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8 bg-[#070e1e] text-[#f1f5f9]">
-          <div className="mb-4 sm:mb-6">
-            <ModuleTabs />
-          </div>
-          <Outlet context={{ onOpenQuickAction: handleOpenQuickAction }} />
+                    <Outlet context={{ onOpenQuickAction: handleOpenQuickAction }} />
         </main>
       </div>
 

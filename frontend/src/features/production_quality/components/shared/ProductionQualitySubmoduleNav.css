@@ -1,0 +1,118 @@
+/**
+ * Production & Quality Horizontal Submodule Navigation Bar Styles
+ * Matches the executive dark navy sidebar theme (#07162c / #08172e)
+ * with neon-lime green (#d4ff00) active tab accents.
+ * Scoped strictly under .production-quality-submodule-nav.
+ */
+
+.production-quality-submodule-nav {
+  width: 100%;
+  background: linear-gradient(180deg, #07162c 0%, #08172e 100%);
+  background-color: #07162c;
+  border: 1px solid #1e2a4a;
+  border-radius: 0.875rem;
+  padding: 0.375rem 0.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.35);
+  margin-top: 0.5rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+  z-index: 10;
+}
+
+.production-quality-submodule-nav__scroll {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  white-space: nowrap;
+  scroll-behavior: smooth;
+  padding-bottom: 2px;
+  touch-action: pan-x;
+}
+
+.production-quality-submodule-nav__scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* Inactive Tab Base */
+.production-quality-submodule-nav__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.75rem;
+  line-height: 1rem;
+  font-weight: 600;
+  color: #94a3b8;
+  background-color: transparent;
+  border-radius: 0.625rem;
+  text-decoration: none;
+  transition: all 0.18s ease-in-out;
+  flex-shrink: 0;
+  position: relative;
+  cursor: pointer;
+  user-select: none;
+  border: 1px solid transparent;
+  outline: none;
+}
+
+/* Hover State - Subtle Navy highlight matching sidebar inactive hover */
+.production-quality-submodule-nav__item:hover {
+  color: #f1f5f9;
+  background-color: rgba(16, 24, 47, 0.75);
+  border-color: rgba(30, 42, 74, 0.8);
+}
+
+/* Focus State - Visible keyboard focus indicator matching theme */
+.production-quality-submodule-nav__item:focus-visible {
+  outline: 2px solid #d4ff00;
+  outline-offset: 1px;
+}
+
+/* Active Tab - Slightly lighter navy background, neon-lime green text and border */
+.production-quality-submodule-nav__item--active {
+  color: #d4ff00;
+  background-color: #10182f;
+  border-color: rgba(212, 255, 0, 0.3);
+  font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgba(212, 255, 0, 0.15);
+}
+
+/* Active Tab Indicator - Thin neon-lime green underline */
+.production-quality-submodule-nav__item--active::after {
+  content: '';
+  position: absolute;
+  bottom: 0px;
+  left: 0.875rem;
+  right: 0.875rem;
+  height: 2px;
+  background-color: #d4ff00;
+  border-radius: 9999px;
+  box-shadow: 0 0 10px rgba(212, 255, 0, 0.7);
+}
+
+/* Inactive Tab Icon */
+.production-quality-submodule-nav__icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  color: #94a3b8;
+  transition: color 0.18s ease-in-out;
+}
+
+.production-quality-submodule-nav__item:hover .production-quality-submodule-nav__icon {
+  color: #f1f5f9;
+}
+
+/* Active Tab Icon - Neon-lime green */
+.production-quality-submodule-nav__item--active .production-quality-submodule-nav__icon {
+  color: #d4ff00;
+}
+
+.production-quality-submodule-nav__label {
+  white-space: nowrap;
+}

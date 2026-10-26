@@ -36,6 +36,9 @@ export const productionService = {
 
   // GET /api/production-quality/work-orders/:id
   getWorkOrderById: async (id) => {
+    if (!id || id === "undefined" || id === "null") {
+      return { data: null };
+    }
     return await axiosInstance.get(`/production-quality/work-orders/${id}`);
   },
 
@@ -76,6 +79,9 @@ export const productionService = {
 
   // GET /api/production-quality/work-orders/:id/history
   getWorkOrderHistory: async (id) => {
+    if (!id || id === "undefined" || id === "null") {
+      return { data: { history: [] } };
+    }
     return await axiosInstance.get(`/production-quality/work-orders/${id}/history`);
   },
 

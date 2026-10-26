@@ -28,7 +28,7 @@ export default function QRLabelModal({
   const [qrImage, setQrImage] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrError, setQrError] = useState(null);
-  const [toast, setToast] = useState(null); // { message, type: 'success' | 'error' }
+  const [toast, setToast] = useState(null);
   const [availableOrders, setAvailableOrders] = useState([]);
   const [currentId, setCurrentId] = useState(workOrderId || workOrder?.id);
   const [serverQrInfo, setServerQrInfo] = useState(null);
@@ -42,41 +42,41 @@ export default function QRLabelModal({
       setError(null);
       setToast(null);
 
-      if (workOrder && workOrder.id) {
+      if (workOrder) {
         setActiveOrder(workOrder);
-        setCurrentId(workOrder.id);
-      } else if (workOrderId) {
+        setCurrentId(workOrder.id || workOrderId);
+      } else if (workOrderId && workOrderId !== "undefined" && workOrderId !== "null") {
         setCurrentId(workOrderId);
         fetchOrderDetails(workOrderId);
       } else {
+        // Fallback: fetch recent work orders so user can select
         loadRecentOrdersAndSelect();
       }
     } else {
       setQrImage(null);
-      setError(null);
-      setToast(null);
-      setAvailableOrders([]);
+      setServerQrInfo(null);
     }
   }, [isOpen, workOrderId, workOrder]);
 
   // Fetch full details if only ID was passed
   const fetchOrderDetails = async (id) => {
-    if (!id) return;
+    if (!id || id === "undefined" || id === "null") return;
     try {
       setLoading(true);
       setError(null);
       const res = await productionService.getWorkOrderById(id);
-      const order = res?.data || res;
-      if (order && (order.id || order.workOrderNo)) {
-        setActiveOrder(order);
+      if (res?.data || res?.workOrder) {
+        setActiveOrder(res.data || res.workOrder);
+      } else if (res && !res.error) {
+        setActiveOrder(res);
       } else {
-        // Fallback to QR API service if getWorkOrderById doesn't return
-        const qrRes = await qrService.getQRCode(id);
-        if (qrRes?.success && qrRes.data) {
-          const lData = qrRes.data.labelData || qrRes.data.labelMetadata || {};
+        // Fallback to QR service metadata
+        const qrMeta = await qrService.getQRCode(id);
+        if (qrMeta?.data?.lookupData) {
+          const lData = qrMeta.data.lookupData;
           setActiveOrder({
-            id: qrRes.data.workOrderId || id,
-            workOrderNo: qrRes.data.workOrderNo || lData.workOrderNo,
+            id: id,
+            workOrderNo: lData.workOrderNo,
             productName: lData.productName,
             productSku: lData.productSku,
             batchNumber: lData.batchNumber,
@@ -85,17 +85,20 @@ export default function QRLabelModal({
             priority: lData.priority,
             plannedEnd: lData.plannedEnd,
           });
+        } else {
+          setError(res?.message || "Failed to load work order details.");
         }
       }
     } catch (err) {
-      console.warn("Could not fetch order by ID, trying QR service fallback:", err);
+      console.warn("Could not fetch work order details:", err);
+      // Attempt fallback through qrService
       try {
-        const qrRes = await qrService.getQRCode(id);
-        if (qrRes?.success && qrRes.data) {
-          const lData = qrRes.data.labelData || qrRes.data.labelMetadata || {};
+        const qrMeta = await qrService.getQRCode(id);
+        if (qrMeta?.data?.lookupData) {
+          const lData = qrMeta.data.lookupData;
           setActiveOrder({
-            id: qrRes.data.workOrderId || id,
-            workOrderNo: qrRes.data.workOrderNo || lData.workOrderNo,
+            id: id,
+            workOrderNo: lData.workOrderNo,
             productName: lData.productName,
             productSku: lData.productSku,
             batchNumber: lData.batchNumber,
@@ -172,28 +175,27 @@ export default function QRLabelModal({
   const batchNumber = useMemo(() => {
     const raw =
       activeOrder?.batchNumber ||
-      activeOrder?.batchNo ||
-      (activeOrder?.notes ? activeOrder.notes.match(/Batch:?\s*([A-Za-z0-9_-]+)/i)?.[1] : null);
-    if (raw && String(raw).trim()) return String(raw).trim();
-    return woNo && woNo !== "N/A" ? `BATCH-${woNo}` : "Unassigned";
+      activeOrder?.batch?.batchNumber ||
+      activeOrder?.batchNo;
+    return raw && String(raw).trim() ? String(raw).trim() : (woNo !== "N/A" ? `BTH-${woNo.replace(/^WO-?/i, "")}` : "BATCH-01");
   }, [activeOrder, woNo]);
 
   const plannedQty = useMemo(() => {
-    const raw = activeOrder?.plannedQuantity;
-    if (raw !== undefined && raw !== null && !isNaN(Number(raw))) {
-      return `${Number(raw).toLocaleString()} Units`;
-    }
-    return "N/A";
+    const val =
+      activeOrder?.plannedQuantity ??
+      activeOrder?.quantity ??
+      activeOrder?.targetQuantity;
+    return val !== undefined && val !== null ? `${val} Units` : "100 Units";
   }, [activeOrder]);
 
   const status = useMemo(() => {
-    const raw = activeOrder?.status;
-    return raw && String(raw).trim() ? String(raw).trim().toUpperCase() : "N/A";
+    const raw = activeOrder?.status || "PLANNED";
+    return String(raw).toUpperCase();
   }, [activeOrder]);
 
   const priority = useMemo(() => {
-    const raw = activeOrder?.priority;
-    return raw && String(raw).trim() ? String(raw).trim().toUpperCase() : "MEDIUM";
+    const raw = activeOrder?.priority || "MEDIUM";
+    return String(raw).toUpperCase();
   }, [activeOrder]);
 
   const dueDate = useMemo(() => {
@@ -231,6 +233,24 @@ export default function QRLabelModal({
     };
   }, [isOpen, resolvedWorkOrderId]);
 
+  // Semantic status and priority color helpers for QR preview card
+  const getStatusColor = (st) => {
+    const s = String(st || "").toUpperCase();
+    if (s.includes("PASS") || s.includes("COMPLET") || s.includes("RELEASE") || s.includes("READY")) return "text-emerald-400";
+    if (s.includes("FAIL") || s.includes("REJECT") || s.includes("CANCEL")) return "text-rose-400";
+    if (s.includes("HOLD") || s.includes("BLOCK") || s.includes("WAIT")) return "text-amber-400";
+    if (s.includes("PROGRESS") || s.includes("RUN") || s.includes("EXEC")) return "text-blue-400";
+    return "text-emerald-400";
+  };
+
+  const getPriorityColor = (pr) => {
+    const p = String(pr || "").toUpperCase();
+    if (p.includes("HIGH") || p.includes("URGENT") || p.includes("CRITICAL")) return "text-rose-400 font-bold";
+    if (p.includes("MED")) return "text-amber-400 font-bold";
+    if (p.includes("LOW")) return "text-emerald-400 font-bold";
+    return "text-[#f1f5f9] font-bold";
+  };
+
   // Dynamic application target URL using canonical /production/work-orders/:id route
   const targetUrl = useMemo(() => {
     if (!resolvedWorkOrderId) return "";
@@ -245,15 +265,22 @@ export default function QRLabelModal({
       return serverQrInfo.targetUrl || serverQrInfo.qrTargetUrl;
     }
 
-    // 3. Prop targetUrl
-    if (activeOrder?.targetUrl || activeOrder?.qrTargetUrl) {
-      return activeOrder.targetUrl || activeOrder.qrTargetUrl;
+    // 3. Environment or Vite public base URL override
+    const explicitAppUrl =
+      typeof window !== "undefined" && window.__ERP_CONFIG__?.APP_URL;
+    if (explicitAppUrl) {
+      return `${explicitAppUrl.replace(/\/+$/, "")}/production/work-orders/${resolvedWorkOrderId}/report.pdf`;
     }
 
-    // 4. VITE_APP_URL is explicitly configured in environment
-    if (import.meta.env.VITE_APP_URL) {
-      const base = String(import.meta.env.VITE_APP_URL).replace(/\/+$/, "");
-      return `${base}/production/work-orders/${resolvedWorkOrderId}/report.pdf`;
+    // 4. Detected LAN IP from server
+    if (serverQrInfo?.lanIp) {
+      const port =
+        typeof window !== "undefined" && window.location.port
+          ? `:${window.location.port}`
+          : "";
+      const protocol =
+        typeof window !== "undefined" ? window.location.protocol : "http:";
+      return `${protocol}//${serverQrInfo.lanIp}${port}/production/work-orders/${resolvedWorkOrderId}/report.pdf`;
     }
 
     // 5. In browser environment: use window.location.origin
@@ -261,134 +288,125 @@ export default function QRLabelModal({
       return `${window.location.origin}/production/work-orders/${resolvedWorkOrderId}/report.pdf`;
     }
 
-    return `/production/work-orders/${resolvedWorkOrderId}/report.pdf`;
-  }, [resolvedWorkOrderId, serverQrInfo, useLanForMobile, activeOrder]);
+    // 6. Absolute default
+    return `http://localhost:5173/production/work-orders/${resolvedWorkOrderId}/report.pdf`;
+  }, [resolvedWorkOrderId, serverQrInfo, useLanForMobile]);
 
-  // Generate QR Code locally whenever targetUrl changes
+  // Generate QR Image client-side with fallback
   useEffect(() => {
-    if (!isOpen || !targetUrl) {
-      setQrImage(null);
-      return;
-    }
+    if (!isOpen || !targetUrl) return;
 
     let isMounted = true;
+    setQrLoading(true);
+    setQrError(null);
 
-    async function generateQRCode() {
-      try {
-        setQrLoading(true);
-        setQrError(null);
-
-        // High resolution local generation via pure JavaScript
-        const dataUrl = await QRCode.toDataURL(targetUrl, {
-          width: 360,
-          margin: 2,
-          errorCorrectionLevel: "H",
-          color: {
-            dark: "#000000",
-            light: "#FFFFFF",
-          },
-        });
-
+    QRCode.toDataURL(targetUrl, {
+      width: 256,
+      margin: 2,
+      color: {
+        dark: "#000000",
+        light: "#ffffff",
+      },
+      errorCorrectionLevel: "M",
+    })
+      .then((url) => {
         if (isMounted) {
-          setQrImage(dataUrl);
-        }
-      } catch (err) {
-        console.error("Local QR Code generation failed:", err);
-        if (isMounted) {
-          setQrError("Failed to generate QR code. Please try again.");
-        }
-      } finally {
-        if (isMounted) {
+          setQrImage(url);
           setQrLoading(false);
         }
-      }
-    }
-
-    generateQRCode();
+      })
+      .catch((err) => {
+        console.error("QR Code generation error:", err);
+        if (isMounted) {
+          // If server provided pre-generated base64, use it
+          if (serverQrInfo?.qrCodeDataUri || serverQrInfo?.qrImage) {
+            setQrImage(serverQrInfo.qrCodeDataUri || serverQrInfo.qrImage);
+            setQrLoading(false);
+          } else {
+            setQrError("Could not generate QR code image.");
+            setQrLoading(false);
+          }
+        }
+      });
 
     return () => {
       isMounted = false;
     };
-  }, [isOpen, targetUrl]);
+  }, [isOpen, targetUrl, serverQrInfo]);
 
+  // Handlers
   const handleOrderChange = (e) => {
-    const newId = Number(e.target.value);
-    setCurrentId(newId);
-    const found = availableOrders.find((o) => o.id === newId);
+    const selectedId = e.target.value;
+    setCurrentId(selectedId);
+    const found = availableOrders.find((o) => String(o.id) === String(selectedId));
     if (found) {
       setActiveOrder(found);
     } else {
-      fetchOrderDetails(newId);
+      fetchOrderDetails(selectedId);
     }
+  };
+
+  const handleCopyLink = () => {
+    if (!targetUrl) return;
+    navigator.clipboard
+      .writeText(targetUrl)
+      .then(() => {
+        setToast({
+          message: "PDF Report URL copied to clipboard!",
+          type: "success",
+        });
+        setTimeout(() => setToast(null), 3000);
+      })
+      .catch(() => {
+        setToast({ message: "Failed to copy link.", type: "error" });
+        setTimeout(() => setToast(null), 3000);
+      });
   };
 
   const handleDownloadQRCode = () => {
     if (!qrImage) {
       setToast({
-        message: "QR code is still being generated. Please wait a moment.",
+        message: "QR code is still loading. Please wait a moment.",
         type: "error",
       });
       setTimeout(() => setToast(null), 3000);
       return;
     }
-
     try {
-      const filename = `${woNo !== "N/A" ? woNo : `WO-${resolvedWorkOrderId}`}-QR.png`;
       const link = document.createElement("a");
       link.href = qrImage;
-      link.download = filename;
+      link.download = `${woNo}_QR_Label.png`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
 
       setToast({
-        message: `QR Code downloaded successfully as ${filename}!`,
+        message: "QR Code image downloaded successfully!",
         type: "success",
       });
-      setTimeout(() => setToast(null), 3500);
+      setTimeout(() => setToast(null), 3000);
     } catch (err) {
-      setToast({
-        message: "Failed to download QR code image. Please try again.",
-        type: "error",
-      });
-      setTimeout(() => setToast(null), 3500);
+      console.error("Failed to trigger QR download:", err);
+      setToast({ message: "Could not download QR image.", type: "error" });
+      setTimeout(() => setToast(null), 3000);
     }
   };
 
-  const handleCopyLink = async () => {
-    if (!targetUrl) return;
-    try {
-      await navigator.clipboard.writeText(targetUrl);
-      setToast({
-        message: "PDF report link copied to clipboard!",
-        type: "success",
-      });
-      setTimeout(() => setToast(null), 3500);
-    } catch (err) {
-      setToast({
-        message: "Failed to copy link to clipboard.",
-        type: "error",
-      });
-      setTimeout(() => setToast(null), 3500);
-    }
-  };
-
-  
   const handleDownloadPdfReport = async () => {
     if (!resolvedWorkOrderId) return;
     try {
       setPdfDownloading(true);
-      const res = await qrService.getWorkOrderReportPdf(resolvedWorkOrderId);
-      const blob = new Blob([res.data], { type: "application/pdf" });
-      const dlUrl = URL.createObjectURL(blob);
+      const blob = await productionService.downloadWorkOrderReport(
+        resolvedWorkOrderId
+      );
+      const dlUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = dlUrl;
-      const orderName = woNo && woNo !== "N/A" ? woNo : ("WO-" + resolvedWorkOrderId);
-      link.download = orderName + "-Production-Quality-Report.pdf";
+      link.download = `WorkOrder_Report_${woNo}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(dlUrl);
+      window.URL.revokeObjectURL(dlUrl);
 
       setToast({
         message: "PDF Report downloaded successfully!",
@@ -422,8 +440,8 @@ export default function QRLabelModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-xs">
-      {/* Print Specific CSS to isolate printable QR label */}
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-xs">
+      {/* Print Specific CSS to isolate printable QR label on physical sticker printing */}
       <style>{`
         @media print {
           body * {
@@ -450,22 +468,34 @@ export default function QRLabelModal({
             flex-direction: row !important;
             page-break-after: always;
           }
+          #printable-qr-label .qr-preview-info-area {
+            background: #ffffff !important;
+            color: #0f172a !important;
+          }
+          #printable-qr-label .qr-preview-info-area * {
+            color: #0f172a !important;
+            border-color: #cbd5e1 !important;
+            background: transparent !important;
+          }
           .no-print {
             display: none !important;
           }
         }
       `}</style>
 
-      <div className="relative w-full max-w-lg bg-[#0e172a] border border-[#1e2a4a] rounded-2xl shadow-2xl overflow-hidden text-[#f1f5f9] max-h-[92vh] flex flex-col">
+      {/* Modal Dialog Container with Module Navy Theme */}
+      <div className="relative w-full max-w-lg bg-[#10182f] border border-[#1e2a4a] rounded-2xl shadow-2xl overflow-hidden text-[#f1f5f9] max-h-[92vh] flex flex-col">
         {/* Modal Header */}
-        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-[#1e2a4a] bg-[#0b1324] no-print shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20">
+        <div className="flex items-center justify-between px-4 sm:px-5 py-3.5 sm:py-4 border-b border-[#1e2a4a] bg-[#0b172d] no-print shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 flex items-center justify-center shrink-0">
               <QrCode className="w-5 h-5" />
             </div>
-            <div>
-              <h3 className="text-base font-semibold text-white">Work Order QR Code</h3>
-              <p className="text-xs text-[#94a3b8]">
+            <div className="min-w-0">
+              <h3 className="text-base font-bold text-[#f1f5f9] tracking-tight leading-snug">
+                Work Order QR Code
+              </h3>
+              <p className="text-xs text-[#94a3b8] font-medium truncate mt-0.5">
                 {woNo !== "N/A" ? `Work Order: ${woNo}` : "Production & Quality Module"}
               </p>
             </div>
@@ -473,7 +503,7 @@ export default function QRLabelModal({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 rounded-lg text-[#94a3b8] hover:text-white hover:bg-[#1e2a4a] transition-colors cursor-pointer"
+            className="p-1.5 rounded-lg text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-[#1e2a4a] transition-colors cursor-pointer"
             aria-label="Close modal"
           >
             <X className="w-5 h-5" />
@@ -481,8 +511,8 @@ export default function QRLabelModal({
         </div>
 
         {/* Modal Body */}
-        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0">
-          {/* Order Selector (if opened from generic submodule heading without pre-selected ID) */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 min-h-0 bg-[#10182f]">
+          {/* Order Selector (if opened without pre-selected ID) */}
           {!workOrderId && !workOrder && availableOrders.length > 0 && (
             <div className="mb-4 no-print">
               <label className="block text-xs font-semibold text-[#94a3b8] mb-1.5">
@@ -492,19 +522,19 @@ export default function QRLabelModal({
                 <select
                   value={currentId || ""}
                   onChange={handleOrderChange}
-                  className="w-full px-3 py-2 rounded-xl bg-[#080d1a] border border-[#1e2a4a] text-xs text-white appearance-none focus:outline-none focus:border-blue-500 pr-8 cursor-pointer"
+                  className="w-full px-3 py-2 rounded-xl bg-[#0a1020] border border-[#1e2a4a] text-xs text-[#f1f5f9] appearance-none focus:outline-none focus:border-blue-500 pr-8 cursor-pointer"
                 >
                   {availableOrders.map((wo) => {
                     const num = wo.workOrderNo || wo.workOrderNumber || `WO-${wo.id}`;
                     const name = wo.productName || "Work Order";
                     return (
-                      <option key={wo.id} value={wo.id}>
+                      <option key={wo.id} value={wo.id} className="bg-[#0a1020] text-[#f1f5f9]">
                         {num} — {name} ({wo.status || "PLANNED"})
                       </option>
                     );
                   })}
                 </select>
-                <ChevronDown className="w-4 h-4 text-[#64748b] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <ChevronDown className="w-4 h-4 text-[#94a3b8] absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               </div>
             </div>
           )}
@@ -546,15 +576,15 @@ export default function QRLabelModal({
           {/* QR Code and Work Order Details */}
           {!loading && !error && (
             <div className="space-y-4">
-              {/* Printable Industrial Sticker Card */}
+              {/* Module-themed QR Preview Card */}
               <div
                 id="printable-qr-label"
                 ref={printAreaRef}
-                className="bg-white text-slate-900 rounded-xl p-3.5 sm:p-5 border-2 border-dashed border-slate-300 shadow-inner flex flex-col sm:flex-row items-center gap-4 sm:gap-5"
+                className="bg-[#0b172d] text-[#f1f5f9] rounded-xl p-3.5 sm:p-5 border border-[#1e2a4a] shadow-inner flex flex-col sm:flex-row items-center gap-4 sm:gap-5"
               >
-                {/* QR Code Graphic */}
+                {/* QR Code Graphic Box */}
                 <div className="flex flex-col items-center shrink-0">
-                  <div className="p-2.5 bg-white rounded-lg border border-slate-200 shadow-xs flex items-center justify-center min-w-[144px] min-h-[144px]">
+                  <div className="p-2.5 bg-white rounded-xl border border-slate-200 shadow-sm flex items-center justify-center min-w-[144px] min-h-[144px]">
                     {qrLoading && (
                       <div className="flex flex-col items-center justify-center py-6 text-slate-400">
                         <RefreshCw className="w-6 h-6 animate-spin mb-1 text-blue-600" />
@@ -575,68 +605,68 @@ export default function QRLabelModal({
                       />
                     )}
                   </div>
-                  <span className="text-[9px] font-mono font-bold text-slate-500 mt-1 uppercase tracking-wider text-center">
+                  <span className="text-[9px] font-mono font-bold text-[#94a3b8] mt-1.5 uppercase tracking-wider text-center">
                     Scan to open PDF report
                   </span>
                 </div>
 
                 {/* Work Order Metadata Block */}
-                <div className="flex-1 w-full text-left space-y-1.5 text-xs">
-                  <div className="border-b border-slate-200 pb-1.5">
-                    <span className="text-[10px] uppercase font-bold text-blue-600 tracking-wider">
+                <div className="qr-preview-info-area flex-1 w-full text-left space-y-1.5 text-xs">
+                  <div className="border-b border-[#1e2a4a] pb-1.5">
+                    <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider">
                       Yash Group ERP • Module 4
                     </span>
-                    <h4 className="text-base font-black text-slate-900 tracking-tight leading-tight">
+                    <h4 className="text-base font-bold text-[#f1f5f9] tracking-tight leading-tight">
                       {woNo}
                     </h4>
-                    <p className="text-xs font-semibold text-slate-700 truncate mt-0.5">
+                    <p className="text-xs font-medium text-slate-300 truncate mt-0.5">
                       {productName}
                     </p>
                   </div>
 
                   <div className="grid grid-cols-2 gap-x-2 gap-y-1.5 pt-1 text-[11px]">
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                    <div className="bg-[#0a1020] p-1.5 rounded-lg border border-[#1e2a4a]/60">
+                      <span className="text-[#94a3b8] block text-[9px] uppercase font-bold">
                         Product Code / SKU
                       </span>
-                      <span className="font-mono font-bold text-slate-800">{productCode}</span>
+                      <span className="font-mono font-bold text-[#f1f5f9] truncate block">{productCode}</span>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                    <div className="bg-[#0a1020] p-1.5 rounded-lg border border-[#1e2a4a]/60">
+                      <span className="text-[#94a3b8] block text-[9px] uppercase font-bold">
                         Production Batch
                       </span>
-                      <span className="font-mono font-bold text-slate-800">{batchNumber}</span>
+                      <span className="font-mono font-bold text-[#f1f5f9] truncate block">{batchNumber}</span>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                    <div className="bg-[#0a1020] p-1.5 rounded-lg border border-[#1e2a4a]/60">
+                      <span className="text-[#94a3b8] block text-[9px] uppercase font-bold">
                         Planned Qty
                       </span>
-                      <span className="font-bold text-slate-800">{plannedQty}</span>
+                      <span className="font-bold text-[#f1f5f9]">{plannedQty}</span>
                     </div>
-                    <div>
-                      <span className="text-slate-400 block text-[9px] uppercase font-bold">
+                    <div className="bg-[#0a1020] p-1.5 rounded-lg border border-[#1e2a4a]/60">
+                      <span className="text-[#94a3b8] block text-[9px] uppercase font-bold">
                         Status
                       </span>
-                      <span className="font-bold text-slate-800 uppercase">{status}</span>
+                      <span className={`font-bold uppercase ${getStatusColor(status)}`}>{status}</span>
                     </div>
                   </div>
 
-                  <div className="pt-1.5 border-t border-slate-100 flex items-center justify-between text-[9px] text-slate-500">
+                  <div className="pt-1.5 border-t border-[#1e2a4a] flex items-center justify-between text-[9px] text-[#94a3b8]">
                     <span>
-                      Priority: <strong className="uppercase text-slate-800">{priority}</strong>
+                      Priority: <strong className={`uppercase ${getPriorityColor(priority)}`}>{priority}</strong>
                     </span>
-                    <span>Due: <strong className="text-slate-800">{dueDate}</strong></span>
+                    <span>Due: <strong className="text-[#f1f5f9]">{dueDate}</strong></span>
                   </div>
                 </div>
               </div>
 
               {/* Mobile Phone / Network Mode Notice */}
               {serverQrInfo?.lanIp && (
-                <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs no-print">
+                <div className="p-2.5 rounded-xl bg-[#0a1020] border border-[#1e2a4a] flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs no-print">
                   <div className="flex items-center gap-2">
                     <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
                     <span className="text-[11px] text-[#94a3b8]">
-                      Target: <strong className="text-white">{useLanForMobile ? `Wi-Fi Phone (${serverQrInfo.lanIp})` : "Localhost"}</strong>
+                      Target: <strong className="text-[#f1f5f9]">{useLanForMobile ? `Wi-Fi Phone (${serverQrInfo.lanIp})` : "Localhost"}</strong>
                     </span>
                   </div>
                   <button
@@ -650,12 +680,12 @@ export default function QRLabelModal({
               )}
 
               {/* Encoded PDF Report URL and Copy Action */}
-              <div className="p-3 rounded-xl bg-[#080d1a] border border-[#1e2a4a] flex items-center justify-between gap-3 text-xs no-print">
+              <div className="p-3 rounded-xl bg-[#0a1020] border border-[#1e2a4a] flex items-center justify-between gap-3 text-xs no-print">
                 <div className="min-w-0 flex-1">
-                  <span className="text-[10px] uppercase font-semibold text-[#64748b] block">
+                  <span className="text-[10px] uppercase font-semibold text-[#94a3b8] block">
                     Encoded Work Order URL
                   </span>
-                  <div className="font-mono text-[#94a3b8] truncate text-[11px] mt-0.5 select-all">
+                  <div className="font-mono text-[#f1f5f9] truncate text-[11px] mt-0.5 select-all">
                     {targetUrl || "URL pending..."}
                   </div>
                 </div>
@@ -663,7 +693,7 @@ export default function QRLabelModal({
                   type="button"
                   onClick={handleCopyLink}
                   disabled={!targetUrl}
-                  className="px-3 py-1.5 rounded-lg bg-[#1e2a4a] hover:bg-slate-700 disabled:opacity-40 text-xs text-white flex items-center gap-1.5 transition-colors cursor-pointer shrink-0 border border-[#2b3d68]"
+                  className="px-3 py-1.5 rounded-lg bg-[#10182f] hover:bg-[#1e2a4a] text-[#f1f5f9] border border-[#1e2a4a] disabled:opacity-40 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
                   title="Copy PDF Report Link"
                 >
                   <Copy className="w-3.5 h-3.5 text-blue-400" />
@@ -675,44 +705,44 @@ export default function QRLabelModal({
         </div>
 
         {/* Modal Footer Actions */}
-        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 px-4 sm:px-5 py-3 sm:py-4 border-t border-[#1e2a4a] bg-[#0b1324] no-print shrink-0">
+        <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-2.5 px-4 sm:px-5 py-3 sm:py-4 border-t border-[#1e2a4a] bg-[#0b172d] no-print shrink-0">
           <button
             type="button"
             onClick={onClose}
-            className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs font-medium text-[#94a3b8] hover:text-white hover:bg-[#1e2a4a] transition-colors cursor-pointer text-center"
+            className="w-full sm:w-auto px-4 py-2 rounded-lg text-xs font-semibold text-[#94a3b8] hover:text-[#f1f5f9] hover:bg-[#10182f] transition-colors cursor-pointer text-center border border-transparent"
           >
             Close
           </button>
 
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
-                        <button
+            <button
               type="button"
               disabled={pdfDownloading || !resolvedWorkOrderId}
               onClick={handleDownloadPdfReport}
-              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600/20 hover:bg-emerald-600/30 text-xs font-medium text-emerald-300 transition-colors disabled:opacity-50 cursor-pointer border border-emerald-500/30"
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition-colors disabled:opacity-50 cursor-pointer border border-emerald-500 shadow-sm"
               title="Download PDF Report"
             >
-              <FileText className="w-4 h-4 text-emerald-400" />
+              <FileText className="w-4 h-4 text-white" />
               <span>{pdfDownloading ? "Downloading..." : "Download PDF Report"}</span>
             </button>
             <button
               type="button"
               disabled={qrLoading || !qrImage}
               onClick={handleDownloadQRCode}
-              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-[#1e2a4a] hover:bg-slate-700 text-xs font-medium text-white transition-colors disabled:opacity-50 cursor-pointer border border-[#2b3d68]"
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-lg bg-white hover:bg-slate-100 text-xs font-bold text-slate-800 transition-colors disabled:opacity-50 cursor-pointer border border-slate-300 shadow-sm"
               title="Download QR Code PNG Image"
             >
-              <Download className="w-4 h-4 text-blue-400" />
+              <Download className="w-4 h-4 text-slate-700" />
               <span>Download QR Code</span>
             </button>
             <button
               type="button"
               disabled={qrLoading || !qrImage}
               onClick={handlePrint}
-              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition-colors shadow-md disabled:opacity-50 cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 rounded-lg bg-[#d4ff00] hover:bg-[#c2ed00] text-xs font-black text-black transition-colors shadow-sm disabled:opacity-50 cursor-pointer border border-lime-400"
               title="Print QR Code Label"
             >
-              <Printer className="w-4 h-4" />
+              <Printer className="w-4 h-4 text-black" />
               <span>Print QR Code</span>
             </button>
           </div>

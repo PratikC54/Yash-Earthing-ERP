@@ -6,6 +6,9 @@ export const workOrderService = {
   },
 
   getWorkOrderById: async (id) => {
+    if (!id || id === "undefined" || id === "null") {
+      return { data: null };
+    }
     return await api.get(`/production-quality/work-orders/${id}`);
   },
 
@@ -46,6 +49,9 @@ export const workOrderService = {
   },
 
   getWorkOrderHistory: async (id) => {
+    if (!id || id === "undefined" || id === "null") {
+      return { data: { history: [] } };
+    }
     return await api.get(`/production-quality/work-orders/${id}/history`);
   },
 

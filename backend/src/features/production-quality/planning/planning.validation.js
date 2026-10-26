@@ -1,27 +1,21 @@
 import { z } from "zod";
-import { PRIORITY, WORK_ORDER_STATUS } from "../shared/productionQuality.constants.js";
+import { PRIORITY } from "../shared/productionQuality.constants.js";
 
+/**
+ * Validation schemas for Production Planning
+ */
 export const createWorkOrderSchema = z.object({
-  salesOrderId: z.coerce.number().int().positive(),
-  productId: z.coerce.number().int().positive(),
+  bomRevisionId: z.coerce.number().int().positive("BOM Revision ID is required and must be a positive integer"),
   plannedQuantity: z.coerce.number().positive("Planned quantity must be greater than zero"),
-  bomRevisionId: z.preprocess(
-    (val) => (val === undefined || val === null || val === "" ? undefined : val),
-    z.coerce.number().int().positive().optional()
-  ),
   plannedStart: z.string().datetime().optional().or(z.string().regex(/^\d{4}-\d{2}-\d{2}/)).optional(),
   plannedEnd: z.string().datetime().optional().or(z.string().regex(/^\d{4}-\d{2}-\d{2}/)).optional(),
   assignedLine: z.string().max(100).nullable().optional(),
-  priority: z.preprocess((val) => (!val ? PRIORITY.MEDIUM : val), z.enum([PRIORITY.LOW, PRIORITY.MEDIUM, PRIORITY.HIGH, PRIORITY.URGENT])),
+  priority: z.enum([PRIORITY.LOW, PRIORITY.MEDIUM, PRIORITY.HIGH, PRIORITY.URGENT]).default(PRIORITY.MEDIUM),
   notes: z.string().max(1000).optional(),
-  assignedSupervisorId: z.preprocess((val) => (val ? Number(val) : undefined), z.number().int().positive().optional()),
-  workCenter: z.string().optional(),
-  items: z.array(z.any()).optional(),
 });
 
 export const updateWorkOrderSchema = z.object({
-  plannedQuantity: z.coerce.number().positive().optional(),
-  bomRevisionId: z.coerce.number().int().positive().optional(),
+  plannedQuantity: z.coerce.number().positive("Planned quantity must be greater than zero").optional(),
   plannedStart: z.string().datetime().optional().or(z.string().regex(/^\d{4}-\d{2}-\d{2}/)).optional(),
   plannedEnd: z.string().datetime().optional().or(z.string().regex(/^\d{4}-\d{2}-\d{2}/)).optional(),
   assignedLine: z.string().max(100).nullable().optional(),
@@ -30,25 +24,34 @@ export const updateWorkOrderSchema = z.object({
 });
 
 export const workOrderIdParamSchema = z.object({
-  id: z.union([z.coerce.number().int().positive("Work Order ID must be a positive integer"), z.string().min(1)]),
+  id: z.union([
+    z.coerce.number().int().positive("Work Order ID must be a positive integer"),
+    z.string().min(1, "Work Order identifier cannot be empty"),
+  ]),
 });
 
 export const workOrderIdInParamsSchema = z.object({
-  workOrderId: z.coerce.number().int().positive("Work Order ID must be a positive integer"),
+  workOrderId: z.union([
+    z.coerce.number().int().positive("Work Order ID must be a positive integer"),
+    z.string().min(1, "Work Order identifier cannot be empty"),
+  ]),
 });
 
 export const transitionStatusSchema = z.object({
+  action: z.enum(["SUBMIT", "RELEASE", "START", "HOLD", "RESUME", "CANCEL", "COMPLETE", "TRANSFER_QUALITY"], {
+    errorMap: () => ({ message: "Action must be SUBMIT, RELEASE, START, HOLD, RESUME, CANCEL, COMPLETE, or TRANSFER_QUALITY" }),
+  }),
   reason: z.string().max(500).optional(),
-  notes: z.string().max(500).optional(),
 });
 
 export const listWorkOrdersQuerySchema = z.object({
   page: z.coerce.number().int().positive().default(1),
   limit: z.coerce.number().int().positive().max(100).default(20),
-  status: z.nativeEnum(WORK_ORDER_STATUS).optional(),
-  salesOrderId: z.coerce.number().int().positive().optional(),
-  priority: z.nativeEnum(PRIORITY).optional(),
+  status: z.string().optional(),
+  priority: z.string().optional(),
   search: z.string().optional(),
+  startDate: z.string().optional(),
+  endDate: z.string().optional(),
   sortBy: z.string().default("createdAt"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
@@ -56,4 +59,7 @@ export const listWorkOrdersQuerySchema = z.object({
 export const productionCalendarQuerySchema = z.object({
   startDate: z.string().optional(),
   endDate: z.string().optional(),
+  search: z.string().optional(),
+  status: z.string().optional(),
+  priority: z.string().optional(),
 });

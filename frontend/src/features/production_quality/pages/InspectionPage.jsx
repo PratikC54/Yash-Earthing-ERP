@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   Search,
   Eye,
@@ -17,17 +17,43 @@ import {
 } from "lucide-react";
 import qualityService from "../services/qualityService";
 import QRLabelModal from "../components/qr/QRLabelModal";
+import ProductionQualitySubmoduleNav from "../components/shared/ProductionQualitySubmoduleNav";
 import AssignInspectorModal from "../components/quality/AssignInspectorModal";
 import StatusBadge from "../../../components/common/StatusBadge";
 import Button from "../../../components/common/Button";
 
 export default function InspectionPage() {
+  const [searchParams] = useSearchParams();
+  const rawTab = searchParams.get("tab") || searchParams.get("status") || "ALL";
+  const initialTab =
+    rawTab === "PENDING" || rawTab === "PENDING_ASSIGNMENT"
+      ? "PENDING_ASSIGNMENT"
+      : rawTab === "COMPLETED" || rawTab === "PASSED" || rawTab === "RELEASED"
+      ? "COMPLETED"
+      : rawTab;
+  const initialSearch = searchParams.get("search") || "";
+
   const [inspections, setInspections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [successMessage, setSuccessMessage] = useState(null);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState("ALL");
+  const [searchTerm, setSearchTerm] = useState(initialSearch);
+  const [activeTab, setActiveTab] = useState(initialTab);
+
+  useEffect(() => {
+    const raw = searchParams.get("tab") || searchParams.get("status");
+    if (raw !== null) {
+      const tabVal =
+        raw === "PENDING" || raw === "PENDING_ASSIGNMENT"
+          ? "PENDING_ASSIGNMENT"
+          : raw === "COMPLETED" || raw === "PASSED" || raw === "RELEASED"
+          ? "COMPLETED"
+          : raw;
+      setActiveTab(tabVal);
+    }
+    const s = searchParams.get("search");
+    if (s !== null) setSearchTerm(s);
+  }, [searchParams]);
   const [viewedInspection, setViewedInspection] = useState(null);
   const [assigningInspection, setAssigningInspection] = useState(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
@@ -177,6 +203,9 @@ export default function InspectionPage() {
           </Button>
         </div>
       </div>
+
+      {/* Production & Quality Submodule Navigation Bar */}
+      <ProductionQualitySubmoduleNav />
 
       {successMessage && (
         <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-xl flex items-center justify-between text-xs text-emerald-300 animate-in fade-in">

@@ -49,15 +49,272 @@ import MaterialIssuancePage from '../../features/production_quality/pages/Materi
 import InspectionPage from '../../features/production_quality/pages/InspectionPage'
 import NonConformancePage from '../../features/production_quality/pages/NonConformancePage'
 import DispatchPage from '../../features/production_quality/pages/DispatchPage'
+import QualityDashboard from '../../features/production_quality/pages/QualityDashboard'
+import ProductionCompletionPage from '../../features/production_quality/pages/ProductionCompletionPage'
+import WorkOrderDetailsPage from '../../features/production_quality/pages/WorkOrderDetailsPage'
+import WorkOrderReportPage from '../../features/production_quality/pages/WorkOrderReportPage'
+import InspectionDetailsPage from '../../features/production_quality/pages/InspectionDetailsPage'
+import NotificationHistoryPage from '../../features/production_quality/pages/NotificationHistoryPage'
+
+const moduleToPathMap = {
+  'overview': '/overview',
+  'leads': '/leads',
+  'followups': '/followups',
+  'quotations': '/quotations',
+  'orders': '/orders',
+  'procurement-dashboard': '/procurement-dashboard',
+  'vendors': '/vendors',
+  'purchase-requests': '/purchase-requests',
+  'purchase-orders': '/purchase-orders',
+  'goods-receipts': '/goods-receipts',
+  'inventory': '/inventory',
+  'engineering': '/engineering',
+  'm3-products': '/m3-products',
+  'm3-boms': '/m3-boms',
+  'm3-drawings': '/m3-drawings',
+  'm4-dashboard': '/production-quality/dashboard',
+  'm4-planning': '/production-quality/planning',
+  'm4-work-orders': '/production-quality/work-orders',
+  'm4-shop-floor': '/production-quality/manufacturing',
+  'm4-issuance': '/production-quality/material-issuance',
+  'm4-inspections': '/production-quality/inspections',
+  'm4-ncr': '/production-quality/non-conformance',
+  'm4-dispatch': '/production-quality/dispatch',
+  'm4-completion': '/production-quality/completion',
+  'm4-quality': '/production-quality/quality',
+  'm5-dashboard': '/m5-dashboard',
+  'm5-projects': '/m5-projects',
+  'm5-installations': '/m5-installations',
+  'm5-service': '/m5-service',
+  'finance': '/finance',
+  'm6-invoices': '/m6-invoices',
+  'm6-payables': '/m6-payables',
+  'm6-costing': '/m6-costing',
+  'm6-settings': '/m6-settings',
+  'employees': '/employees',
+  'attendance': '/attendance',
+  'task': '/task',
+  'performance': '/performance',
+  'payroll': '/payroll',
+  'shifts': '/shifts',
+}
+
+const resolvePathToModule = (rawPath) => {
+  if (!rawPath) return null
+  const cleanPath = String(rawPath).toLowerCase().split('?')[0].replace(/^\/+/, '').replace(/\/+$/, '')
+
+  // 1. Work Order Report (PDF)
+  if (
+    cleanPath.includes('work-orders') &&
+    (cleanPath.endsWith('/report.pdf') || cleanPath.endsWith('/report') || cleanPath.includes('/report'))
+  ) {
+    return { moduleId: 'm4-work-order-report', moduleName: 'Work Order Report' }
+  }
+
+  // 2. Work Order Details
+  if (
+    cleanPath.match(/(?:production-quality\/|pq\/|production\/|pg\/|^)work-orders\/[a-zA-Z0-9_-]+$/) &&
+    !cleanPath.endsWith('work-orders')
+  ) {
+    return { moduleId: 'm4-work-order-details', moduleName: 'Work Order Details' }
+  }
+
+  // 3. Inspection Details
+  if (
+    cleanPath.match(/(?:production-quality\/|pq\/|quality\/|^)inspections\/[a-zA-Z0-9_-]+$/) &&
+    !cleanPath.endsWith('inspections')
+  ) {
+    return { moduleId: 'm4-inspection-details', moduleName: 'Inspection Details' }
+  }
+
+  // 4. Planning & Scheduling
+  if (
+    cleanPath === 'production-quality/planning' ||
+    cleanPath === 'pq/planning' ||
+    cleanPath === 'production/planning' ||
+    cleanPath === 'erp/production/planning' ||
+    cleanPath === 'm4-planning'
+  ) {
+    return { moduleId: 'm4-planning', moduleName: 'Planning & Scheduling' }
+  }
+
+  // 5. Work Orders
+  if (
+    cleanPath === 'production-quality/work-orders' ||
+    cleanPath === 'pq/work-orders' ||
+    cleanPath === 'production/work-orders' ||
+    cleanPath === 'erp/production/work-orders' ||
+    cleanPath === 'work-orders' ||
+    cleanPath === 'pg/work-orders' ||
+    cleanPath === 'm4-work-orders'
+  ) {
+    return { moduleId: 'm4-work-orders', moduleName: 'Work Orders & Job Cards' }
+  }
+
+  // 6. Material Issuance
+  if (
+    cleanPath === 'production-quality/material-issuance' ||
+    cleanPath === 'pq/material-issuance' ||
+    cleanPath === 'production/material-issuance' ||
+    cleanPath === 'erp/production/material-issuance' ||
+    cleanPath === 'material-issuance' ||
+    cleanPath === 'm4-issuance'
+  ) {
+    return { moduleId: 'm4-issuance', moduleName: 'Material Issuance' }
+  }
+
+  // 7. Shop Floor Tracking / Manufacturing Execution
+  if (
+    cleanPath === 'production-quality/manufacturing' ||
+    cleanPath === 'production-quality/shop-floor' ||
+    cleanPath === 'production-quality/tracking' ||
+    cleanPath === 'pq/manufacturing' ||
+    cleanPath === 'production/manufacturing' ||
+    cleanPath === 'production/shop-floor' ||
+    cleanPath === 'production/tracking' ||
+    cleanPath === 'erp/production/manufacturing' ||
+    cleanPath === 'erp/production/shop-floor' ||
+    cleanPath === 'shop-floor' ||
+    cleanPath === 'm4-shop-floor'
+  ) {
+    return { moduleId: 'm4-shop-floor', moduleName: 'Shop Floor Tracking' }
+  }
+
+  // 8. Quality Inspections
+  if (
+    cleanPath === 'production-quality/inspections' ||
+    cleanPath === 'pq/inspections' ||
+    cleanPath === 'quality/inspections' ||
+    cleanPath === 'erp/quality/inspections' ||
+    cleanPath === 'production/quality-inspection' ||
+    cleanPath === 'm4-inspections'
+  ) {
+    return { moduleId: 'm4-inspections', moduleName: 'Quality Inspections' }
+  }
+
+  // 9. Quality Dashboard / Quality Assurance
+  if (
+    cleanPath === 'production-quality/quality' ||
+    cleanPath === 'pq/quality' ||
+    cleanPath === 'quality' ||
+    cleanPath === 'quality/dashboard' ||
+    cleanPath === 'erp/quality' ||
+    cleanPath === 'production/quality'
+  ) {
+    return { moduleId: 'm4-quality', moduleName: 'Quality Assurance' }
+  }
+
+  // 10. Non-Conformance (NCR) / CAPA / Rework
+  if (
+    cleanPath === 'production-quality/non-conformance' ||
+    cleanPath === 'pq/non-conformance' ||
+    cleanPath === 'quality/non-conformance' ||
+    cleanPath === 'erp/quality/non-conformance' ||
+    cleanPath === 'non-conformance' ||
+    cleanPath === 'production-quality/rework' ||
+    cleanPath === 'pq/rework' ||
+    cleanPath === 'quality/capa' ||
+    cleanPath === 'quality/rework' ||
+    cleanPath === 'rework' ||
+    cleanPath === 'm4-ncr'
+  ) {
+    return { moduleId: 'm4-ncr', moduleName: 'Non-Conformance (NCR)' }
+  }
+
+  // 11. Finished Goods Approval / Production Completion
+  if (
+    cleanPath === 'production-quality/completion' ||
+    cleanPath === 'pq/completion' ||
+    cleanPath === 'production/completion' ||
+    cleanPath === 'erp/production/completion'
+  ) {
+    return { moduleId: 'm4-completion', moduleName: 'Finished Goods Approval' }
+  }
+
+  // 12. Production Dispatch
+  if (
+    cleanPath === 'production-quality/dispatch' ||
+    cleanPath === 'pq/dispatch' ||
+    cleanPath === 'production/dispatch' ||
+    cleanPath === 'dispatch' ||
+    cleanPath === 'm4-dispatch'
+  ) {
+    return { moduleId: 'm4-dispatch', moduleName: 'Production Dispatch' }
+  }
+
+  // 13. Smart Alerts / Notifications
+  if (
+    cleanPath === 'production-quality/notifications' ||
+    cleanPath === 'pq/notifications' ||
+    cleanPath === 'notifications'
+  ) {
+    return { moduleId: 'm4-notifications', moduleName: 'Alerts & Escalations' }
+  }
+
+  // 14. Production & Quality Dashboard
+  if (
+    cleanPath === 'production-quality' ||
+    cleanPath === 'production-quality/dashboard' ||
+    cleanPath === 'production-quality/production' ||
+    cleanPath === 'pq/dashboard' ||
+    cleanPath === 'pq' ||
+    cleanPath === 'production' ||
+    cleanPath === 'production/dashboard' ||
+    cleanPath === 'erp/production/dashboard' ||
+    cleanPath === 'm4-dashboard'
+  ) {
+    return { moduleId: 'm4-dashboard', moduleName: 'Production & QA Center' }
+  }
+
+  // 15. Other General Modules
+  const generalMap = {
+    'overview': { moduleId: 'overview', moduleName: 'Master Dashboard' },
+    'leads': { moduleId: 'leads', moduleName: 'Leads & Enquiries' },
+    'followups': { moduleId: 'followups', moduleName: 'Customer Follow-ups' },
+    'quotations': { moduleId: 'quotations', moduleName: 'Quotations & Estimates' },
+    'orders': { moduleId: 'orders', moduleName: 'Orders & Dispatch Ready' },
+    'procurement-dashboard': { moduleId: 'procurement-dashboard', moduleName: 'Procurement Dashboard' },
+    'vendors': { moduleId: 'vendors', moduleName: 'Vendor Master' },
+    'purchase-requests': { moduleId: 'purchase-requests', moduleName: 'Purchase Requests & RFQs' },
+    'purchase-orders': { moduleId: 'purchase-orders', moduleName: 'Purchase Orders' },
+    'goods-receipts': { moduleId: 'goods-receipts', moduleName: 'Goods Receipts (GRN)' },
+    'inventory': { moduleId: 'inventory', moduleName: 'Raw Materials & Inventory' },
+    'engineering': { moduleId: 'engineering', moduleName: 'Products & Specifications' },
+    'm3-products': { moduleId: 'm3-products', moduleName: 'Products & Specifications' },
+    'm3-boms': { moduleId: 'm3-boms', moduleName: 'Bill of Materials (BOM)' },
+    'm3-drawings': { moduleId: 'm3-drawings', moduleName: 'Engineering Drawings' },
+    'm5-dashboard': { moduleId: 'm5-dashboard', moduleName: 'Installation & Projects' },
+    'm5-projects': { moduleId: 'm5-projects', moduleName: 'Project Register' },
+    'm5-installations': { moduleId: 'm5-installations', moduleName: 'Installation Register' },
+    'm5-service': { moduleId: 'm5-service', moduleName: 'Service Tickets' },
+    'projects': { moduleId: 'm5-projects', moduleName: 'Project Register' },
+    'installations': { moduleId: 'm5-installations', moduleName: 'Installation Register' },
+    'service': { moduleId: 'm5-service', moduleName: 'Service Tickets' },
+    'finance': { moduleId: 'finance', moduleName: 'Commercial Invoicing' },
+    'm6-invoices': { moduleId: 'm6-invoices', moduleName: 'Commercial Invoicing' },
+    'm6-payables': { moduleId: 'm6-payables', moduleName: 'Vendor Payables' },
+    'm6-costing': { moduleId: 'm6-costing', moduleName: 'Job Costing & P&L' },
+    'm6-settings': { moduleId: 'm6-settings', moduleName: 'Commercial Settings' },
+    'employees': { moduleId: 'employees', moduleName: 'HRMS' },
+    'attendance': { moduleId: 'attendance', moduleName: 'Attendance Manager' },
+    'task': { moduleId: 'task', moduleName: 'Task Manager' },
+    'tasks': { moduleId: 'task', moduleName: 'Task Manager' },
+    'performance': { moduleId: 'performance', moduleName: 'Performance Manager' },
+    'payroll': { moduleId: 'payroll', moduleName: 'Payroll Manager' },
+    'shifts': { moduleId: 'shifts', moduleName: 'Manufacturing Integration' },
+  }
+
+  return generalMap[cleanPath] || null
+}
 
 export default function AppLayout() {
   const { user, logout } = useAuth()
+  const location = useLocation()
+  const navigate = useNavigate()
   const isAdmin = user?.role === 'ADMIN'
   const isSuperUser = isAdmin || user?.hasFullAccess === true
   const [sections] = useState(initialNavSections)
 
-  // Default active module according to role:
-  // Admin / Full Access gets Master Dashboard (overview); others default to their authorized workflow page
   const defaultPageId = isSuperUser
     ? 'overview'
     : user?.role === 'BACK_OFFICER'
@@ -66,9 +323,17 @@ export default function AppLayout() {
     ? 'orders'
     : 'leads'
 
-  const [activeModuleId, setActiveModuleId] = useState(defaultPageId)
+  const initialResolved = typeof window !== 'undefined'
+    ? resolvePathToModule(window.location.pathname)
+    : null
+
+  const [activeModuleId, setActiveModuleId] = useState(
+    initialResolved ? initialResolved.moduleId : defaultPageId
+  )
   const [activeModule, setActiveModule] = useState(
-    isSuperUser
+    initialResolved
+      ? initialResolved.moduleName
+      : isSuperUser
       ? 'Master Dashboard'
       : user?.role === 'BACK_OFFICER'
       ? 'Quotations & Estimates'
@@ -157,6 +422,10 @@ export default function AppLayout() {
     }
     setActiveModule(item.name)
     setActiveModuleId(item.id)
+    const targetPath = moduleToPathMap[item.id]
+    if (targetPath && location.pathname !== targetPath) {
+      navigate(targetPath)
+    }
   }
 
   const handleNavigate = (targetId) => {
@@ -172,6 +441,10 @@ export default function AppLayout() {
         setActiveModule(found.name)
         break
       }
+    }
+    const targetPath = moduleToPathMap[targetId]
+    if (targetPath && location.pathname !== targetPath) {
+      navigate(targetPath)
     }
   }
 
@@ -189,54 +462,20 @@ export default function AppLayout() {
     }
   }
 
-  // Initialize activeModuleId based on URL path if present
+  // Synchronize URL pathname changes to activeModuleId & activeModule
   useEffect(() => {
-    const path = window.location.pathname.replace(/^\//, '').toLowerCase()
-    const pathMapping = {
-      '': defaultPageId,
-      'employees': 'employees',
-      'attendance': 'attendance',
-      'task': 'task',
-      'tasks': 'task',
-      'performance': 'performance',
-      'payroll': 'payroll',
-      'shifts': 'shifts',
-      'manufacturing': 'shifts',
-      'engineering': 'engineering',
-      'leads': 'leads',
-      'followups': 'followups',
-      'quotations': 'quotations',
-      'orders': 'orders',
-      'procurement-dashboard': 'procurement-dashboard',
-      'vendors': 'vendors',
-      'purchase-requests': 'purchase-requests',
-      'purchase-orders': 'purchase-orders',
-      'goods-receipts': 'goods-receipts',
-      'inventory': 'inventory',
-      'm4-dashboard': 'm4-dashboard',
-      'm4-planning': 'm4-planning',
-      'm4-work-orders': 'm4-work-orders',
-      'm4-shop-floor': 'm4-shop-floor',
-      'm4-issuance': 'm4-issuance',
-      'm4-inspections': 'm4-inspections',
-      'm4-ncr': 'm4-ncr',
-      'm4-dispatch': 'm4-dispatch',
-      'production': 'm4-dashboard',
-      'quality': 'm4-inspections',
-      'shop-floor': 'm4-shop-floor',
-      'work-orders': 'm4-work-orders',
-      'm5-dashboard': 'm5-dashboard',
-      'm5-projects': 'm5-projects',
-      'm5-installations': 'm5-installations',
-      'm5-service': 'm5-service',
-      'projects': 'm5-projects',
-      'installations': 'm5-installations',
-      'service': 'm5-service'
+    const rawPath = location.pathname.toLowerCase().replace(/^\/+/, '').replace(/\/+$/, '')
+    if (!rawPath) return
+
+    const resolved = resolvePathToModule(rawPath)
+    if (resolved && resolved.moduleId !== activeModuleId) {
+      if (!isItemAllowed(resolved.moduleId)) return
+      setActiveModuleId(resolved.moduleId)
+      if (resolved.moduleName) {
+        setActiveModule(resolved.moduleName)
+      }
     }
-    if (path && pathMapping[path]) {
-      handleNavigate(pathMapping[path])
-    }
-  }, [])
+  }, [location.pathname, activeModuleId])
 
   // Render current active page
   const renderContent = () => {
@@ -287,21 +526,35 @@ export default function AppLayout() {
 
       // Module 4: Production & Quality
       case 'm4-dashboard':
-        return <DashboardPage />
+        return <DashboardPage onNavigate={handleNavigate} />
       case 'm4-planning':
         return <ProductionPlanningPage />
       case 'm4-work-orders':
         return <WorkOrdersPage />
+      case 'm4-work-order-details':
+        return <WorkOrderDetailsPage />
+      case 'm4-work-order-report':
+        return <WorkOrderReportPage />
       case 'm4-shop-floor':
         return <ShopFloorPage />
       case 'm4-issuance':
         return <MaterialIssuancePage />
       case 'm4-inspections':
         return <InspectionPage />
+      case 'm4-inspection-details':
+        return <InspectionDetailsPage />
       case 'm4-ncr':
         return <NonConformancePage />
+      case 'm4-completion':
+        return <ProductionCompletionPage />
       case 'm4-dispatch':
         return <DispatchPage />
+      case 'm4-quality':
+        return <QualityDashboard />
+      case 'm4-rework':
+        return <ReworkTrackingPage />
+      case 'm4-notifications':
+        return <NotificationHistoryPage />
 
       // Module 5: Project, Installation & Service
       case 'm5-dashboard':
