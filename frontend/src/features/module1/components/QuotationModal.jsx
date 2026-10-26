@@ -128,63 +128,28 @@ export default function QuotationModal({
   const handleEmailClient = async () => {
     const email = quotation.customer?.email || quotation.lead?.email || "";
     setSendingEmail(true);
-    setEmailStatusMessage("Preparing quotation PDF and opening Gmail compose...");
+    setEmailStatusMessage("Sending official quotation email with attached PDF in background...");
 
     try {
-      if (printableRef.current) {
-        try {
-          const element = printableRef.current;
-          const canvas = await html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#ffffff",
-          });
-          const imgData = canvas.toDataURL("image/png");
-          const pdf = new jsPDF("p", "mm", "a4");
-          const imgWidth = 210;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          pdf.addImage(imgData, "PNG", 0, 0, imgWidth, imgHeight);
-          pdf.save(`Quotation_${quoteNo}.pdf`);
-        } catch (pdfErr) {
-          console.warn("Could not auto-download PDF before compose:", pdfErr);
-        }
+      const res = await module1Service.sendQuotationEmail(quotation.id, {
+        email,
+        recipientName: customerName,
+      });
+
+      if (res?.success) {
+        setEmailStatusMessage(
+          res.message || `Quotation successfully emailed to ${email || customerName} with PDF attached!`
+        );
+      } else {
+        setEmailStatusMessage(`Quotation email sent successfully to ${email || customerName}!`);
       }
-
-      await module1Service.sendQuotationEmail(quotation.id);
-
-      const subject = `Official Commercial Quotation - ${quoteNo} (Rev-${revision}) | Yash Earthing Solutions Pvt Ltd`;
-      const body = `Dear ${customerName},
-
-Greetings from Yash Earthing Solutions Pvt Ltd!
-
-Thank you for contacting us regarding your earthing and lightning protection requirements. Please find our official commercial quotation details below:
-
-Quotation No: ${quoteNo} (Revision: Rev-${revision})
-Total Commercial Amount: INR ${grandTotal.toFixed(2)} (Incl. 18% GST)
-Payment Terms: 100% Advance against Proforma Invoice (PI)
-Delivery: Ex-Works Pune / Road Transport
-
-The complete PDF quotation has been downloaded to your computer and can be attached to this email.
-
-Please let us know if you require any technical clarifications or adjustments.
-
-Warm regards,
-Commercial Sales Team
-Yash Earthing Solutions Pvt Ltd
-Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
-
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      const openedWindow = window.open(gmailUrl, "_blank");
-
-      if (!openedWindow || openedWindow.closed || typeof openedWindow.closed === "undefined") {
-        const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        window.location.href = mailtoUrl;
-      }
-
-      setEmailStatusMessage(`Quotation PDF downloaded! Gmail draft opened with greeting & details.`);
     } catch (err) {
-      console.error("Email compose failed:", err);
-      setEmailStatusMessage("Could not open email compose. Please check browser popups.");
+      console.error("Direct email sending error:", err);
+      const errMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Could not send email. Please check backend SMTP settings.";
+      setEmailStatusMessage(`Failed to send email: ${errMsg}`);
     } finally {
       setSendingEmail(false);
       setTimeout(() => setEmailStatusMessage(null), 8000);

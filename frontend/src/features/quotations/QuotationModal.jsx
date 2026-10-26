@@ -146,77 +146,28 @@ export default function QuotationModal({
   const handleEmailClient = async () => {
     const email = quotation.customer?.email || quotation.lead?.email || "";
     setSendingEmail(true);
-    setEmailStatusMessage("Preparing quotation PDF and opening Gmail compose...");
+    setEmailStatusMessage("Sending official quotation email with attached PDF in background...");
 
     try {
-      // 1. Generate and trigger download of the official Quotation PDF
-      if (printableRef.current) {
-        try {
-          const element = printableRef.current;
-          const canvas = await html2canvas(element, {
-            scale: 2,
-            useCORS: true,
-            backgroundColor: "#0d1326",
-          });
-          const imgData = canvas.toDataURL("image/png");
-          const pdf = new jsPDF("p", "mm", "a4");
-          const pdfWidth = pdf.internal.pageSize.getWidth();
-          const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-          pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
-          const fileName = `${quoteNo}_Rev${revision}.pdf`;
-          pdf.save(fileName);
-        } catch (pdfErr) {
-          console.warn("Auto PDF download notice:", pdfErr);
-        }
-      }
-
-      // 2. Also record quotation as SENT_TO_CLIENT in backend database
-      await module1Service.sendQuotationEmail(quotation.id, {
-        email: email || "pratik.fundsaudit@gmail.com",
+      const res = await module1Service.sendQuotationEmail(quotation.id, {
+        email,
         recipientName: customerName,
-      }).catch(() => null);
+      });
 
-      // 3. Construct professional email draft
-      const subject = `Commercial Quotation ${quoteNo} (Rev-${revision}) - Yash Earthing Solutions Pvt Ltd`;
-      const body = `Dear ${customerName},
-
-Greetings from Yash Earthing Solutions Pvt Ltd!
-
-We appreciate your interest in our advanced Earthing & Lightning Protection Systems.
-
-Please find our official Commercial Estimate & Quotation details below:
---------------------------------------------------
-• Quotation Reference: ${quoteNo} (Revision: Rev-${revision})
-• Total Quoted Value : INR ${grandTotal.toFixed(2)} (Inclusive of GST)
-• Payment Terms      : ${quotation.paymentTerms || "100% Advance against PI"}
-• Delivery Terms     : ${quotation.deliveryTerms || "Ex-Works Pune / Road Transport"}
-• Bank Remittance    : State Bank of India | A/c: 42706903179 | IFSC: SBIN0004726
---------------------------------------------------
-
-*The authenticated quotation PDF has just been downloaded to your computer—please attach "${quoteNo}_Rev${revision}.pdf" to this email before hitting Send.*
-
-Please let us know if you require any technical clarifications or adjustments. We look forward to partnering with your esteemed organization.
-
-Warm regards,
-${quotation.preparedBy?.split("(")[0]?.trim() || "Commercial Sales Team"}
-Yash Earthing Solutions Pvt Ltd
-Pune, Maharashtra | sales@yashearthing.com | +91 9370335298`;
-
-      // 4. Open Gmail Compose directly in a new tab with to, subject, and body prefilled
-      const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(email)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-      
-      const openedWindow = window.open(gmailUrl, "_blank");
-      
-      // Fallback to mailto if popup blocker prevented window.open
-      if (!openedWindow || openedWindow.closed || typeof openedWindow.closed === "undefined") {
-        const mailtoUrl = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-        window.location.href = mailtoUrl;
+      if (res?.success) {
+        setEmailStatusMessage(
+          res.message || `Quotation successfully emailed to ${email || customerName} with PDF attached!`
+        );
+      } else {
+        setEmailStatusMessage(`Quotation email sent successfully to ${email || customerName}!`);
       }
-
-      setEmailStatusMessage(`Quotation PDF downloaded! Gmail draft opened with greeting & details.`);
     } catch (err) {
-      console.error("Email compose failed:", err);
-      setEmailStatusMessage("Could not open email compose. Please check browser popups.");
+      console.error("Direct email sending error:", err);
+      const errMsg =
+        err.response?.data?.message ||
+        err.message ||
+        "Could not send email. Please check backend SMTP settings.";
+      setEmailStatusMessage(`Failed to send email: ${errMsg}`);
     } finally {
       setSendingEmail(false);
       setTimeout(() => setEmailStatusMessage(null), 8000);
